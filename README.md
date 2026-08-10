@@ -14,6 +14,7 @@
 ```text
 codex-workflows/
 ├── .agents/plugins/marketplace.json
+├── .github/workflows/validate.yml
 ├── docs/plugin-updates.md
 ├── plugins/
 │   ├── prompt-compiler/
@@ -42,6 +43,8 @@ git diff --check
 ```
 
 공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스와 대표 검색을 확인한다.
+
+GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows 환경의 통합 검증과 운영체제별 업데이트 스크립트 dry run을 실행한다.
 
 ## GitHub marketplace 설치
 
