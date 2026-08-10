@@ -61,7 +61,7 @@ description: 사용자의 일반 자연어 요청을 실제 의도 중심의 실
 지원 모드:
 - **show-plan-and-execute** — 간결한 작업 계획 또는 컴파일된 프롬프트를 보여준 뒤 실행
 - **compile-only** — 실행하지 않고 최적화된 프롬프트/계획만 출력
-- **diagnose-only** — 문제점만 진단하고 재작성·실행하지 않음
+- **execution-readiness-diagnose** — 요청 자체의 실행 가능성, 누락된 필수 입력과 권한 경계만 진단하고 실행하지 않음. 프롬프트 품질·전후 비교·회귀 평가는 `prompt-evaluator`로 라우팅
 
 사용자의 요청에서 모드를 추론한다.
 

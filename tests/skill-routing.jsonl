@@ -1,12 +1,28 @@
-{"id":"compile-simple-execution","prompt":"이 요청을 권한과 제약을 보존한 실행 가능한 구조로 바꾸고 바로 수행해줘.","expected_skill":"prompt-compiler","boundary":"execute-vs-evaluate"}
-{"id":"compile-multi-capability","prompt":"조사, 문서 작성, 파일 생성과 검증이 포함된 이 작업을 필요한 만큼만 분해해 수행해줘.","expected_skill":"prompt-compiler","boundary":"orchestrate-vs-evaluate"}
-{"id":"compile-only","prompt":"이 요구사항을 실행하지 말고 재사용할 수 있는 실행 프롬프트로 정리해줘.","expected_skill":"prompt-compiler","boundary":"compile-vs-review"}
-{"id":"evaluate-permission","prompt":"이 프롬프트가 사용자의 권한을 과도하게 확대하는지 진단하고 최소 수정안을 제시해줘.","expected_skill":"prompt-evaluator","boundary":"evaluate-vs-execute"}
-{"id":"evaluate-compare","prompt":"두 프롬프트를 의도 보존, 질문 기준, 작업 분해와 검증 가능성 관점에서 비교해줘.","expected_skill":"prompt-evaluator","boundary":"compare-vs-compile"}
-{"id":"evaluate-regression","prompt":"이 에이전트 지침의 회귀 테스트 케이스를 정상·실패 경계별로 설계해줘.","expected_skill":"prompt-evaluator","boundary":"regression-vs-orchestration"}
-{"id":"advise-concept","prompt":"툴팁과 팝오버의 차이, 적합 조건과 접근성 고려사항을 비교해줘.","expected_skill":"uiux-advisor","boundary":"explain-vs-audit"}
-{"id":"advise-spec","prompt":"파일 업로드 컴포넌트의 정상, 로딩, 오류, 취소와 복구 상태를 명세해줘.","expected_skill":"uiux-advisor","boundary":"specify-vs-audit"}
-{"id":"advise-research","prompt":"새 온보딩 흐름을 검증할 사용성 테스트 계획과 반증 기준을 작성해줘.","expected_skill":"uiux-advisor","boundary":"plan-vs-audit"}
-{"id":"audit-screenshot","prompt":"첨부한 결제 화면을 관찰 증거와 미검증 항목을 나눠 심각도별로 감사해줘.","expected_skill":"uiux-auditor","boundary":"audit-vs-explain"}
-{"id":"audit-flow","prompt":"회원가입부터 이메일 인증까지 흐름에서 막힘, 이탈, 오류 복구 문제를 우선순위별로 찾아줘.","expected_skill":"uiux-auditor","boundary":"audit-vs-specify"}
-{"id":"audit-code","prompt":"이 폼 구현을 키보드, 포커스, 오류 연결과 상태 완전성 관점에서 감사하고 검증 방법을 제시해줘.","expected_skill":"uiux-auditor","boundary":"audit-vs-general-guidance"}
+{"id":"compile-simple-execution","prompt":"이 요청을 권한과 제약을 보존한 실행 가능한 구조로 바꾸고 바로 수행해줘.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"execute-vs-evaluate"}
+{"id":"compile-multi-capability","prompt":"조사, 문서 작성, 파일 생성과 검증이 포함된 이 작업을 필요한 만큼만 분해해 수행해줘.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"orchestrate-vs-evaluate"}
+{"id":"compile-only","prompt":"이 요구사항을 실행하지 말고 재사용할 수 있는 실행 프롬프트로 정리해줘.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"compile-vs-review"}
+{"id":"compile-readiness","prompt":"이 요청에 빠진 필수 입력과 권한 경계를 먼저 확인하고, 안전하게 해결할 수 있으면 바로 수행해줘.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"readiness-vs-evaluate"}
+{"id":"compile-audit-execution","prompt":"이 화면 감사 요청을 실행 가능한 최소 단계로 구조화한 뒤 실제 감사를 수행해줘.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"orchestrate-vs-evaluate"}
+{"id":"compile-reusable-prompt","prompt":"팀원이 재사용할 수 있도록 이 UI 조사 요청을 실행 프롬프트로 바꿔줘. 실행하지는 마.","expected_skill":"prompt-compiler","forbidden_skills":["prompt-evaluator"],"boundary":"compile-vs-review"}
+{"id":"evaluate-permission","prompt":"이 프롬프트가 사용자의 권한을 과도하게 확대하는지 진단하고 최소 수정안을 제시해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["prompt-compiler"],"boundary":"evaluate-vs-execute"}
+{"id":"evaluate-compare","prompt":"두 프롬프트를 의도 보존, 질문 기준, 작업 분해와 검증 가능성 관점에서 비교해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["prompt-compiler"],"boundary":"compare-vs-compile"}
+{"id":"evaluate-regression","prompt":"이 에이전트 지침의 회귀 테스트 케이스를 정상·실패 경계별로 설계해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["prompt-compiler"],"boundary":"regression-vs-orchestration"}
+{"id":"evaluate-readiness-only","prompt":"이 요청을 실행하지 말고 실행 가능성, 모호성과 누락된 검증 조건만 진단해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["prompt-compiler"],"boundary":"evaluate-vs-execute"}
+{"id":"evaluate-ui-audit-prompt","prompt":"이 UI 감사 프롬프트가 관찰과 추론을 구분하도록 작성됐는지 평가해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["uiux-auditor"],"boundary":"prompt-review-vs-ui-audit"}
+{"id":"evaluate-permission-regression","prompt":"이 프롬프트의 이전 버전과 현재 버전 사이에 권한 확대 회귀가 생겼는지 판정해줘.","expected_skill":"prompt-evaluator","forbidden_skills":["prompt-compiler"],"boundary":"regression-vs-orchestration"}
+{"id":"advise-concept","prompt":"툴팁과 팝오버의 차이, 적합 조건과 접근성 고려사항을 비교해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"explain-vs-audit"}
+{"id":"advise-spec","prompt":"파일 업로드 컴포넌트의 정상, 로딩, 오류, 취소와 복구 상태를 명세해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"specify-vs-audit"}
+{"id":"advise-research","prompt":"새 온보딩 흐름을 검증할 사용성 테스트 계획과 반증 기준을 작성해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"plan-vs-audit"}
+{"id":"advise-idea-review","prompt":"아직 화면은 없고 결제 취소 기능 아이디어만 있어. UX 원칙과 상태 설계 관점에서 검토해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"proposal-review-vs-audit"}
+{"id":"advise-compare-onboarding","prompt":"두 온보딩 설계안의 적합 조건과 검증 비용을 비교해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"compare-vs-audit"}
+{"id":"advise-table-contract","prompt":"접근 가능한 데이터 테이블의 상태·키보드·콘텐츠 계약을 명세해줘.","expected_skill":"uiux-advisor","forbidden_skills":["uiux-auditor"],"boundary":"specify-vs-audit"}
+{"id":"audit-screenshot","prompt":"첨부한 결제 화면을 관찰 증거와 미검증 항목을 나눠 심각도별로 감사해줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"audit-vs-explain"}
+{"id":"audit-flow","prompt":"회원가입부터 이메일 인증까지 흐름에서 막힘, 이탈, 오류 복구 문제를 우선순위별로 찾아줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"audit-vs-specify"}
+{"id":"audit-code","prompt":"이 폼 구현을 키보드, 포커스, 오류 연결과 상태 완전성 관점에서 감사하고 검증 방법을 제시해줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"audit-vs-general-guidance"}
+{"id":"audit-live-url","prompt":"이 URL을 직접 열어 결제 과업을 수행하고 오류·뒤로가기·작은 화면을 감사해줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"observed-audit-vs-advice"}
+{"id":"audit-prototype","prompt":"첨부 프로토타입에서 삭제 확인과 실행 취소 흐름을 실제 상태별로 점검해줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"observed-audit-vs-advice"}
+{"id":"audit-rendered-code","prompt":"출시 전 이 화면 코드를 렌더링 결과와 구현 증거를 나눠 감사해줘.","expected_skill":"uiux-auditor","forbidden_skills":["uiux-advisor"],"boundary":"audit-vs-general-guidance"}
+{"id":"no-skill-translation","prompt":"이 한국어 문장을 자연스러운 영어로 번역해줘.","expected_skill":null,"forbidden_skills":["prompt-compiler","prompt-evaluator","uiux-advisor","uiux-auditor"],"boundary":"no-skill"}
+{"id":"no-skill-python-fix","prompt":"이 파이썬 정렬 함수의 인덱스 오류를 찾아 수정해줘.","expected_skill":null,"forbidden_skills":["prompt-compiler","prompt-evaluator","uiux-advisor","uiux-auditor"],"boundary":"no-skill"}
+{"id":"no-skill-summary","prompt":"첨부한 회의 메모를 세 문장으로 요약해줘.","expected_skill":null,"forbidden_skills":["prompt-compiler","prompt-evaluator","uiux-advisor","uiux-auditor"],"boundary":"no-skill"}
+{"id":"no-skill-weather","prompt":"서울의 오늘 날씨를 확인해줘.","expected_skill":null,"forbidden_skills":["prompt-compiler","prompt-evaluator","uiux-advisor","uiux-auditor"],"boundary":"no-skill"}
