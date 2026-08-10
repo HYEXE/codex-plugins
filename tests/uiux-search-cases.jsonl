@@ -1,0 +1,20 @@
+{"id":"form-validation","query":"폼 검증 오류 메시지 인라인 접근성","top":5,"top_one_of":["uiux-playbook-018","uiux-playbook-020"],"must_include":["uiux-playbook-018"]}
+{"id":"loading-progress","query":"로딩 진행","top":5,"top_one_of":["uiux-playbook-019"],"must_include":["uiux-playbook-019"]}
+{"id":"empty-onboarding","query":"빈 상태 온보딩 첫 행동 안내","top":5,"top_one_of":["uiux-playbook-021"],"must_include":["uiux-playbook-021"]}
+{"id":"consent-privacy","query":"동의 개인정보 선택권 철회 프라이버시","top":5,"top_one_of":["uiux-playbook-022"],"must_include":["uiux-playbook-022"]}
+{"id":"destructive-undo","query":"파괴적 작업 삭제 확인 실행 취소 복구","top":5,"top_one_of":["uiux-playbook-020","uiux-playbook-023"],"must_include":["uiux-playbook-023"]}
+{"id":"button-cta","query":"버튼 CTA 주요 행동 우선순위 레이블","top":5,"top_one_of":["uiux-playbook-024"],"must_include":["uiux-playbook-024"]}
+{"id":"modal-focus","query":"모달 다이얼로그 포커스 복귀 키보드","top":5,"top_one_of":["uiux-playbook-026","uiux-playbook-036"],"must_include":["uiux-playbook-026"]}
+{"id":"dense-table","query":"데이터 테이블 정렬 필터 밀도 빈 상태","top":5,"top_one_of":["uiux-playbook-027"],"must_include":["uiux-playbook-027"]}
+{"id":"contrast","query":"텍스트 색상 대비 접근성 WCAG","top":5,"top_one_of":["uiux-playbook-032"],"must_include":["uiux-playbook-032"]}
+{"id":"keyboard-semantics","query":"시맨틱 HTML 키보드 조작 접근성 의미 구조","top":5,"top_one_of":["uiux-playbook-035","uiux-playbook-037"],"must_include":["uiux-playbook-035"]}
+{"id":"responsive-reflow","query":"반응형 작은 화면 리플로우 확대 가로 스크롤","top":5,"top_one_of":["uiux-playbook-033"],"must_include":["uiux-playbook-033"]}
+{"id":"reduced-motion","query":"애니메이션 모션 감소 설정 멀미 접근성","top":5,"top_one_of":["uiux-playbook-034"],"must_include":["uiux-playbook-034"]}
+{"id":"usability-test","query":"사용성 테스트 과업 성공률 관찰 반증 기준","top":5,"top_one_of":["uiux-playbook-041"],"must_include":["uiux-playbook-041"]}
+{"id":"design-governance","query":"디자인 시스템 거버넌스 소유권 변경 승인 폐기","top":5,"top_one_of":["uiux-playbook-045"],"must_include":["uiux-playbook-045"]}
+{"id":"tokens-variants","query":"디자인 토큰 컴포넌트 변형 상태 일관성","top":5,"top_one_of":["uiux-playbook-046"],"must_include":["uiux-playbook-046"]}
+{"id":"handoff-acceptance","query":"핸드오프 인수 기준 산출물 주석 개발 전달","top":5,"top_one_of":["uiux-playbook-048"],"must_include":["uiux-playbook-048"]}
+{"id":"qa-regression","query":"디자인 QA 회귀 검증 출시 전 체크리스트 결함 분류","top":5,"top_one_of":["uiux-playbook-049"],"must_include":["uiux-playbook-049"]}
+{"id":"performance-latency","query":"인터랙션 성능 지연 시간 응답성 체감 속도","top":5,"top_one_of":["uiux-playbook-050"],"must_include":["uiux-playbook-050"]}
+{"id":"human-ai","query":"AI 모델 불확실성 설명 사용자 통제 신뢰","top":5,"top_one_of":["uiux-playbook-005"],"must_include":["uiux-playbook-005"]}
+{"id":"research-methods","query":"사용자 조사 방법 인터뷰 설문 관찰 선택","top":5,"top_one_of":["uiux-playbook-006"],"must_include":["uiux-playbook-006"]}
