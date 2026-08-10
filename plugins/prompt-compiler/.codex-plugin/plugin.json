@@ -1,6 +1,6 @@
 {
   "name": "prompt-compiler",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "자연어 요청을 안전한 실행 구조로 컴파일하고 프롬프트의 권한·분해·검증 품질을 평가하는 한국어 중심 워크플로입니다.",
   "author": {
     "name": "HYEXEN"

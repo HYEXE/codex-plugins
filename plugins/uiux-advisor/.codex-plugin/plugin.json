@@ -1,6 +1,6 @@
 {
   "name": "uiux-advisor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "공개 표준과 다중 출처 지식베이스를 검색해 UI/UX 가이드와 증거 기반 화면·흐름 감사를 제공하는 한국어 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
