@@ -27,7 +27,13 @@ codex-workflows/
 │       └── skills/
 │           ├── uiux-advisor/
 │           └── uiux-auditor/
+├── tests/
+│   ├── skill-routing.jsonl
+│   └── uiux-search-cases.jsonl
 └── scripts/
+    ├── check_version_bumps.py
+    ├── eval_routing.py
+    ├── eval_uiux_search.py
     ├── update_plugins.ps1
     ├── update_plugins.sh
     └── validate_all.py
@@ -39,12 +45,21 @@ codex-workflows/
 
 ```bash
 python3 scripts/validate_all.py
+python3 scripts/eval_routing.py validate
+python3 scripts/eval_uiux_search.py
+python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스와 대표 검색을 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스 참조 무결성과 검색 회귀를 확인한다.
 
-GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows 환경의 통합 검증과 운영체제별 업데이트 스크립트 dry run을 실행한다.
+라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 실제 모델에서 관찰한 선택 결과를 별도 JSONL로 저장했다면 다음처럼 점수화할 수 있다.
+
+```bash
+python3 scripts/eval_routing.py score observed-routing.jsonl
+```
+
+GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows 환경의 통합 검증과 운영체제별 업데이트 스크립트 dry run을 실행한다. 플러그인에 배포되는 파일이 바뀌면 해당 manifest의 SemVer가 기준 커밋보다 증가했는지도 검사한다.
 
 ## GitHub marketplace 설치
 

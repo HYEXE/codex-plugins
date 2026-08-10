@@ -9,13 +9,24 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
-ROUTING_CASES_PATH = ROOT / "tests" / "skill-routing.jsonl"
+ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
+UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
+VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
+SEMVER_PATTERN = re.compile(
+    r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\."
+    r"(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+)
+GUIDE_ID_PATTERN = re.compile(r"uiux-playbook-(\d{3})")
+SLUG_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 UPDATE_SCRIPT_MARKERS = {
     "bash": (
         ROOT / "scripts" / "update_plugins.sh",
@@ -179,7 +190,7 @@ def validate_plugin(plugin_name: str, skill_names: tuple[str, ...], failures: li
 
     manifest = load_json(manifest_path)
     check(manifest.get("name") == plugin_name, f"{plugin_name}: manifest name mismatch", failures)
-    check(bool(re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", str(manifest.get("version", "")))), f"{plugin_name}: invalid version", failures)
+    check(bool(SEMVER_PATTERN.fullmatch(str(manifest.get("version", "")))), f"{plugin_name}: invalid version", failures)
     check(manifest.get("skills") == "./skills/", f"{plugin_name}: skills path must be ./skills/", failures)
     check(bool(manifest.get("description")), f"{plugin_name}: missing description", failures)
     check(bool((manifest.get("author") or {}).get("name")), f"{plugin_name}: missing author.name", failures)
@@ -241,24 +252,163 @@ def validate_update_scripts(failures: list[str]) -> None:
         run([powershell, "-NoProfile", "-File", str(powershell_script), "-DryRun"], ROOT, failures, echo=False)
 
 
+def validate_repository_scripts(failures: list[str]) -> None:
+    for path in (ROUTING_EVALUATOR_PATH, UIUX_SEARCH_EVALUATOR_PATH, VERSION_CHECK_PATH):
+        check(path.is_file(), f"missing {path.relative_to(ROOT)}", failures)
+    for script in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            compile(script.read_text(encoding="utf-8"), str(script), "exec")
+        except SyntaxError as exc:
+            failures.append(f"invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
+
+
 def validate_uiux_kb(failures: list[str]) -> None:
     skill_dir = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor"
     kb_dir = skill_dir / "references" / "kb"
+    guides_path = kb_dir / "guides.jsonl"
+    sources_path = kb_dir / "sources.json"
+    check(guides_path.is_file(), "uiux-advisor: missing guides.jsonl", failures)
+    check(sources_path.is_file(), "uiux-advisor: missing sources.json", failures)
+    if not guides_path.is_file() or not sources_path.is_file():
+        return
+
     records: list[dict[str, Any]] = []
-    for line_number, line in enumerate((kb_dir / "guides.jsonl").read_text(encoding="utf-8").splitlines(), 1):
+    for line_number, line in enumerate(guides_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue
         try:
-            records.append(json.loads(line))
+            record = json.loads(line)
         except json.JSONDecodeError as exc:
             failures.append(f"uiux-advisor: invalid guides.jsonl line {line_number}: {exc}")
+            continue
+        if not isinstance(record, dict):
+            failures.append(f"uiux-advisor: guides.jsonl line {line_number} must be an object")
+            continue
+        records.append(record)
+
+    try:
+        sources = load_json(sources_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"uiux-advisor: invalid sources.json: {exc}")
+        sources = []
+    check(isinstance(sources, list), "uiux-advisor: sources.json must be an array", failures)
+    if isinstance(sources, list):
+        source_records = [source for source in sources if isinstance(source, dict)]
+        check(len(source_records) == len(sources), "uiux-advisor: every source must be an object", failures)
+    else:
+        source_records = []
+
+    source_ids: list[str] = []
+    source_required = ("id", "title", "publisher", "url", "source_type", "scope", "stability", "usage")
+    for index, source in enumerate(source_records, 1):
+        label = source.get("id") or f"source-{index}"
+        for field in source_required:
+            check(isinstance(source.get(field), str) and bool(source[field].strip()), f"uiux-advisor: {label} missing {field}", failures)
+        source_id = source.get("id")
+        if isinstance(source_id, str):
+            source_ids.append(source_id)
+        url = source.get("url")
+        check(isinstance(url, str) and url.startswith(("https://", "http://")), f"uiux-advisor: {label} has invalid URL", failures)
+    check(len(source_ids) == len(set(source_ids)), "uiux-advisor: duplicate source IDs", failures)
+    known_source_ids = set(source_ids)
+
     ids = [record.get("id") for record in records]
     markdown_paths = [record.get("markdown_path") for record in records]
+    string_ids = [guide_id for guide_id in ids if isinstance(guide_id, str)]
+    string_markdown_paths = [path for path in markdown_paths if isinstance(path, str)]
     check(len(records) == 50, f"uiux-advisor: expected 50 records, got {len(records)}", failures)
-    check(len(ids) == len(set(ids)), "uiux-advisor: duplicate guide IDs", failures)
-    check(all(isinstance(path, str) and (kb_dir / path).is_file() for path in markdown_paths), "uiux-advisor: missing guide Markdown", failures)
+    check(len(string_ids) == len(set(string_ids)), "uiux-advisor: duplicate guide IDs", failures)
+    check(len(string_markdown_paths) == len(set(string_markdown_paths)), "uiux-advisor: duplicate guide Markdown paths", failures)
+    known_guide_ids = {guide_id for guide_id in ids if isinstance(guide_id, str)}
+    used_source_ids: set[str] = set()
+    required_fields = (
+        "id",
+        "num",
+        "slug",
+        "title",
+        "category",
+        "rule",
+        "sources",
+        "tags",
+        "related_ids",
+        "time_sensitive",
+        "markdown_path",
+        "version",
+        "snapshot_date",
+    )
+
+    for index, record in enumerate(records, 1):
+        guide_id = record.get("id")
+        label = guide_id if isinstance(guide_id, str) and guide_id else f"guide-{index}"
+        for field in required_fields:
+            check(field in record, f"uiux-advisor: {label} missing {field}", failures)
+
+        match = GUIDE_ID_PATTERN.fullmatch(guide_id) if isinstance(guide_id, str) else None
+        check(match is not None, f"uiux-advisor: {label} has invalid guide ID", failures)
+        if match:
+            check(record.get("num") == int(match.group(1)), f"uiux-advisor: {label} num does not match ID", failures)
+        slug = record.get("slug")
+        check(isinstance(slug, str) and SLUG_PATTERN.fullmatch(slug) is not None, f"uiux-advisor: {label} has invalid slug", failures)
+        for field in ("title", "category", "rule"):
+            check(isinstance(record.get(field), str) and bool(record[field].strip()), f"uiux-advisor: {label} missing {field}", failures)
+
+        version = record.get("version")
+        check(isinstance(version, str) and SEMVER_PATTERN.fullmatch(version) is not None, f"uiux-advisor: {label} has invalid version", failures)
+        snapshot_date = record.get("snapshot_date")
+        try:
+            parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
+            check(parsed_snapshot is not None and parsed_snapshot <= date.today(), f"uiux-advisor: {label} has future snapshot_date", failures)
+        except ValueError:
+            failures.append(f"uiux-advisor: {label} has invalid snapshot_date")
+        check(isinstance(record.get("time_sensitive"), bool), f"uiux-advisor: {label} time_sensitive must be boolean", failures)
+
+        for field in ("sources", "tags", "related_ids"):
+            values = record.get(field)
+            check(
+                isinstance(values, list) and bool(values) and all(isinstance(value, str) and value for value in values),
+                f"uiux-advisor: {label} {field} must be a non-empty string array", failures)
+            if isinstance(values, list):
+                check(len(values) == len(set(values)), f"uiux-advisor: {label} has duplicate {field}", failures)
+
+        record_sources = record.get("sources")
+        if isinstance(record_sources, list):
+            unknown_sources = sorted(set(record_sources) - known_source_ids)
+            check(not unknown_sources, f"uiux-advisor: {label} references unknown sources {unknown_sources}", failures)
+            used_source_ids.update(source_id for source_id in record_sources if isinstance(source_id, str))
+        related_ids = record.get("related_ids")
+        if isinstance(related_ids, list):
+            unknown_related = sorted(set(related_ids) - known_guide_ids)
+            check(not unknown_related, f"uiux-advisor: {label} references unknown guides {unknown_related}", failures)
+            check(guide_id not in related_ids, f"uiux-advisor: {label} relates to itself", failures)
+
+        markdown_path = record.get("markdown_path")
+        if not isinstance(markdown_path, str):
+            failures.append(f"uiux-advisor: {label} missing guide Markdown")
+            continue
+        resolved = (kb_dir / markdown_path).resolve()
+        try:
+            resolved.relative_to(kb_dir.resolve())
+        except ValueError:
+            failures.append(f"uiux-advisor: {label} has unsafe Markdown path {markdown_path}")
+            continue
+        check(resolved.is_file(), f"uiux-advisor: {label} missing guide Markdown {markdown_path}", failures)
+        if resolved.is_file():
+            frontmatter = parse_frontmatter(resolved)
+            expected_frontmatter = {
+                "id": guide_id,
+                "title": record.get("title"),
+                "slug": slug,
+                "category": record.get("category"),
+                "version": version,
+                "snapshot_date": snapshot_date,
+                "time_sensitive": str(record.get("time_sensitive")).lower(),
+            }
+            for field, expected in expected_frontmatter.items():
+                check(frontmatter.get(field) == str(expected), f"uiux-advisor: {label} Markdown {field} mismatch", failures)
+
+    unused_sources = sorted(known_source_ids - used_source_ids)
+    check(not unused_sources, f"uiux-advisor: unused source registry entries {unused_sources}", failures)
     check(len(list((kb_dir / "guides").rglob("*.md"))) == 50, "uiux-advisor: guide file count mismatch", failures)
-    check(isinstance(load_json(kb_dir / "sources.json"), (list, dict)), "uiux-advisor: invalid sources.json", failures)
 
     broken: list[str] = []
     link_pattern = re.compile(r"\[[^\]]+\]\(([^)#]+\.md)(?:#[^)]+)?\)")
@@ -277,50 +427,14 @@ def validate_uiux_kb(failures: list[str]) -> None:
     check(not broken, f"uiux-advisor: broken links: {broken[:5]}", failures)
 
 
-def validate_routing_cases(failures: list[str]) -> None:
-    check(ROUTING_CASES_PATH.is_file(), "missing tests/skill-routing.jsonl", failures)
-    if not ROUTING_CASES_PATH.is_file():
-        return
-
-    known_skills = {skill for skills in EXPECTED_PLUGINS.values() for skill in skills}
-    seen_ids: set[str] = set()
-    counts = {skill: 0 for skill in known_skills}
-    for line_number, line in enumerate(ROUTING_CASES_PATH.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            case = json.loads(line)
-        except json.JSONDecodeError as exc:
-            failures.append(f"routing cases line {line_number}: invalid JSON: {exc}")
-            continue
-        case_id = case.get("id")
-        prompt = case.get("prompt")
-        expected_skill = case.get("expected_skill")
-        check(isinstance(case_id, str) and bool(case_id), f"routing cases line {line_number}: missing id", failures)
-        check(case_id not in seen_ids, f"routing cases: duplicate id {case_id}", failures)
-        if isinstance(case_id, str):
-            seen_ids.add(case_id)
-        check(isinstance(prompt, str) and bool(prompt.strip()), f"routing cases {case_id}: missing prompt", failures)
-        if isinstance(prompt, str):
-            leaks_selector = any(f"${skill_name}" in prompt for skill_name in known_skills)
-            check(not leaks_selector, f"routing cases {case_id}: prompt leaks an explicit skill selector", failures)
-        check(expected_skill in known_skills, f"routing cases {case_id}: unknown skill {expected_skill}", failures)
-        if expected_skill in counts:
-            counts[expected_skill] += 1
-        check(bool(case.get("boundary")), f"routing cases {case_id}: missing boundary", failures)
-
-    for skill_name, count in sorted(counts.items()):
-        check(count >= 2, f"routing cases: {skill_name} needs at least 2 cases, got {count}", failures)
-
-
 def main() -> int:
     failures: list[str] = []
     validate_marketplace(failures)
     for plugin_name, skill_names in EXPECTED_PLUGINS.items():
         validate_plugin(plugin_name, skill_names, failures)
     validate_update_scripts(failures)
+    validate_repository_scripts(failures)
     validate_uiux_kb(failures)
-    validate_routing_cases(failures)
 
     python = sys.executable
     prompt_dir = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
@@ -329,12 +443,9 @@ def main() -> int:
     run([python, "scripts/eval_harness.py", "--help"], prompt_dir, failures, echo=False)
     run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
     run([python, "scripts/search_kb.py", "--id", "23"], uiux_dir, failures)
-    run(
-        [python, "scripts/search_kb.py", "--query", "가입 오류 복구 접근성", "--top", "3", "--json"],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
+    run([python, str(ROUTING_EVALUATOR_PATH), "validate"], ROOT, failures)
+    run([python, str(UIUX_SEARCH_EVALUATOR_PATH)], ROOT, failures)
+    run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
 
     if failures:
         print("\nMONOREPO VALIDATION FAILED")

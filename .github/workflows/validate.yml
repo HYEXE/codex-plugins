@@ -36,6 +36,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Python 설정
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -44,6 +45,14 @@ jobs:
 
       - name: 저장소 통합 검증
         run: python scripts/validate_all.py
+
+      - name: 플러그인 버전 증가 검증
+        if: runner.os == 'Linux' && github.event_name != 'workflow_dispatch'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: python scripts/check_version_bumps.py --base "$BASE_SHA" --head "$HEAD_SHA"
 
       - name: Bash 업데이트 스크립트 검증
         if: runner.os == 'Linux'
