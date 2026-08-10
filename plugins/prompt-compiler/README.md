@@ -330,7 +330,7 @@ Prompt Compiler
 ### 기본: Compile and Execute
 
 ```text
-$prompt-compiler-v3-2-ko
+$prompt-compiler
 한국 AI 정책 문제점을 분석해줘.
 ```
 
@@ -341,7 +341,7 @@ $prompt-compiler-v3-2-ko
 ### Show Plan and Execute
 
 ```text
-$prompt-compiler-v3-2-ko
+$prompt-compiler
 
 어떻게 작업을 나눴는지도 보여주고 실행해줘.
 경쟁사 3곳을 조사해서 비교표를 작성해줘.
@@ -354,7 +354,7 @@ $prompt-compiler-v3-2-ko
 ### Compile Only
 
 ```text
-$prompt-compiler-v3-2-ko
+$prompt-compiler
 
 실행하지 말고 다음 요청을
 최적화된 프롬프트로만 만들어줘.
@@ -369,7 +369,7 @@ $prompt-compiler-v3-2-ko
 ### Diagnose Only
 
 ```text
-$prompt-compiler-v3-2-ko
+$prompt-evaluator
 
 내 프롬프트의 문제점만 분석해줘.
 아직 수정하거나 실행하지 마.
@@ -505,28 +505,30 @@ Simple-task over-decomposition <= 5%
 
 ## Eval 실행
 
+다음 명령은 `plugins/prompt-compiler/` 플러그인 루트에서 실행합니다.
+
 데이터셋 검증:
 
 ```bash
-python scripts/eval_harness.py validate
+python3 skills/prompt-compiler/scripts/eval_harness.py validate
 ```
 
 결과 파일 평가:
 
 ```bash
-python scripts/eval_harness.py score path/to/results.jsonl
+python3 skills/prompt-compiler/scripts/eval_harness.py score path/to/results.jsonl
 ```
 
 테스트용 trace template 생성:
 
 ```bash
-python scripts/eval_harness.py template
+python3 skills/prompt-compiler/scripts/eval_harness.py template
 ```
 
 패키지 검증:
 
 ```bash
-python scripts/validate_package.py
+python3 skills/prompt-compiler/scripts/validate_package.py
 ```
 
 ---
@@ -534,50 +536,33 @@ python scripts/validate_package.py
 ## 패키지 구조
 
 ```text
-prompt-compiler-v3.1/
-│
+prompt-compiler/
+├── .codex-plugin/
+│   └── plugin.json
 ├── README.md
-├── SKILL.md
 ├── CHANGELOG.md
-│
-├── agents/
-│   └── openai.yaml
-│
-├── references/
-│   ├── intent-frame.md
-│   ├── task-graph.md
-│   ├── execution-contracts.md
-│   ├── routing.md
-│   ├── permissions.md
-│   ├── verification.md
-│   ├── recovery.md
-│   ├── evaluation.md
-│   ├── examples.md
-│   └── evals.md
-│
-├── schemas/
-│   └── intent-graph.schema.json
-│
-├── evals/
-│   ├── cases.jsonl
-│   ├── compiler-trace.schema.json
-│   ├── eval_adapter.md
-│   ├── end_to_end.md
-│   └── golden_results.jsonl
-│
-├── scripts/
-│   ├── eval_harness.py
-│   └── validate_package.py
-│
-└── reports/
-    └── harness-self-test.md
+├── reports/
+└── skills/
+    ├── prompt-compiler/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── assets/
+    │   ├── references/
+    │   ├── schemas/
+    │   ├── evals/
+    │   └── scripts/
+    └── prompt-evaluator/
+        ├── SKILL.md
+        ├── agents/openai.yaml
+        ├── assets/
+        └── references/
 ```
 
 ---
 
 ## 설계 원칙
 
-Prompt Compiler v3.1은 다음 원칙을 우선합니다.
+Prompt Compiler v3.2-ko는 다음 원칙을 우선합니다.
 
 1. **Original intent is authoritative.**
 2. **Minimum necessary orchestration.**
@@ -638,11 +623,22 @@ Freshness / Artifact / Question Gates
 Regression Eval Harness
 ```
 
+### v3.2-ko
+Korean Semantic Layer와 독립적인 Prompt Evaluator
+
+```text
+Eval-Hardened Intent Compiler
++
+Korean Semantic Layer
++
+Prompt Quality and Regression Evaluation
+```
+
 ---
 
 ## 현재 개발 방향
 
-v3.1의 우선 목표는 기능의 양이 아니라 **측정 가능한 신뢰성**입니다.
+v3.2-ko의 우선 목표는 기능의 양이 아니라 **측정 가능한 신뢰성과 명확한 스킬 경계**입니다.
 
 다음 개선은 실제 eval 결과를 기준으로 진행하는 것을 권장합니다.
 
@@ -661,7 +657,7 @@ v3.1의 우선 목표는 기능의 양이 아니라 **측정 가능한 신뢰성
 
 ## 한 문장 요약
 
-**Prompt Compiler v3.1은 사용자의 짧은 자연어 요청을 의도와 권한을 보존한 실행 가능한 작업 구조로 컴파일하고, 필요한 능력을 선택해 실행·검증하는 meta-skill입니다.**
+**Prompt Compiler v3.2-ko는 사용자의 자연어 요청을 의도와 권한을 보존한 실행 가능한 작업 구조로 컴파일하고, 별도 평가 스킬로 프롬프트 품질과 회귀 위험을 검증하는 워크플로입니다.**
 
 
 ---

@@ -4,14 +4,14 @@
 
 목표:
 - 한국어 사용자와 유지보수자가 Skill 규칙을 자연스럽게 읽을 수 있게 한다.
-- machine interface는 v3.1과 동일하게 유지한다.
+- machine identifier와 scoring protocol은 v3.1 호환성을 유지한다.
 
 변경:
 - `SKILL.md`의 자연어 지침을 한국어 중심으로 재작성
 - `references/`의 설명과 예시를 한국어 중심으로 재작성
 - eval adapter / end-to-end 설명을 한국어화
 - README를 v3.2-ko 기준으로 갱신
-- `LANGUAGE_POLICY.md` 추가
+- `skills/prompt-compiler/references/language-policy.md` 추가
 - localization integrity validator 추가
 - machine-critical 파일의 SHA-256 manifest 추가
 
@@ -25,7 +25,7 @@
 - deterministic eval harness protocol
 
 주의:
-- localization validator 통과는 machine interface가 유지되었다는 뜻이다.
+- localization validator 통과는 현재 파일이 기록된 기준 체크섬과 일치한다는 뜻이다.
 - 실제 모델 성능이 v3.1과 동일하다는 뜻은 아니며, 모델 기반 A/B eval이 별도로 필요하다.
 
 ## v3.1 — Eval-Hardened Intent Compiler

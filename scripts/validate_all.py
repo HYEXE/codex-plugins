@@ -159,6 +159,25 @@ def validate_plugin(plugin_name: str, skill_names: tuple[str, ...], failures: li
     check(bool(manifest.get("description")), f"{plugin_name}: missing description", failures)
     check(bool((manifest.get("author") or {}).get("name")), f"{plugin_name}: missing author.name", failures)
     interface = manifest.get("interface") or {}
+    default_prompts = interface.get("defaultPrompt")
+    check(
+        isinstance(default_prompts, list) and 1 <= len(default_prompts) <= 3,
+        f"{plugin_name}: interface.defaultPrompt must contain 1 to 3 entries",
+        failures,
+    )
+    if isinstance(default_prompts, list):
+        for index, prompt in enumerate(default_prompts, 1):
+            check(
+                isinstance(prompt, str) and bool(prompt.strip()),
+                f"{plugin_name}: defaultPrompt[{index}] must be a non-empty string",
+                failures,
+            )
+            if isinstance(prompt, str):
+                check(
+                    len(prompt) <= 128,
+                    f"{plugin_name}: defaultPrompt[{index}] exceeds 128 characters",
+                    failures,
+                )
     for field in ("displayName", "shortDescription", "longDescription", "developerName", "category"):
         check(bool(interface.get(field)), f"{plugin_name}: missing interface.{field}", failures)
     for field in ("composerIcon", "logo"):

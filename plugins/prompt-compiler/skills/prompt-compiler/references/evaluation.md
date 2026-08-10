@@ -86,9 +86,9 @@ controlled test에서만 `evals/compiler-trace.schema.json`에 맞는 compact tr
 
 v3.2-ko의 핵심 추가 검증:
 
-- machine-critical schema/key/enum이 v3.1과 동일한가
+- machine-critical schema/key/enum이 기록된 승인 체크섬과 일치하는가
 - 한글화 과정에서 eval label이 바뀌지 않았는가
-- script/grader protocol이 바뀌지 않았는가
+- scoring key, 배점과 release gate가 v3.1 호환성을 유지하는가
 - semantic guidance만 한국어로 이동했는가
 
 `machine-interface.sha256.json`과 `scripts/validate_localization.py`를 사용한다.

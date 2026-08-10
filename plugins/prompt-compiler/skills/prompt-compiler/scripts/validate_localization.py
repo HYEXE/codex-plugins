@@ -22,4 +22,4 @@ if errors:
         print("-", error)
     raise SystemExit(1)
 
-print(f"LOCALIZATION VALIDATION PASSED: {len(manifest['files'])} machine-critical files unchanged")
+print(f"LOCALIZATION VALIDATION PASSED: {len(manifest['files'])} machine-critical files match recorded checksums")
