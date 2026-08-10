@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -15,6 +16,30 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_CASES_PATH = ROOT / "tests" / "skill-routing.jsonl"
+UPDATE_SCRIPT_MARKERS = {
+    "bash": (
+        ROOT / "scripts" / "update_plugins.sh",
+        (
+            "codex-workflows-kr",
+            "prompt-compiler",
+            "uiux-advisor",
+            "run_codex plugin marketplace upgrade",
+            "run_codex plugin add",
+            "--dry-run",
+        ),
+    ),
+    "powershell": (
+        ROOT / "scripts" / "update_plugins.ps1",
+        (
+            "codex-workflows-kr",
+            "prompt-compiler",
+            "uiux-advisor",
+            '@("plugin", "marketplace", "upgrade"',
+            '@("plugin", "add"',
+            "$DryRun",
+        ),
+    ),
+}
 EXPECTED_PLUGINS = {
     "prompt-compiler": ("prompt-compiler", "prompt-evaluator"),
     "uiux-advisor": ("uiux-advisor", "uiux-auditor"),
@@ -192,6 +217,30 @@ def validate_plugin(plugin_name: str, skill_names: tuple[str, ...], failures: li
         validate_skill(plugin_name, plugin_dir, skill_name, failures)
 
 
+def validate_update_scripts(failures: list[str]) -> None:
+    for label, (path, markers) in UPDATE_SCRIPT_MARKERS.items():
+        check(path.is_file(), f"missing {label} update script", failures)
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for marker in markers:
+            check(marker in text, f"{label} update script missing marker: {marker}", failures)
+
+    bash_script = UPDATE_SCRIPT_MARKERS["bash"][0]
+    if bash_script.is_file():
+        if os.name != "nt":
+            check(os.access(bash_script, os.X_OK), "bash update script is not executable", failures)
+        bash = shutil.which("bash")
+        if bash:
+            run([bash, "-n", str(bash_script)], ROOT, failures, echo=False)
+            run([bash, str(bash_script), "--dry-run"], ROOT, failures, echo=False)
+
+    powershell_script = UPDATE_SCRIPT_MARKERS["powershell"][0]
+    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    if powershell_script.is_file() and powershell:
+        run([powershell, "-NoProfile", "-File", str(powershell_script), "-DryRun"], ROOT, failures, echo=False)
+
+
 def validate_uiux_kb(failures: list[str]) -> None:
     skill_dir = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor"
     kb_dir = skill_dir / "references" / "kb"
@@ -269,6 +318,7 @@ def main() -> int:
     validate_marketplace(failures)
     for plugin_name, skill_names in EXPECTED_PLUGINS.items():
         validate_plugin(plugin_name, skill_names, failures)
+    validate_update_scripts(failures)
     validate_uiux_kb(failures)
     validate_routing_cases(failures)
 

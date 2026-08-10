@@ -14,6 +14,7 @@
 ```text
 codex-workflows/
 ├── .agents/plugins/marketplace.json
+├── docs/plugin-updates.md
 ├── plugins/
 │   ├── prompt-compiler/
 │   │   ├── .codex-plugin/plugin.json
@@ -25,7 +26,10 @@ codex-workflows/
 │       └── skills/
 │           ├── uiux-advisor/
 │           └── uiux-auditor/
-└── scripts/validate_all.py
+└── scripts/
+    ├── update_plugins.ps1
+    ├── update_plugins.sh
+    └── validate_all.py
 ```
 
 저장소와 marketplace는 하나지만 각 플러그인은 독립적으로 설치하고 버전을 관리한다. 각 스킬의 실행 지침과 필요한 resources는 해당 스킬 폴더에 둔다.
@@ -49,15 +53,27 @@ codex plugin add uiux-advisor@codex-workflows-kr
 
 ## 업데이트
 
-저장소에 새 버전이 push된 뒤 각 사용 환경에서 Git marketplace snapshot을 갱신하고 플러그인을 다시 설치한다.
+저장소에 새 버전이 push돼도 각 PC의 Git marketplace snapshot과 설치 cache는 자동으로 바뀌지 않는다. 운영체제별 스크립트가 marketplace를 갱신하고 두 플러그인을 다시 설치한다.
+
+macOS/Linux:
 
 ```bash
-codex plugin marketplace upgrade codex-workflows-kr
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+./scripts/update_plugins.sh
 ```
 
-설치 또는 업데이트 후에는 새 Codex 작업에서 동작을 확인한다.
+Windows PowerShell:
+
+```powershell
+pwsh -NoProfile -File .\scripts\update_plugins.ps1
+```
+
+실제 변경 없이 실행할 명령을 먼저 확인할 수 있다.
+
+```bash
+./scripts/update_plugins.sh --dry-run
+```
+
+최초 설정, CLI 경로 지정, launchd·cron·Windows 작업 스케줄러 자동화는 [플러그인 업데이트 가이드](docs/plugin-updates.md)를 참고한다. 설치 또는 업데이트 후에는 Codex를 재시작하거나 새 작업을 열어 변경 사항을 불러온다.
 
 ## 로컬 개발
 
