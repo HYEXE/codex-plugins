@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Prompt Compiler v3.1 Eval Trace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "decomposition",
+    "node_count",
+    "profiles",
+    "permission_level",
+    "asks_question",
+    "freshness",
+    "connected_data",
+    "artifact_planned",
+    "external_write_planned",
+    "verification"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "decomposition": {
+      "enum": [
+        "pass_through",
+        "single_node",
+        "task_graph"
+      ]
+    },
+    "node_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "direct",
+          "research",
+          "analysis",
+          "writing",
+          "coding",
+          "artifact",
+          "external_action"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "permission_level": {
+      "enum": [
+        "read",
+        "analyze",
+        "draft",
+        "edit",
+        "send",
+        "destructive"
+      ]
+    },
+    "asks_question": {
+      "type": "boolean"
+    },
+    "freshness": {
+      "enum": [
+        "not_required",
+        "required",
+        "connected_private"
+      ]
+    },
+    "connected_data": {
+      "type": "boolean"
+    },
+    "artifact_planned": {
+      "type": "boolean"
+    },
+    "external_write_planned": {
+      "type": "boolean"
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Prompt Compiler v3.2-ko"
+  short_description: "의도를 안전한 최소 실행 구조로 컴파일하고 결과까지 검증"
+  default_prompt: "Use $prompt-compiler to compile my intent into the smallest safe executable structure, execute it, and verify the result."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

@@ -1,0 +1,29 @@
+{
+  "name": "prompt-compiler",
+  "version": "0.1.0",
+  "description": "사용자의 자연어 요청을 의도·권한·제약을 보존한 최소 실행 구조로 컴파일하고 수행·검증하는 한국어 중심 워크플로입니다.",
+  "author": {
+    "name": "HYEXEN"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Prompt Compiler",
+    "shortDescription": "의도를 안전한 최소 실행 구조로 컴파일",
+    "longDescription": "일반 자연어 요청에서 목표, 산출물, 제약, 권한 경계와 검증 조건을 추출하고 필요한 만큼만 작업을 분해합니다. 사용 가능한 기능으로 작업을 즉시 수행한 뒤 결과를 검증하며, 파생된 중간 표현을 재귀적으로 다시 컴파일하지 않습니다.",
+    "developerName": "HYEXEN",
+    "category": "Productivity",
+    "capabilities": [
+      "의도와 권한 경계 보존",
+      "최소 작업 그래프 구성",
+      "사용 가능한 기능으로 실행 경로 선택",
+      "결과 검증과 제한적 재계획"
+    ],
+    "defaultPrompt": [
+      "이 요청을 안전한 최소 실행 구조로 컴파일하고 수행해줘.",
+      "이 복합 작업을 필요한 만큼만 분해하고 각 결과를 검증해줘.",
+      "이 프롬프트의 문제를 진단하고 실행 가능한 형태로 다시 작성해줘."
+    ],
+    "composerIcon": "./skills/prompt-compiler/assets/icon.svg",
+    "logo": "./skills/prompt-compiler/assets/icon.svg"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "v3.2-ko",
+  "purpose": "Detect unintended changes to canonical machine interfaces after Korean localization.",
+  "files": {
+    "schemas/intent-graph.schema.json": "5c6f9658832b8579b7c7c55f591153d7ebf3db0a6c0737a785251321510c7dd0",
+    "evals/compiler-trace.schema.json": "680177bf07fb1ca5b30f22775904f854786482b6ddf576c7f5bb8c453247cf3f",
+    "evals/cases.jsonl": "b1f21ac3b22bafbb30b0899c9d64e3a19febca2f49260bc283269a7abfe9e102",
+    "evals/golden_results.jsonl": "79eb89a469a23d55daddbd3e36507f23edf88c141f71c694e8f586377e04be24",
+    "scripts/eval_harness.py": "fa0c3d4eefb13cdfe74b6190e1c81b20468bac84accaaaf530f1da2b758c9287"
+  }
+}

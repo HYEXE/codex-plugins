@@ -1,0 +1,32 @@
+{
+  "name": "codex-workflows-kr",
+  "interface": {
+    "displayName": "Codex Workflows KR"
+  },
+  "plugins": [
+    {
+      "name": "prompt-compiler",
+      "source": {
+        "source": "local",
+        "path": "./plugins/prompt-compiler"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "uiux-advisor",
+      "source": {
+        "source": "local",
+        "path": "./plugins/uiux-advisor"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

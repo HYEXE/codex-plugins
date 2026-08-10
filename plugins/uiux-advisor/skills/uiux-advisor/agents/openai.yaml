@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI/UX Advisor"
+  short_description: "근거 기반 한국어 UI/UX 설명, 리뷰, 명세와 검증 계획"
+  default_prompt: "Use $uiux-advisor to review this UI/UX problem with evidence-backed guidance and concrete validation steps."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
