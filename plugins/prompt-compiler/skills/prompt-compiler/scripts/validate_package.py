@@ -4,8 +4,7 @@ import json, subprocess, sys
 
 root = Path(__file__).resolve().parents[1]
 required = [
-    "README.md",
-    "LANGUAGE_POLICY.md",
+    "references/language-policy.md",
     "SKILL.md",
     "agents/openai.yaml",
     "references/intent-frame.md",

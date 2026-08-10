@@ -711,4 +711,4 @@ Schemas / Evals / Scripts
 
 이 구조는 한국어 유지보수성을 높이면서 machine interface를 번역으로 흔들지 않기 위한 설계입니다.
 
-자세한 정책은 [`LANGUAGE_POLICY.md`](LANGUAGE_POLICY.md)를 참고하세요.
+자세한 정책은 [`language-policy.md`](skills/prompt-compiler/references/language-policy.md)를 참고하세요.

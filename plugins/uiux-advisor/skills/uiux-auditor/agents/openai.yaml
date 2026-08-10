@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI/UX Auditor"
+  short_description: "화면과 사용자 흐름을 근거·심각도·검증 가능성으로 감사"
+  default_prompt: "Use $uiux-auditor to audit this screen or flow by severity, evidence, user impact, and verification needs."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

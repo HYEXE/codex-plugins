@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic structural grader for Prompt Compiler v3.1 traces.
+"""Deterministic structural grader for Prompt Compiler v3.2 traces.
 
 Usage:
   python scripts/eval_harness.py validate
@@ -9,6 +9,15 @@ Usage:
 from pathlib import Path
 import json, sys, statistics
 from collections import defaultdict
+
+USAGE = """usage: eval_harness.py [validate | score RESULTS.jsonl | template | --help]
+
+Commands:
+  validate              Validate the bundled evaluation case dataset.
+  score RESULTS.jsonl   Score observed compiler decisions against the dataset.
+  template              Emit a JSONL result template; this is not observed output.
+  -h, --help            Show this help message.
+"""
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "evals" / "cases.jsonl"
@@ -162,6 +171,9 @@ def emit_template():
 
 def main():
     cmd=sys.argv[1] if len(sys.argv)>1 else "validate"
+    if cmd in {"help", "-h", "--help"}:
+        print(USAGE)
+        return 0
     if cmd=="validate":
         return validate_cases()
     if cmd=="score":
@@ -169,7 +181,7 @@ def main():
         return score_results(sys.argv[2])
     if cmd=="template":
         emit_template(); return 0
-    raise SystemExit("unknown command: "+cmd)
+    raise SystemExit(f"unknown command: {cmd}\n\n{USAGE}")
 
 if __name__=="__main__":
     raise SystemExit(main())

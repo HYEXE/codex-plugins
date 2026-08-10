@@ -1,0 +1,6 @@
+interface:
+  display_name: "Prompt Evaluator"
+  short_description: "프롬프트의 권한·구조·검증 품질을 진단하고 회귀 평가"
+  default_prompt: "Use $prompt-evaluator to diagnose the intent, permission boundaries, decomposition, and verification quality of this prompt."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

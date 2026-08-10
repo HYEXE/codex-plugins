@@ -1,15 +1,15 @@
 {
   "name": "uiux-advisor",
-  "version": "0.1.0",
-  "description": "공개 표준과 다중 출처 지식베이스를 검색해 한국어 UI/UX 설명, 비교, 리뷰, 명세와 검증 계획을 작성하는 워크플로입니다.",
+  "version": "0.2.0",
+  "description": "공개 표준과 다중 출처 지식베이스를 검색해 UI/UX 가이드와 증거 기반 화면·흐름 감사를 제공하는 한국어 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "UI/UX Advisor",
-    "shortDescription": "근거 기반 한국어 UI/UX 가이드",
-    "longDescription": "접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다루는 한국어 지식베이스를 검색합니다. 관찰된 사실과 추론을 구분하고 사용자 영향, 트레이드오프와 실제 검증 방법을 연결합니다.",
+    "shortDescription": "근거 기반 UI/UX 가이드와 화면·흐름 감사",
+    "longDescription": "접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다루는 한국어 지식베이스를 검색합니다. 별도 감사 스킬로 화면·코드·사용자 흐름의 관찰 사실과 미검증 항목을 구분하고 심각도, 수정 우선순위와 검증 방법을 연결합니다.",
     "developerName": "HYEXEN",
     "category": "Productivity",
     "capabilities": [
@@ -17,12 +17,14 @@
       "화면과 사용자 흐름 리뷰",
       "컴포넌트와 제품 명세 작성",
       "리서치와 검증 계획 수립",
-      "근거 가이드와 출처 추적"
+      "근거 가이드와 출처 추적",
+      "화면과 사용자 흐름의 증거 기반 감사"
     ],
     "defaultPrompt": [
-      "이 화면을 접근성, 상태 완전성과 사용자 영향 관점에서 검토해줘.",
+      "이 UI 문제에 적용되는 원리와 대안을 근거와 함께 설명해줘.",
       "이 기능의 정상·오류·복구 상태와 검증 기준을 명세해줘.",
-      "이 UI 대안을 근거와 트레이드오프로 비교해줘."
+      "이 UI 대안을 근거와 트레이드오프로 비교해줘.",
+      "이 사용자 흐름을 심각도와 근거 확실도에 따라 감사해줘."
     ],
     "composerIcon": "./skills/uiux-advisor/assets/icon.svg",
     "logo": "./skills/uiux-advisor/assets/icon.svg"
