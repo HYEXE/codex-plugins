@@ -1,2 +1,4 @@
+* text=auto eol=lf
+
 # Imported plugin Markdown uses intentional trailing spaces for hard line breaks.
 plugins/**/*.md -whitespace
