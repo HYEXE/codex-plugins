@@ -1,15 +1,15 @@
 {
   "name": "uiux-advisor",
-  "version": "0.4.0",
-  "description": "근거 기반 UI/UX 가이드·감사와 모션, 데이터 시각화, 창의적 UI 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
+  "version": "0.5.0",
+  "description": "근거 기반 UI/UX 가이드·감사와 모션, 데이터 시각화, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "UI/UX Advisor",
-    "shortDescription": "UI/UX 근거를 모션·차트·창의적 UI 구현까지 연결",
-    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 Anime.js·Motion·GSAP 등의 모션, Bklit UI 등의 데이터 시각화, shadcn-compatible 시각 효과 컴포넌트를 기존 프론트엔드에 맞게 선택·구현·검증합니다.",
+    "shortDescription": "UI/UX 근거를 모션·차트·디자인 시스템 구현까지 연결",
+    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 구조화된 도구 레지스트리에서 현재 프론트엔드에 맞는 모션, 데이터 시각화, 시각 효과와 디자인 시스템 도구를 선별하고 구현·검증합니다.",
     "developerName": "HYEXEN",
     "category": "Productivity",
     "capabilities": [
@@ -21,11 +21,13 @@
       "화면과 사용자 흐름의 증거 기반 감사",
       "Anime.js·Motion·GSAP·네이티브 API 기반 UI 모션 구현",
       "Bklit UI·Recharts·ECharts·D3 기반 데이터 시각화 구현",
-      "UI registry와 headless primitive를 활용한 창의적 화면 조합"
+      "UI registry와 headless primitive를 활용한 창의적 화면 조합",
+      "디자인 토큰·컴포넌트 API·Storybook·마이그레이션 기반 디자인 시스템 구축",
+      "프레임워크·역할별 프론트엔드 도구 레지스트리 검색"
     ],
     "defaultPrompt": [
       "이 UI 문제의 원리와 대안을 근거와 트레이드오프로 비교해줘.",
-      "이 화면에 적합한 모션·차트·UI 도구를 선택해 접근성과 성능까지 구현해줘.",
+      "이 코드베이스에 맞는 모션·차트·UI 또는 디자인 시스템 도구를 선택해 구현하고 검증해줘.",
       "이 사용자 흐름을 심각도와 근거 확실도에 따라 감사해줘."
     ],
     "composerIcon": "./skills/uiux-advisor/assets/icon.svg",

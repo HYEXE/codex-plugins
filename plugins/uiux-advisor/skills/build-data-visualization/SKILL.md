@@ -24,8 +24,9 @@ description: 데이터와 사용자 과업에 맞는 차트·시각화 표현을
    성공·반증 기준:
    ```
 
-4. `references/visualization-toolkit-selection.md`를 읽고 가장 작은 적합 도구를 고른다.
-5. 접근성·상태·QA 기준은 `references/chart-contract-and-qa.md`를 읽어 적용한다.
+4. `../uiux-advisor/scripts/search_toolkits.py --role data-visualization --ecosystem <ecosystem>`으로 구조화 후보를 확인한다.
+5. `references/visualization-toolkit-selection.md`를 읽고 가장 작은 적합 도구를 고른다.
+6. 접근성·상태·QA 기준은 `references/chart-contract-and-qa.md`를 읽어 적용한다.
 
 ## 도구 선택 규칙
 
@@ -64,5 +65,6 @@ Bklit UI는 shadcn/ui registry와 프로젝트 구성이 전제다. 설치 전�
 
 - 차트 유형과 UX 원칙만 비교하는 요청은 `uiux-advisor`로 보낸다.
 - 기존 대시보드의 문제를 찾고 우선순위화하는 요청은 `uiux-auditor`로 보낸다.
+- 여러 제품 화면이 공유하는 chart token과 component API를 시스템화하면 `build-design-system`을 함께 적용한다.
 - 차트 밖의 페이지 배경, hero, 카드와 텍스트 효과 조합은 `compose-creative-ui`를 사용한다.
 - 시각화 전이의 복잡한 타임라인 구현은 `implement-ui-motion`의 모션 계약도 적용한다.

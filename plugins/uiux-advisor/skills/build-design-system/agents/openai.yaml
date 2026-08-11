@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design System Builder"
+  short_description: "토큰과 컴포넌트를 연결해 확장 가능한 디자인 시스템 구현"
+  default_prompt: "Use $build-design-system to build or evolve this codebase design system with tokens, component contracts, documentation, migration, and regression validation."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

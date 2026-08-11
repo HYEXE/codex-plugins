@@ -3,6 +3,7 @@
 공식 문서 확인 기준일: 2026-08-11
 
 이 목록은 무조건 설치할 추천 순위가 아니다. 현재 framework와 기존 design system을 보존하면서 필요한 역할 하나를 채우는 후보군이다.
+구조화된 최신 후보 목록은 `../uiux-advisor/scripts/search_toolkits.py --role creative-ui`로 먼저 확인한다.
 
 ## 역할 구분
 

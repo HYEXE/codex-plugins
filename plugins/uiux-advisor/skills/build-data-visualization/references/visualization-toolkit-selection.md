@@ -3,6 +3,7 @@
 공식 문서 확인 기준일: 2026-08-11
 
 라이브러리 API와 설치 방식은 변할 수 있다. 구현할 때 설치 버전과 현재 공식 문서를 확인한다.
+구조화된 최신 후보 목록은 `../uiux-advisor/scripts/search_toolkits.py --role data-visualization`으로 먼저 확인한다.
 
 ## 도구보다 먼저 정할 것
 

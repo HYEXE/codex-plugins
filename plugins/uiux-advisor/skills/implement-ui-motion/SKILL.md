@@ -23,8 +23,9 @@ description: 기존 프론트엔드에서 상태 전환 동작 자체가 주된 
    완료·실패 판정:
    ```
 
-4. `references/motion-toolkit-selection.md`를 읽고 현재 요구를 충족하는 가장 단순한 기술을 선택한다.
-5. 구현과 검증 세부 기준이 필요하면 `references/motion-contract-and-qa.md`를 읽는다.
+4. `../uiux-advisor/scripts/search_toolkits.py --role motion --ecosystem <ecosystem>`으로 구조화 후보를 확인한다.
+5. `references/motion-toolkit-selection.md`를 읽고 현재 요구를 충족하는 가장 단순한 기술을 선택한다.
+6. 구현과 검증 세부 기준이 필요하면 `references/motion-contract-and-qa.md`를 읽는다.
 
 ## 기술 선택 규칙
 
@@ -64,5 +65,6 @@ description: 기존 프론트엔드에서 상태 전환 동작 자체가 주된 
 - 모션이 필요한지와 제품 원칙만 결정하는 요청은 `uiux-advisor`로 보낸다.
 - 기존 화면의 과도한 모션이나 접근성 문제만 찾는 요청은 `uiux-auditor`로 보낸다.
 - 차트의 데이터 의미와 시각 인코딩이 중심이면 `build-data-visualization`을 사용한다.
+- 여러 component가 공유하는 motion token과 공개 API를 시스템화하면 `build-design-system`을 함께 적용한다.
 - hover, press, focus, 열기·닫기처럼 상태 전환 동작의 구현이 주목적이면 이 스킬을 사용한다.
 - 랜딩 페이지의 배경·카드·텍스트 효과를 레지스트리에서 조합하는 작업은 `compose-creative-ui`를 사용하되, 복잡한 모션 구현이 생기면 이 스킬의 계약을 함께 적용한다.

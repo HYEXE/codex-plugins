@@ -13,6 +13,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES = ROOT / "tests" / "skill-routing.jsonl"
 KNOWN_SKILLS = {
+    "build-design-system",
     "build-data-visualization",
     "compose-creative-ui",
     "implement-ui-motion",

@@ -17,8 +17,27 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
+ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-11.jsonl"
 UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
+TOOLKIT_REGISTRY_PATH = (
+    ROOT
+    / "plugins"
+    / "uiux-advisor"
+    / "skills"
+    / "uiux-advisor"
+    / "references"
+    / "frontend-toolkit-registry.json"
+)
+TOOLKIT_SEARCH_PATH = (
+    ROOT
+    / "plugins"
+    / "uiux-advisor"
+    / "skills"
+    / "uiux-advisor"
+    / "scripts"
+    / "search_toolkits.py"
+)
 SEMVER_PATTERN = re.compile(
     r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
     r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\."
@@ -59,6 +78,7 @@ EXPECTED_PLUGINS = {
         "implement-ui-motion",
         "build-data-visualization",
         "compose-creative-ui",
+        "build-design-system",
     ),
 }
 REQUIRED_SKILL_FILES = {
@@ -67,7 +87,11 @@ REQUIRED_SKILL_FILES = {
         "references/evaluation-rubric.md",
         "assets/icon.svg",
     ),
-    ("uiux-advisor", "uiux-advisor"): ("scripts/search_kb.py",),
+    ("uiux-advisor", "uiux-advisor"): (
+        "scripts/search_kb.py",
+        "scripts/search_toolkits.py",
+        "references/frontend-toolkit-registry.json",
+    ),
     ("uiux-advisor", "uiux-auditor"): (
         "references/audit-rubric.md",
         "assets/icon.svg",
@@ -85,6 +109,12 @@ REQUIRED_SKILL_FILES = {
     ("uiux-advisor", "compose-creative-ui"): (
         "references/component-toolkit-selection.md",
         "references/composition-and-qa.md",
+        "assets/icon.svg",
+    ),
+    ("uiux-advisor", "build-design-system"): (
+        "references/design-system-workflow.md",
+        "references/token-and-component-contracts.md",
+        "references/framework-adapters.md",
         "assets/icon.svg",
     ),
 }
@@ -112,6 +142,14 @@ REQUIRED_SKILL_MARKERS = {
         "shadcn/ui",
         "React Aria",
         "Ark UI",
+    ),
+    ("uiux-advisor", "build-design-system"): (
+        "DTCG",
+        "Style Dictionary",
+        "Storybook",
+        "CSS Custom Properties",
+        "Vue",
+        "Svelte",
     ),
 }
 FORBIDDEN_SKILL_DOCS = ("README.md", "CHANGELOG.md")
@@ -308,13 +346,207 @@ def validate_update_scripts(failures: list[str]) -> None:
 
 
 def validate_repository_scripts(failures: list[str]) -> None:
-    for path in (ROUTING_EVALUATOR_PATH, UIUX_SEARCH_EVALUATOR_PATH, VERSION_CHECK_PATH):
+    for path in (
+        ROUTING_EVALUATOR_PATH,
+        UIUX_SEARCH_EVALUATOR_PATH,
+        VERSION_CHECK_PATH,
+        TOOLKIT_SEARCH_PATH,
+    ):
         check(path.is_file(), f"missing {path.relative_to(ROOT)}", failures)
     for script in sorted((ROOT / "scripts").glob("*.py")):
         try:
             compile(script.read_text(encoding="utf-8"), str(script), "exec")
         except SyntaxError as exc:
             failures.append(f"invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
+    check(ROUTING_OBSERVED_PATH.is_file(), "missing independent routing observation snapshot", failures)
+
+
+def validate_frontend_toolkits(failures: list[str]) -> None:
+    check(TOOLKIT_REGISTRY_PATH.is_file(), "uiux-advisor: missing frontend toolkit registry", failures)
+    if not TOOLKIT_REGISTRY_PATH.is_file():
+        return
+
+    try:
+        payload = load_json(TOOLKIT_REGISTRY_PATH)
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"uiux-advisor: invalid frontend toolkit registry: {exc}")
+        return
+    if not isinstance(payload, dict):
+        failures.append("uiux-advisor: frontend toolkit registry must be an object")
+        return
+
+    schema_version = payload.get("schema_version")
+    check(
+        isinstance(schema_version, str) and SEMVER_PATTERN.fullmatch(schema_version) is not None,
+        "uiux-advisor: invalid toolkit schema_version",
+        failures,
+    )
+    snapshot_date = payload.get("snapshot_date")
+    try:
+        parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
+        check(
+            parsed_snapshot is not None and parsed_snapshot <= date.today(),
+            "uiux-advisor: invalid or future toolkit snapshot_date",
+            failures,
+        )
+    except ValueError:
+        parsed_snapshot = None
+        failures.append("uiux-advisor: invalid toolkit snapshot_date")
+
+    tools = payload.get("tools")
+    check(isinstance(tools, list), "uiux-advisor: toolkit tools must be an array", failures)
+    if not isinstance(tools, list):
+        return
+    check(len(tools) >= 20, f"uiux-advisor: expected at least 20 toolkits, got {len(tools)}", failures)
+
+    allowed_kinds = {"api", "library", "registry", "specification", "workbench"}
+    allowed_roles = {
+        "motion",
+        "data-visualization",
+        "creative-ui",
+        "primitive",
+        "design-system",
+        "documentation",
+        "testing",
+    }
+    allowed_ecosystems = {
+        "web",
+        "vanilla",
+        "react",
+        "vue",
+        "svelte",
+        "angular",
+        "solid",
+        "multi-platform",
+    }
+    allowed_adoption = {"native", "package", "registry", "source-copy", "specification"}
+    allowed_status = {"candidate", "verified", "deprecated"}
+    allowed_license_review = {"required-at-adoption", "verified", "not-applicable"}
+    required_ids = {
+        "anime-js",
+        "motion",
+        "gsap",
+        "bklit-ui",
+        "recharts",
+        "apache-echarts",
+        "observable-plot",
+        "d3",
+        "shadcn-ui",
+        "magic-ui",
+        "aceternity-ui",
+        "react-bits",
+        "css-visual-effects",
+        "react-aria",
+        "base-ui",
+        "radix-primitives",
+        "ark-ui",
+        "design-tokens-format",
+        "style-dictionary",
+        "storybook",
+        "css-custom-properties",
+    }
+
+    ids: list[str] = []
+    names: list[str] = []
+    official_urls: list[str] = []
+    covered_roles: set[str] = set()
+    for index, tool in enumerate(tools, 1):
+        if not isinstance(tool, dict):
+            failures.append(f"uiux-advisor: toolkit {index} must be an object")
+            continue
+        label = tool.get("id") or f"toolkit-{index}"
+        tool_id = tool.get("id")
+        name = tool.get("name")
+        check(
+            isinstance(tool_id, str) and SLUG_PATTERN.fullmatch(tool_id) is not None,
+            f"uiux-advisor: {label} has invalid id",
+            failures,
+        )
+        check(isinstance(name, str) and bool(name.strip()), f"uiux-advisor: {label} missing name", failures)
+        if isinstance(tool_id, str):
+            ids.append(tool_id)
+        if isinstance(name, str):
+            names.append(name)
+
+        check(tool.get("kind") in allowed_kinds, f"uiux-advisor: {label} has invalid kind", failures)
+        check(tool.get("adoption") in allowed_adoption, f"uiux-advisor: {label} has invalid adoption", failures)
+        check(tool.get("status") in allowed_status, f"uiux-advisor: {label} has invalid status", failures)
+        check(
+            tool.get("license_review") in allowed_license_review,
+            f"uiux-advisor: {label} has invalid license_review",
+            failures,
+        )
+        roles = tool.get("roles")
+        valid_roles = (
+            isinstance(roles, list)
+            and bool(roles)
+            and all(isinstance(role, str) and bool(role) for role in roles)
+        )
+        check(valid_roles, f"uiux-advisor: {label} has invalid roles", failures)
+        if valid_roles:
+            check(len(roles) == len(set(roles)), f"uiux-advisor: {label} has duplicate roles", failures)
+            check(set(roles) <= allowed_roles, f"uiux-advisor: {label} has unknown roles", failures)
+            covered_roles.update(roles)
+        ecosystems = tool.get("ecosystems")
+        valid_ecosystems = (
+            isinstance(ecosystems, list)
+            and bool(ecosystems)
+            and all(isinstance(ecosystem, str) and bool(ecosystem) for ecosystem in ecosystems)
+        )
+        check(valid_ecosystems, f"uiux-advisor: {label} has invalid ecosystems", failures)
+        if valid_ecosystems:
+            check(
+                len(ecosystems) == len(set(ecosystems)),
+                f"uiux-advisor: {label} has duplicate ecosystems",
+                failures,
+            )
+            check(
+                set(ecosystems) <= allowed_ecosystems,
+                f"uiux-advisor: {label} has unknown ecosystems",
+                failures,
+            )
+        official_url = tool.get("official_url")
+        check(
+            isinstance(official_url, str) and official_url.startswith("https://"),
+            f"uiux-advisor: {label} has invalid official_url",
+            failures,
+        )
+        if isinstance(official_url, str):
+            official_urls.append(official_url)
+        checked_on = tool.get("checked_on")
+        try:
+            parsed_checked = date.fromisoformat(checked_on) if isinstance(checked_on, str) else None
+            check(
+                parsed_checked is not None
+                and parsed_checked <= date.today()
+                and (parsed_snapshot is None or parsed_checked <= parsed_snapshot),
+                f"uiux-advisor: {label} has invalid checked_on",
+                failures,
+            )
+        except ValueError:
+            failures.append(f"uiux-advisor: {label} has invalid checked_on")
+        check(
+            isinstance(tool.get("selection_note"), str) and bool(tool["selection_note"].strip()),
+            f"uiux-advisor: {label} missing selection_note",
+            failures,
+        )
+        if tool.get("license_review") == "verified":
+            check(bool(tool.get("license_spdx")), f"uiux-advisor: {label} missing license_spdx", failures)
+            check(
+                isinstance(tool.get("license_url"), str) and tool["license_url"].startswith("https://"),
+                f"uiux-advisor: {label} missing license_url",
+                failures,
+            )
+
+    check(len(ids) == len(set(ids)), "uiux-advisor: duplicate toolkit IDs", failures)
+    check(len(names) == len(set(names)), "uiux-advisor: duplicate toolkit names", failures)
+    check(
+        len(official_urls) == len(set(official_urls)),
+        "uiux-advisor: duplicate toolkit official URLs",
+        failures,
+    )
+    check(required_ids <= set(ids), f"uiux-advisor: missing required toolkits {sorted(required_ids - set(ids))}", failures)
+    check(allowed_roles <= covered_roles, f"uiux-advisor: uncovered toolkit roles {sorted(allowed_roles - covered_roles)}", failures)
 
 
 def validate_uiux_kb(failures: list[str]) -> None:
@@ -490,6 +722,7 @@ def main() -> int:
     validate_update_scripts(failures)
     validate_repository_scripts(failures)
     validate_uiux_kb(failures)
+    validate_frontend_toolkits(failures)
 
     python = sys.executable
     prompt_dir = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
@@ -498,7 +731,38 @@ def main() -> int:
     run([python, "scripts/eval_harness.py", "--help"], prompt_dir, failures, echo=False)
     run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
     run([python, "scripts/search_kb.py", "--id", "23"], uiux_dir, failures)
+    run([python, "scripts/search_toolkits.py", "--id", "anime-js"], uiux_dir, failures, echo=False)
+    run(
+        [python, "scripts/search_toolkits.py", "--role", "design-system", "--ecosystem", "react", "--json"],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
+    for role, ecosystem in (
+        ("creative-ui", "svelte"),
+        ("motion", "angular"),
+        ("data-visualization", "angular"),
+    ):
+        run(
+            [
+                python,
+                "scripts/search_toolkits.py",
+                "--role",
+                role,
+                "--ecosystem",
+                ecosystem,
+                "--json",
+            ],
+            uiux_dir,
+            failures,
+            echo=False,
+        )
     run([python, str(ROUTING_EVALUATOR_PATH), "validate"], ROOT, failures)
+    run(
+        [python, str(ROUTING_EVALUATOR_PATH), "score", str(ROUTING_OBSERVED_PATH)],
+        ROOT,
+        failures,
+    )
     run([python, str(UIUX_SEARCH_EVALUATOR_PATH)], ROOT, failures)
     run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
 

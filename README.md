@@ -7,7 +7,7 @@
 | 플러그인 | 번들 스킬 | 용도 |
 | --- | --- | --- |
 | `prompt-compiler` | `prompt-compiler`, `prompt-evaluator` | 요청을 안전한 최소 실행 구조로 컴파일하고 프롬프트 품질과 회귀 위험을 평가 |
-| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-motion`, `build-data-visualization`, `compose-creative-ui` | 근거 기반 UI/UX 설계·감사와 모션·차트·창의적 UI 구현 |
+| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-motion`, `build-data-visualization`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 모션·차트·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
 
@@ -25,6 +25,7 @@ codex-workflows/
 │   └── uiux-advisor/
 │       ├── .codex-plugin/plugin.json
 │       └── skills/
+│           ├── build-design-system/
 │           ├── build-data-visualization/
 │           ├── compose-creative-ui/
 │           ├── implement-ui-motion/
@@ -32,6 +33,7 @@ codex-workflows/
 │           └── uiux-auditor/
 ├── tests/
 │   ├── skill-routing.jsonl
+│   ├── skill-routing-observed-2026-08-11.jsonl
 │   └── uiux-search-cases.jsonl
 └── scripts/
     ├── check_version_bumps.py
@@ -54,9 +56,16 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구별 문서 마커 포함 여부와 검색 회귀를 확인한다. 외부 문서 URL의 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
 
-라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 실제 모델에서 관찰한 선택 결과를 별도 JSONL로 저장했다면 다음처럼 점수화할 수 있다.
+프론트엔드 도구는 역할과 생태계로 검색할 수 있다.
+
+```bash
+python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
+  --role design-system --ecosystem react
+```
+
+라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과를 함께 갱신해야 한다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있다.
 
 ```bash
 python3 scripts/eval_routing.py score observed-routing.jsonl
