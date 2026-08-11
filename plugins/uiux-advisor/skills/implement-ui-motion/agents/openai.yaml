@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI Motion Implementer"
+  short_description: "UI 모션 기술을 선택하고 접근성·성능까지 구현·검증"
+  default_prompt: "Use $implement-ui-motion to implement this interaction with the simplest suitable motion technology and verify reduced motion, interruption, and performance."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

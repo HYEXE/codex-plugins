@@ -53,7 +53,13 @@ UPDATE_SCRIPT_MARKERS = {
 }
 EXPECTED_PLUGINS = {
     "prompt-compiler": ("prompt-compiler", "prompt-evaluator"),
-    "uiux-advisor": ("uiux-advisor", "uiux-auditor"),
+    "uiux-advisor": (
+        "uiux-advisor",
+        "uiux-auditor",
+        "implement-ui-motion",
+        "build-data-visualization",
+        "compose-creative-ui",
+    ),
 }
 REQUIRED_SKILL_FILES = {
     ("prompt-compiler", "prompt-compiler"): ("references/language-policy.md",),
@@ -65,6 +71,47 @@ REQUIRED_SKILL_FILES = {
     ("uiux-advisor", "uiux-auditor"): (
         "references/audit-rubric.md",
         "assets/icon.svg",
+    ),
+    ("uiux-advisor", "implement-ui-motion"): (
+        "references/motion-toolkit-selection.md",
+        "references/motion-contract-and-qa.md",
+        "assets/icon.svg",
+    ),
+    ("uiux-advisor", "build-data-visualization"): (
+        "references/visualization-toolkit-selection.md",
+        "references/chart-contract-and-qa.md",
+        "assets/icon.svg",
+    ),
+    ("uiux-advisor", "compose-creative-ui"): (
+        "references/component-toolkit-selection.md",
+        "references/composition-and-qa.md",
+        "assets/icon.svg",
+    ),
+}
+REQUIRED_SKILL_MARKERS = {
+    ("uiux-advisor", "implement-ui-motion"): (
+        "Anime.js",
+        "Web Animations API",
+        "View Transition API",
+        "Motion",
+        "GSAP",
+        "prefers-reduced-motion",
+    ),
+    ("uiux-advisor", "build-data-visualization"): (
+        "Bklit UI",
+        "Recharts",
+        "Apache ECharts",
+        "Observable Plot",
+        "D3",
+        "텍스트 또는 표",
+    ),
+    ("uiux-advisor", "compose-creative-ui"): (
+        "Magic UI",
+        "Aceternity UI",
+        "React Bits",
+        "shadcn/ui",
+        "React Aria",
+        "Ark UI",
     ),
 }
 FORBIDDEN_SKILL_DOCS = ("README.md", "CHANGELOG.md")
@@ -163,6 +210,14 @@ def validate_skill(plugin_name: str, plugin_dir: Path, skill_name: str, failures
 
     for relative in REQUIRED_SKILL_FILES.get((plugin_name, skill_name), ()):
         check((skill_dir / relative).is_file(), f"{plugin_name}: {skill_name} missing {relative}", failures)
+
+    required_markers = REQUIRED_SKILL_MARKERS.get((plugin_name, skill_name), ())
+    if required_markers:
+        markdown_text = "\n".join(
+            path.read_text(encoding="utf-8") for path in sorted(skill_dir.rglob("*.md"))
+        )
+        for marker in required_markers:
+            check(marker in markdown_text, f"{plugin_name}: {skill_name} missing toolkit marker {marker}", failures)
 
     agents_yaml = skill_dir / "agents" / "openai.yaml"
     check(agents_yaml.is_file(), f"{plugin_name}: {skill_name} missing agents/openai.yaml", failures)

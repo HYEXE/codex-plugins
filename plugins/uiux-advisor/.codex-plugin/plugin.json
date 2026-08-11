@@ -1,15 +1,15 @@
 {
   "name": "uiux-advisor",
-  "version": "0.3.0",
-  "description": "공개 표준과 다중 출처 지식베이스를 검색해 UI/UX 가이드와 증거 기반 화면·흐름 감사를 제공하는 한국어 워크플로입니다.",
+  "version": "0.4.0",
+  "description": "근거 기반 UI/UX 가이드·감사와 모션, 데이터 시각화, 창의적 UI 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "UI/UX Advisor",
-    "shortDescription": "근거 기반 UI/UX 가이드와 화면·흐름 감사",
-    "longDescription": "접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다루는 한국어 지식베이스를 검색합니다. 별도 감사 스킬로 화면·코드·사용자 흐름의 관찰 사실과 미검증 항목을 구분하고 심각도, 수정 우선순위와 검증 방법을 연결합니다.",
+    "shortDescription": "UI/UX 근거를 모션·차트·창의적 UI 구현까지 연결",
+    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 Anime.js·Motion·GSAP 등의 모션, Bklit UI 등의 데이터 시각화, shadcn-compatible 시각 효과 컴포넌트를 기존 프론트엔드에 맞게 선택·구현·검증합니다.",
     "developerName": "HYEXEN",
     "category": "Productivity",
     "capabilities": [
@@ -18,11 +18,14 @@
       "컴포넌트와 제품 명세 작성",
       "리서치와 검증 계획 수립",
       "근거 가이드와 출처 추적",
-      "화면과 사용자 흐름의 증거 기반 감사"
+      "화면과 사용자 흐름의 증거 기반 감사",
+      "Anime.js·Motion·GSAP·네이티브 API 기반 UI 모션 구현",
+      "Bklit UI·Recharts·ECharts·D3 기반 데이터 시각화 구현",
+      "UI registry와 headless primitive를 활용한 창의적 화면 조합"
     ],
     "defaultPrompt": [
       "이 UI 문제의 원리와 대안을 근거와 트레이드오프로 비교해줘.",
-      "이 기능의 정상·오류·복구 상태와 검증 기준을 명세해줘.",
+      "이 화면에 적합한 모션·차트·UI 도구를 선택해 접근성과 성능까지 구현해줘.",
       "이 사용자 흐름을 심각도와 근거 확실도에 따라 감사해줘."
     ],
     "composerIcon": "./skills/uiux-advisor/assets/icon.svg",

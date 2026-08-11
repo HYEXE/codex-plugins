@@ -1,0 +1,6 @@
+interface:
+  display_name: "Creative UI Composer"
+  short_description: "검증된 UI 도구를 조합해 개성 있는 화면을 안전하게 구현"
+  default_prompt: "Use $compose-creative-ui to enrich this frontend with compatible UI libraries while preserving accessibility, performance, and the existing design system."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
