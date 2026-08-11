@@ -17,6 +17,7 @@ KNOWN_SKILLS = {
     "build-data-visualization",
     "compose-creative-ui",
     "implement-ui-motion",
+    "prompt-coach",
     "prompt-compiler",
     "prompt-evaluator",
     "uiux-advisor",

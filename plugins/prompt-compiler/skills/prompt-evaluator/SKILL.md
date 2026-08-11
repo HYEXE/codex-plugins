@@ -1,6 +1,6 @@
 ---
 name: prompt-evaluator
-description: 프롬프트, 에이전트 지침과 워크플로 명세를 의도 보존, 모호성, 권한 경계, 작업 분해, capability routing, 최신성, 검증 가능성과 instruction/data boundary 관점에서 진단하고 수정안·비교 결과·회귀 평가 케이스를 작성한다. 사용자가 프롬프트 리뷰, 평가, 개선, 전후 비교, 회귀 테스트, red-team 점검을 요청하거나 Prompt Compiler의 동작 품질을 검증하려 할 때 사용한다. 일반 요청의 즉시 실행이 목적이면 prompt-compiler를 사용한다.
+description: 프롬프트, 에이전트 지침과 워크플로 명세를 의도 보존, 모호성, 권한 경계, 작업 분해, capability routing, 최신성, 검증 가능성과 instruction/data boundary 관점에서 진단하고 수정안·비교 결과·회귀 평가 케이스를 작성한다. 사용자가 기존 프롬프트의 리뷰, 평가, 문제 진단, 전후 비교, 회귀 테스트, red-team 점검을 요청하거나 Prompt Compiler의 동작 품질을 검증하려 할 때 사용한다. 질문을 통해 아직 확정되지 않은 니즈를 발견하고 새 최종 프롬프트를 함께 작성하는 것이 주목적이면 prompt-coach를, 일반 요청의 즉시 실행이 목적이면 prompt-compiler를 사용한다.
 ---
 
 # Prompt Evaluator
@@ -86,6 +86,18 @@ python3 ../prompt-compiler/scripts/eval_harness.py score <observed-results.jsonl
 ```
 
 `../prompt-compiler/evals/golden_results.jsonl`은 구조 검증용 기준 데이터다. 실제 모델 실행 결과로 표현하지 않는다. 관찰 결과를 채점할 때는 별도 JSONL을 사용하고 누락·추가 케이스를 그대로 보고한다.
+
+### Prompt Coach 행동 채점
+
+질문 수, 최대 두 차례 제한, 비실행, 가정 표시와 스킬 연계 경계는 다음 도구로 확인한다.
+
+```bash
+python3 ../prompt-coach/scripts/eval_harness.py validate
+python3 ../prompt-coach/scripts/eval_harness.py score \
+  ../prompt-coach/evals/observed-results-2026-08-11.jsonl
+```
+
+관찰 JSONL에는 독립 실행의 원문 transcript와 별도 adjudication 근거를 함께 남긴다. 정적 기댓값을 관찰값으로 복사해 실제 품질 근거로 표현하지 않는다. tool trace가 없는 transcript 평가는 사용자에게 보인 실행·연계 주장만 판정하며 실제 외부 side effect 부재의 증거로 표현하지 않는다.
 
 ## 기본 출력 형식
 

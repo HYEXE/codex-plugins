@@ -4,6 +4,12 @@
 {"id":"compile-readiness","selected_skill":"prompt-compiler"}
 {"id":"compile-audit-execution","selected_skill":"prompt-compiler"}
 {"id":"compile-reusable-prompt","selected_skill":"prompt-compiler"}
+{"id":"coach-discover-needs","selected_skill":"prompt-coach"}
+{"id":"coach-vague-product-brief","selected_skill":"prompt-coach"}
+{"id":"coach-sufficiency-gate","selected_skill":"prompt-coach"}
+{"id":"coach-task-scoped","selected_skill":"prompt-coach"}
+{"id":"coach-choice-clarification","selected_skill":"prompt-coach"}
+{"id":"coach-no-execution","selected_skill":"prompt-coach"}
 {"id":"evaluate-permission","selected_skill":"prompt-evaluator"}
 {"id":"evaluate-compare","selected_skill":"prompt-evaluator"}
 {"id":"evaluate-regression","selected_skill":"prompt-evaluator"}

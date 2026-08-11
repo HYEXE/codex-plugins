@@ -1,5 +1,21 @@
 # Changelog
 
+## Package 0.4.0 — Prompt Coach
+
+추가:
+- 요청 충분성을 조용히 판단하는 `prompt-coach` 스킬
+- 필요한 경우에만 1~3개 핵심 질문으로 니즈를 구체화하는 대화 흐름
+- one-shot과 task-scoped coaching 모드
+- Coach·Compiler·Evaluator 라우팅 경계와 회귀 사례
+- task-scoped 후속 요청과 send·merge·publish·delete 권한 경계를 포함한 12개 독립 forward test
+- 원문 transcript에서 관찰값을 계산하고 별도 판정 근거를 검증하는 Prompt Coach 행동 평가 도구
+
+유지:
+- Prompt Compiler v3.2-ko 실행 규칙과 기계 인터페이스
+- Prompt Evaluator의 기존 프롬프트 평가 역할
+- 명시적 실행 요청이 없으면 대상 작업을 수행하지 않는 권한 경계
+- 스킬 간 자동 handoff를 가정하지 않는 실행 경계
+
 ## v3.2-ko — Korean Semantic Layer
 
 목표:

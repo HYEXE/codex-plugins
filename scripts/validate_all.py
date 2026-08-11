@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
 ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-11.jsonl"
+PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
+PROMPT_COACH_OBSERVED_PATH = PROMPT_COACH_DIR / "evals" / "observed-results-2026-08-11.jsonl"
 UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
 TOOLKIT_REGISTRY_PATH = (
@@ -71,7 +73,7 @@ UPDATE_SCRIPT_MARKERS = {
     ),
 }
 EXPECTED_PLUGINS = {
-    "prompt-compiler": ("prompt-compiler", "prompt-evaluator"),
+    "prompt-compiler": ("prompt-coach", "prompt-compiler", "prompt-evaluator"),
     "uiux-advisor": (
         "uiux-advisor",
         "uiux-auditor",
@@ -82,6 +84,12 @@ EXPECTED_PLUGINS = {
     ),
 }
 REQUIRED_SKILL_FILES = {
+    ("prompt-compiler", "prompt-coach"): (
+        "assets/icon.svg",
+        "evals/cases.jsonl",
+        "evals/observed-results-2026-08-11.jsonl",
+        "scripts/eval_harness.py",
+    ),
     ("prompt-compiler", "prompt-compiler"): ("references/language-policy.md",),
     ("prompt-compiler", "prompt-evaluator"): (
         "references/evaluation-rubric.md",
@@ -119,6 +127,14 @@ REQUIRED_SKILL_FILES = {
     ),
 }
 REQUIRED_SKILL_MARKERS = {
+    ("prompt-compiler", "prompt-coach"): (
+        "Prompt Sufficiency Gate",
+        "pass-through",
+        "refine-directly",
+        "clarify-before-compile",
+        "질문 1~3개",
+        "최대 두 차례",
+    ),
     ("uiux-advisor", "implement-ui-motion"): (
         "Anime.js",
         "Web Animations API",
@@ -359,6 +375,11 @@ def validate_repository_scripts(failures: list[str]) -> None:
         except SyntaxError as exc:
             failures.append(f"invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
     check(ROUTING_OBSERVED_PATH.is_file(), "missing independent routing observation snapshot", failures)
+    check(
+        PROMPT_COACH_OBSERVED_PATH.is_file(),
+        "missing independent Prompt Coach behavior observation snapshot",
+        failures,
+    )
 
 
 def validate_frontend_toolkits(failures: list[str]) -> None:
@@ -730,6 +751,13 @@ def main() -> int:
     run([python, "scripts/validate_package.py"], prompt_dir, failures)
     run([python, "scripts/eval_harness.py", "--help"], prompt_dir, failures, echo=False)
     run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
+    run([python, "scripts/eval_harness.py", "validate"], PROMPT_COACH_DIR, failures)
+    run([python, "scripts/eval_harness.py", "self-test"], PROMPT_COACH_DIR, failures)
+    run(
+        [python, "scripts/eval_harness.py", "score", str(PROMPT_COACH_OBSERVED_PATH)],
+        PROMPT_COACH_DIR,
+        failures,
+    )
     run([python, "scripts/search_kb.py", "--id", "23"], uiux_dir, failures)
     run([python, "scripts/search_toolkits.py", "--id", "anime-js"], uiux_dir, failures, echo=False)
     run(

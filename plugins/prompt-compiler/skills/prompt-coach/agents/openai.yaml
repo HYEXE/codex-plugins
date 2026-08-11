@@ -1,0 +1,6 @@
+interface:
+  display_name: "Prompt Coach"
+  short_description: "질문으로 니즈를 구체화해 정확한 프롬프트 작성"
+  default_prompt: "Use $prompt-coach to clarify material gaps and produce a reusable prompt. Also select $prompt-compiler when execution is required."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

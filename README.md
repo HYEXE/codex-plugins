@@ -6,7 +6,7 @@
 
 | 플러그인 | 번들 스킬 | 용도 |
 | --- | --- | --- |
-| `prompt-compiler` | `prompt-compiler`, `prompt-evaluator` | 요청을 안전한 최소 실행 구조로 컴파일하고 프롬프트 품질과 회귀 위험을 평가 |
+| `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 필요한 경우 질문으로 니즈를 구체화해 정확한 프롬프트를 작성하고, 확정된 요청을 실행 구조로 컴파일·평가 |
 | `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-motion`, `build-data-visualization`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 모션·차트·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
@@ -20,6 +20,7 @@ codex-workflows/
 │   ├── prompt-compiler/
 │   │   ├── .codex-plugin/plugin.json
 │   │   └── skills/
+│   │       ├── prompt-coach/
 │   │       ├── prompt-compiler/
 │   │       └── prompt-evaluator/
 │   └── uiux-advisor/
@@ -46,17 +47,21 @@ codex-workflows/
 
 저장소와 marketplace는 하나지만 각 플러그인은 독립적으로 설치하고 버전을 관리한다. 각 스킬의 실행 지침과 필요한 resources는 해당 스킬 폴더에 둔다.
 
+`prompt-coach`는 질문을 통한 니즈 발견과 최종 프롬프트 작성, `prompt-compiler`는 확정된 요청의 실행, `prompt-evaluator`는 기존 프롬프트의 평가를 담당한다. 실제 실행까지 필요하면 현재 요청에 `$prompt-coach`와 `$prompt-compiler`를 함께 선택해야 하며, Coach가 Compiler를 자동 호출한다고 가정하지 않는다. Prompt Coach를 한 작업 동안 계속 사용하려면 Prompt Compiler 플러그인의 첫 번째 시작 프롬프트로 그 동작을 요청한다. 이 문장은 현재 작업의 대화 지침이지만 `prompt-coach` 본문이 이후 모든 턴에 자동으로 다시 선택된다는 보장은 아니다. 모든 새 작업이나 메시지 제출 전 입력창에 자동 적용되는 전역 인터셉터도 아니다.
+
 ## 검증
 
 ```bash
 python3 scripts/validate_all.py
 python3 scripts/eval_routing.py validate
+python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py validate
+python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py score plugins/prompt-compiler/skills/prompt-coach/evals/observed-results-2026-08-11.jsonl
 python3 scripts/eval_uiux_search.py
 python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. Prompt Coach 평가는 사용자에게 보인 transcript에서 질문 수, 출력 표지와 실행·자동 연계 주장을 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
 
 프론트엔드 도구는 역할과 생태계로 검색할 수 있다.
 
