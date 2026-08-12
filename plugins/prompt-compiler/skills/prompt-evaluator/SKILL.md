@@ -1,6 +1,6 @@
 ---
 name: prompt-evaluator
-description: 프롬프트, 에이전트 지침과 워크플로 명세를 의도 보존, 모호성, 권한 경계, 작업 분해, capability routing, 최신성, 검증 가능성과 instruction/data boundary 관점에서 진단하고 수정안·비교 결과·회귀 평가 케이스를 작성한다. 사용자가 기존 프롬프트의 리뷰, 평가, 문제 진단, 전후 비교, 회귀 테스트, red-team 점검을 요청하거나 Prompt Compiler의 동작 품질을 검증하려 할 때 사용한다. 질문을 통해 아직 확정되지 않은 니즈를 발견하고 새 최종 프롬프트를 함께 작성하는 것이 주목적이면 prompt-coach를, 일반 요청의 즉시 실행이 목적이면 prompt-compiler를 사용한다.
+description: 프롬프트, 에이전트 지침과 워크플로 명세를 의도 보존, 모호성, 권한 경계, 작업 분해, capability routing, 최신성, 검증 가능성과 instruction/data boundary 관점에서 진단하고 수정안·비교 결과·회귀 평가 케이스를 작성한다. 사용자가 기존 프롬프트의 리뷰, 평가, 문제 진단, 전후 비교, 회귀 테스트, red-team 점검을 요청하거나 Prompt Compiler의 동작 품질을 검증하려 할 때 사용한다. 실행하지 않고 새 최종 프롬프트를 함께 작성하는 것이 주목적이면 prompt-coach를, 요청을 먼저 보완한 뒤 실제 수행·검증하는 것이 목적이면 prompt-compiler를 사용한다.
 ---
 
 # Prompt Evaluator
@@ -98,6 +98,19 @@ python3 ../prompt-coach/scripts/eval_harness.py score \
 ```
 
 관찰 JSONL에는 독립 실행의 원문 transcript와 별도 adjudication 근거를 함께 남긴다. 정적 기댓값을 관찰값으로 복사해 실제 품질 근거로 표현하지 않는다. tool trace가 없는 transcript 평가는 사용자에게 보인 실행·연계 주장만 판정하며 실제 외부 side effect 부재의 증거로 표현하지 않는다.
+
+### Prompt Compiler 오케스트레이션 채점
+
+요청 점검 후 같은 턴 실행, 작업 단위 활성화, 질문 답변 후 이어가기, preview 승인 경계, capability blocker와 부분 완료 보고, prompt-only 중단 조건, 프롬프트 재전송 요구와 자동 handoff 주장은 다음 도구로 확인한다.
+
+```bash
+python3 ../prompt-compiler/scripts/eval_orchestration.py validate
+python3 ../prompt-compiler/scripts/eval_orchestration.py self-test
+python3 ../prompt-compiler/scripts/eval_orchestration.py score \
+  ../prompt-compiler/evals/orchestration-observed-2026-08-12.jsonl
+```
+
+이 평가도 사용자에게 보인 transcript 범위만 판정한다. 실제 파일 변경, 전송 또는 다른 외부 side effect는 별도 tool trace와 결과 검증이 있어야 확인된 것으로 보고한다.
 
 ## 기본 출력 형식
 

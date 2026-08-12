@@ -1,11 +1,11 @@
 ---
 name: prompt-compiler
-description: 사용자의 일반 자연어 요청을 실제 의도 중심의 실행 계획으로 컴파일하는 한국어 중심 Intent Compiler Skill. 사용자가 Prompt Compiler를 명시적으로 호출하거나, 확정된 요청을 더 정확한 실행 명세로 바꿔 수행해 달라고 하거나, 확정된 요구사항을 실행하지 않고 재사용 가능한 실행 프롬프트·계획으로 변환해 달라고 하거나, 분석·리서치·글쓰기·아티팩트·도구 작업·Codex 작업을 하나의 자연어 요청에서 안정적으로 오케스트레이션하려 할 때 사용한다. 사용자의 원래 의도·제약·권한·언어·출력 요구를 보존하고, 필요한 최소 작업 그래프만 만들며, 파생된 프롬프트를 재귀적으로 다시 컴파일하지 않는다. 질문을 통해 아직 확정되지 않은 니즈를 발견하고 최종 프롬프트를 함께 작성하는 것이 주목적이면 prompt-coach를, 프롬프트 자체의 품질 진단·전후 비교·회귀 평가가 주목적이면 prompt-evaluator를 사용한다.
+description: 사용자의 자연어 요청을 충분성 관점에서 점검하고 필요한 경우에만 핵심 질문으로 보완한 뒤 내부 실행 명세로 컴파일해 현재 턴에서 수행·검증하는 한국어 중심 Intent Compiler Skill. 사용자가 Prompt Compiler 플러그인이나 이 스킬을 명시적으로 호출하거나, 요청 개선 후 실행, 같은 작업의 후속 요청 점검, 정정·취소·새 목표 전환, preview 후 승인 또는 분석·리서치·글쓰기·아티팩트·도구 작업의 안정적 오케스트레이션을 원할 때 사용한다. 확정된 제약·권한은 유지하고 변경분만 delta compilation하며 오래된 가정·승인·검증 상태를 무효화한다. 재사용 가능한 최종 프롬프트 자체만 만드는 것이 주목적이면 prompt-coach를, 기존 프롬프트의 품질 진단·전후 비교·회귀 평가가 주목적이면 prompt-evaluator를 사용한다.
 ---
 
 # Prompt Compiler v3.2
 
-자연어 요청을 단순히 “더 좋은 문장”으로 고치는 것이 아니라, 사용자의 의도를 보존한 **실행 가능한 구조**로 컴파일한다.
+자연어 요청을 단순히 “더 좋은 문장”으로 고치는 것이 아니라, 요청의 충분성을 먼저 확인하고 사용자의 의도를 보존한 **내부 실행 명세**로 컴파일해 결과까지 만든다.
 
 사용자의 원래 요청과 더 높은 우선순위의 지침이 항상 기준이다.
 
@@ -42,19 +42,43 @@ description: 사용자의 일반 자연어 요청을 실제 의도 중심의 실
 
 다음 흐름을 사용한다.
 
-`사용자 요청 → Intent Frame → Complexity Gate → Minimal Task Graph → Execution Contracts → Capability Routing → 실행 → 검증 → 최종 통합`
+`사용자 요청 → 작업 범위·대기 상태 확인 → Prompt Sufficiency Gate → 내부 실행 명세 → Intent Frame → Complexity Gate → Minimal Task Graph → Execution Contracts → Capability Routing → 실행 → 검증 → 최종 통합`
 
-`Intent Frame`과 `Task Graph`는 내부 중간 표현(IR)이다. 새로운 사용자 메시지가 아니며, 이 Skill을 다시 호출하는 입력으로 취급하지 않는다.
+내부 실행 명세, `Intent Frame`과 `Task Graph`는 같은 모델 실행 안에서 사용하는 중간 표현(IR)이다. 새로운 사용자 메시지, 별도 모델 호출이나 자동 handoff가 아니며 이 Skill을 다시 호출하는 입력으로 취급하지 않는다.
+
+## Prompt Front Door
+
+작업 범위 모드, 질문 후 이어가기, preview 후 승인, 가정과 부분 완료를 다룰 때 `references/front-door-modes.md`를 따른다. 같은 작업의 후속 요청은 `references/task-state-and-delta.md`도 읽어 전체 요청을 반복 컴파일하지 않고 변경된 상태와 영향받은 검증만 갱신한다.
+
+Prompt Compiler가 선택되면 원래 요청을 곧바로 실행하지 말고 먼저 다음 세 결정 중 하나를 내린다.
+
+- **pass-through**: 요청이 충분하다. 의미를 바꾸지 않는 최소 정리만 내부 적용하고 바로 실행한다.
+- **refine-directly**: 영향이 작은 누락만 있다. 안전한 기본값과 현재 맥락으로 내부 실행 명세를 보완하고, 결과에 영향을 주는 가정만 최종 응답에 밝힌 뒤 실행한다.
+- **clarify-before-compile**: 누락 정보에 따라 결과, 권한, 비용 또는 안전성이 실질적으로 달라진다. 가장 정보 가치가 높은 질문만 한 차례 1~3개 묻고 실행을 보류한다.
+
+모든 항목을 채우기 위해 질문하지 않는다. 다음 정보 중 실제 결과를 바꾸는 것만 확인한다.
+
+- 원하는 최종 상태와 산출물
+- 대상, 사용 맥락 또는 수신자
+- 사용할 입력과 근거
+- 포함·제외 범위
+- 필수 제약과 권한 경계
+- 출력 형식과 검증 기준
+
+질문은 최대 두 차례까지만 반복한다. 이후 남은 정보가 비핵심이면 명시적 가정이나 `[확인 필요: ...]`로 제한하고 안전한 범위에서 실행한다. 대상, 권한 또는 비가역적 행동의 핵심 정보가 여전히 없으면 이를 만들지 말고 실행을 중단한 채 정확한 blocker를 보고한다.
+
+내부 실행 명세는 사용자가 요청한 경우에만 보여준다. 사용자가 단순히 작업을 요청했다면 컴파일된 프롬프트를 복사해 다시 보내라고 요구하지 말고, 충분해진 요청을 기준으로 바로 실행한다.
 
 ## 기본 실행 모드
 
 기본값은 **intent-compile-and-execute**다.
 
 1. 사용자가 원하는 최종 상태를 파악한다.
-2. 필요한 만큼만 구조화한다.
-3. 현재 턴에서 실제 작업을 수행한다.
-4. 결과를 검증한다.
-5. 사용자가 요청한 형태로 결과를 반환한다.
+2. Prompt Sufficiency Gate를 적용한다.
+3. 필요한 만큼만 내부 실행 명세로 구조화한다.
+4. 현재 턴에서 실제 작업을 수행한다.
+5. 결과를 검증한다.
+6. 사용자가 요청한 형태로 결과를 반환한다.
 
 사용자에게 컴파일된 프롬프트를 복사해 다시 보내라고 요구하지 않는다.
 
@@ -62,8 +86,14 @@ description: 사용자의 일반 자연어 요청을 실제 의도 중심의 실
 - **show-plan-and-execute** — 간결한 작업 계획 또는 컴파일된 프롬프트를 보여준 뒤 실행
 - **compile-only** — 실행하지 않고 최적화된 프롬프트/계획만 출력
 - **execution-readiness-diagnose** — 요청 자체의 실행 가능성, 누락된 필수 입력과 권한 경계만 진단하고 실행하지 않음. 프롬프트 품질·전후 비교·회귀 평가는 `prompt-evaluator`로 라우팅
+- **task-scoped-compile-and-execute** — 같은 작업의 후속 요청마다 Front Door를 적용하고 충분하면 실행·검증
+- **delta-compile-and-execute** — 현재 작업의 확정 상태를 유지하고 후속 변경분과 영향받은 node·검증만 갱신
+- **preview-then-act** — preview를 먼저 반환하고 사용자의 후속 승인 전에는 외부 write·파괴적 행동을 수행하지 않음
+- **explain-refinement-and-execute** — raw IR 대신 적용한 보완, 중요한 가정과 검증 결과만 보여주고 실행
 
 사용자의 요청에서 모드를 추론한다.
+
+`프롬프트만`, `실행하지 마`, `계획만`, `진단만` 같은 중단 조건이 없으면 기본 실행 모드를 유지한다. `먼저 보여줘`, `승인 후 실행`은 preview 단계 뒤에서 멈추라는 조건으로 해석한다. Prompt Compiler 플러그인을 호출한 사용자에게 추가로 `prompt-coach`나 다른 스킬을 선택하라고 요구하지 않는다.
 
 ## Phase 1 — Intent Frame 구성
 
@@ -84,6 +114,8 @@ description: 사용자의 일반 자연어 요청을 실제 의도 중심의 실
 - 해결되지 않은 불확실성 `uncertainty`
 
 원문에 없는 목표, 권한, 수신자, 날짜, 파일, 요구사항을 임의로 추가하지 않는다.
+
+후속 요청에서는 전체 Intent Frame을 처음부터 다시 만들지 않는다. 현재 task state capsule과 비교해 `continue`, `amend`, `replace`, `approve`, `cancel` 중 하나로 분류하고, 변경된 필드와 그 의존성만 갱신한다. 사용자 정정과 새 증거는 충돌하는 가정·산출물·검증 상태보다 우선한다.
 
 ## Phase 2 — Complexity Gate
 
@@ -245,6 +277,7 @@ replan으로 바꿀 수 없는 것:
 - 중요한 가정, 불확실성, 실패한 검증, 부분 완료는 숨기지 않는다.
 - 파일이 생성되었다면 실제 파일 링크를 제공한다.
 - 사용자가 계획이나 컴파일된 프롬프트를 요청했다면 이해하기 쉬운 간결한 버전을 보여준다.
+- 사용자가 보완 내역을 요청했거나 중요한 가정·부분 완료·검증 한계가 있으면 `references/front-door-modes.md`의 실행 영수증 형식을 필요한 항목만 사용한다.
 
 ## Permission invariant
 
@@ -261,6 +294,8 @@ replan으로 바꿀 수 없는 것:
 - analyze calendar ≠ create event
 
 낮은 수준의 권한을 높은 수준의 권한으로 확대하지 않는다.
+
+task-scoped 모드 활성화는 외부 write나 파괴적 행동의 포괄 승인이 아니다. preview 후 승인을 요구한 요청은 preview와 실제 action을 별도 단계로 유지한다.
 
 ## Instruction / Data Boundary
 
@@ -327,6 +362,10 @@ replan으로 바꿀 수 없는 것:
 
 IR을 채우기 위해 질문하지 않는다.
 
+질문을 마친 뒤에는 답변을 반영한 내부 실행 명세로 현재 요청을 계속 수행한다. 사용자가 명시적으로 프롬프트만 원한 경우에만 실행 가능한 최종 프롬프트를 반환하고 멈춘다.
+
+질문에 대한 사용자 답변을 별도 요청으로 취급해 원 요청을 다시 붙여넣으라고 하지 않는다. 사용자가 명확히 새 목표로 전환한 경우에만 대기 중 요청을 종료한다.
+
 ## Recursion / Loop Guard
 
 - 사용자 turn당 top-level compilation은 최대 1회다.
@@ -334,6 +373,7 @@ IR을 채우기 위해 질문하지 않는다.
 - 파생 산출물을 새로운 사용자 요청처럼 다시 컴파일하지 않는다.
 - 같은 intent와 permission boundary 안에서 bounded replanning만 허용한다.
 - 실제 automation/scheduling capability를 사용하지 않았다면 background execution이나 미래 완료를 약속하지 않는다.
+- 후속 요청이 기존 목표의 작은 변경이면 전체 graph와 이미 통과한 독립 검증을 반복하지 않는다. 변경된 node와 downstream만 invalidation하고 다시 실행·검증한다.
 
 ## Anti-over-orchestration Gate
 
@@ -360,6 +400,8 @@ Skill 변경 시:
 
 `references/evaluation.md`를 따른다.
 
+Prompt Front Door의 질문, 실행, 중단 조건과 재전송·자동 handoff 주장은 `scripts/eval_orchestration.py`로 정적 케이스와 독립 관찰 transcript를 분리해 평가한다. tool trace가 없는 transcript는 실제 외부 side effect 부재의 증거로 사용하지 않는다.
+
 ## Final Quality Gate
 
 최종 응답 전에 확인한다.
@@ -371,3 +413,6 @@ Skill 변경 시:
 5. 원문에 없는 material requirement를 추가하지 않았는가?
 6. 실행 요청을 계획만 하고 끝내지 않았는가?
 7. 최종 사용자 경험은 내부 orchestration보다 단순한가?
+8. 질문 답변을 원 요청에 합쳐 재전송 없이 이어갔는가?
+9. preview 후 승인 경계와 task-scoped 권한 경계를 보존했는가?
+10. 부분 완료나 unavailable capability를 전체 성공 또는 미래 완료로 표현하지 않았는가?

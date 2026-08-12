@@ -6,7 +6,7 @@
 
 | 플러그인 | 번들 스킬 | 용도 |
 | --- | --- | --- |
-| `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 필요한 경우 질문으로 니즈를 구체화해 정확한 프롬프트를 작성하고, 확정된 요청을 실행 구조로 컴파일·평가 |
+| `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
 | `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-motion`, `build-data-visualization`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 모션·차트·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
@@ -34,7 +34,7 @@ codex-workflows/
 │           └── uiux-auditor/
 ├── tests/
 │   ├── skill-routing.jsonl
-│   ├── skill-routing-observed-2026-08-11.jsonl
+│   ├── skill-routing-observed-2026-08-12.jsonl
 │   └── uiux-search-cases.jsonl
 └── scripts/
     ├── check_version_bumps.py
@@ -47,13 +47,21 @@ codex-workflows/
 
 저장소와 marketplace는 하나지만 각 플러그인은 독립적으로 설치하고 버전을 관리한다. 각 스킬의 실행 지침과 필요한 resources는 해당 스킬 폴더에 둔다.
 
-`prompt-coach`는 질문을 통한 니즈 발견과 최종 프롬프트 작성, `prompt-compiler`는 확정된 요청의 실행, `prompt-evaluator`는 기존 프롬프트의 평가를 담당한다. 실제 실행까지 필요하면 현재 요청에 `$prompt-coach`와 `$prompt-compiler`를 함께 선택해야 하며, Coach가 Compiler를 자동 호출한다고 가정하지 않는다. Prompt Coach를 한 작업 동안 계속 사용하려면 Prompt Compiler 플러그인의 첫 번째 시작 프롬프트로 그 동작을 요청한다. 이 문장은 현재 작업의 대화 지침이지만 `prompt-coach` 본문이 이후 모든 턴에 자동으로 다시 선택된다는 보장은 아니다. 모든 새 작업이나 메시지 제출 전 입력창에 자동 적용되는 전역 인터셉터도 아니다.
+`prompt-compiler`가 플러그인의 기본 진입점이다. `@prompt-compiler` 또는 `$prompt-compiler`와 함께 작업을 요청하면 요청 충분성을 먼저 판단하고, 결과를 바꾸는 정보가 부족할 때만 질문한 뒤 같은 모델 실행 안에서 내부 실행 명세를 만들어 실제 수행·검증까지 이어간다. 컴파일된 프롬프트를 사용자가 복사해 다시 보낼 필요는 없다. 이 과정은 숨은 두 번째 모델 호출이나 스킬 간 자동 handoff가 아니다. 실행 없이 프롬프트 자체만 함께 만들 때는 `prompt-coach`, 기존 프롬프트의 평가·비교·회귀 진단에는 `prompt-evaluator`를 사용한다.
+
+플러그인은 메시지를 제출하기 전에 입력창을 가로채는 전역 인터셉터가 아니다. `@prompt-compiler`는 플러그인 번들을 현재 요청의 컨텍스트로 불러오는 진입점이며, 실제 동작은 선택된 `prompt-compiler` 스킬의 같은 턴 워크플로로 수행된다.
+
+현재 작업의 이후 요청에도 같은 점검·실행 흐름을 적용하도록 요청할 수 있다. 이 모드는 현재 대화의 작업 지침이며 새 작업까지 자동으로 유지되거나 스킬이 매 턴 다시 주입된다는 보장은 없다. 확인 질문에 답하면 대기 중인 원 요청과 합쳐 이어서 실행하고, “먼저 보여주고 승인 후 보내줘” 같은 요청은 preview와 실제 외부 행동을 별도 단계로 분리한다. 실행에 영향을 준 중요한 가정이나 capability 부족으로 남은 미완료 항목은 최종 결과에 구분해 밝힌다.
+
+후속 요청은 진행·수정·대체·승인·취소로 분류하고, 확정된 제약과 권한을 유지한 채 변경된 입력에 영향받는 산출물과 검증만 갱신한다. 정정이나 대상 변경으로 오래된 가정·preview 승인·검증이 무효화되면 이전 성공을 재사용하지 않는다.
 
 ## 검증
 
 ```bash
 python3 scripts/validate_all.py
 python3 scripts/eval_routing.py validate
+python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py validate
+python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py score plugins/prompt-compiler/skills/prompt-compiler/evals/orchestration-observed-2026-08-12.jsonl
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py validate
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py score plugins/prompt-compiler/skills/prompt-coach/evals/observed-results-2026-08-11.jsonl
 python3 scripts/eval_uiux_search.py
@@ -61,7 +69,7 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. Prompt Coach 평가는 사용자에게 보인 transcript에서 질문 수, 출력 표지와 실행·자동 연계 주장을 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 오케스트레이션·구조 평가, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. 오케스트레이션 평가는 질문 수, 작업 단위 활성화, 질문 답변 후 이어가기, preview 승인 경계, 부분 완료 보고, 프롬프트·계획 노출, 결과 제공, 재전송 요구와 자동 연계·외부 행동 주장을 사용자에게 보인 transcript에서 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
 
 프론트엔드 도구는 역할과 생태계로 검색할 수 있다.
 

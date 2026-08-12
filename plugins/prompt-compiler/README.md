@@ -1,12 +1,12 @@
 # Prompt Compiler v3.2-ko
 
 > 자연어 요청을 단순히 “더 좋은 프롬프트”로 바꾸는 것이 아니라,  
-> 사용자의 실제 의도를 보존한 **최소 실행 계획**으로 컴파일하고 적절한 도구·스킬로 실행한 뒤 결과를 검증하는 Intent Compiler Skill입니다.
+> 요청의 충분성을 먼저 점검하고 사용자의 실제 의도를 보존한 **내부 실행 명세**로 컴파일해 적절한 도구·스킬로 실행한 뒤 결과를 검증하는 Intent Compiler Skill입니다.
 
 ## 버전 체계
 
 - 플러그인 패키지 버전은 `.codex-plugin/plugin.json`의 SemVer를 기준으로 한다.
-- 패키지 `0.4.0`은 대화형 `prompt-coach` 스킬을 추가한다.
+- 패키지 `0.6.0`은 같은 작업의 후속 요청을 변경분으로 분류하고 영향받은 산출물·승인·검증만 갱신한다.
 - `v3.2-ko`는 Prompt Compiler 내부 규칙 집합과 기계 인터페이스 버전이다.
 - 패키지 배포 주기와 내부 규칙 집합의 호환성 버전은 서로 독립적으로 관리한다.
 
@@ -15,10 +15,47 @@
 | 스킬 | 주된 결과 |
 | --- | --- |
 | `prompt-coach` | 필요한 경우 질문으로 니즈를 발견하고 재사용 가능한 최종 프롬프트 작성 |
-| `prompt-compiler` | 확정된 요청을 최소 실행 구조로 컴파일하고 실제 수행·검증 |
+| `prompt-compiler` | 요청 충분성을 점검·보완한 뒤 내부 실행 명세로 컴파일하고 실제 수행·검증 |
 | `prompt-evaluator` | 기존 프롬프트의 문제, 권한 확대와 회귀 위험 평가 |
 
-`prompt-coach`는 모든 누락 항목을 묻지 않는다. 요청이 충분하면 질문 없이 정리하고, 영향이 작은 누락은 명시적 가정으로 보완하며, 결과가 실질적으로 달라질 때만 한 차례 1~3개의 질문을 한다. 질문은 최대 두 차례까지만 반복한다.
+`prompt-compiler`가 기본 실행 진입점이다. 요청이 충분하면 바로 수행하고, 영향이 작은 누락은 명시적 가정으로 보완하며, 결과·권한·비용·안전성이 실질적으로 달라질 때만 한 차례 1~3개의 질문을 한다. 질문은 최대 두 차례까지만 반복한다. `prompt-coach`는 같은 판단 규칙을 prompt-only 공동 작성에 사용한다.
+
+같은 작업에서 후속 요청이 오면 `continue`, `amend`, `replace`, `approve`, `cancel` 중 하나로 분류한다. 확정된 제약과 아직 유효한 산출물은 재사용하고, 바뀐 입력을 소비하는 노드와 후속 검증만 다시 수행한다. 정정·대체·취소는 충돌하는 가정, 승인과 검증 상태를 즉시 무효화한다.
+
+### 플러그인으로 점검 후 실행하기
+
+```text
+@prompt-compiler
+
+이 요구사항을 먼저 점검하고 필요한 경우에만 질문한 뒤,
+충분해지면 실제 작업과 검증까지 완료해줘.
+```
+
+이 흐름은 `요청 → 충분성 판단 → 내부 실행 명세 → 실행 → 검증`이다. 내부 명세는 같은 모델 실행의 중간 표현이며, 컴파일된 프롬프트를 복사해 다시 보내거나 별도 모델로 자동 전달하는 과정이 아니다. `@prompt-compiler`는 현재 요청에 플러그인 번들을 불러오는 진입점이지 메시지 제출 전 입력창을 가로채는 전역 인터셉터가 아니다.
+
+### 현재 작업에 점검·실행 모드 적용하기
+
+```text
+@prompt-compiler
+
+이 작업의 이후 요청마다 필요한 경우에만 질문하고,
+충분하면 실행·검증까지 이어가줘.
+```
+
+이 요청은 현재 대화의 작업 지침으로 적용된다. 새 작업까지 자동으로 지속되거나 `prompt-compiler` 스킬이 모든 턴에 다시 주입된다는 보장은 없다. 모드 활성화만 요청했다면 플러그인은 적용 사실을 짧게 확인하고 실제 과업을 기다린다. 후속 요청은 충분하면 바로 실행하고, 중요한 정보가 빠졌을 때만 질문한다.
+
+확인 질문에 답하면 플러그인은 답변을 대기 중인 원 요청에 합쳐 이어서 실행한다. 이미 제공한 요구사항을 다시 붙여 넣거나 컴파일된 프롬프트를 재전송할 필요가 없다.
+
+### Preview를 확인한 뒤 실행하기
+
+```text
+@prompt-compiler
+
+고객 안내 메일을 먼저 보여주고,
+내가 승인한 뒤에만 지정한 수신자에게 보내줘.
+```
+
+첫 응답에서는 preview만 만들고 실제 전송은 수행하지 않는다. 후속 승인은 해당 preview의 내용, 대상과 action에만 적용되며 내용이나 대상이 실질적으로 바뀌면 다시 확인한다. 실행 capability나 권한이 없으면 성공을 가장하지 않고 완료한 부분, 미완료 blocker와 검증 상태를 구분한다. 결과에 영향을 준 중요한 기본값은 가정으로 밝히되 수신자·권한·사실·성공 여부를 가정으로 만들지 않는다.
 
 ### 한 번만 프롬프트 코칭하기
 
@@ -30,11 +67,13 @@ $prompt-coach
 실행하지 말고 최종 프롬프트를 작성해줘.
 ```
 
-### 현재 작업 전체에 충분성 점검 적용하기
+### 현재 작업 전체에 prompt-only 충분성 점검 적용하기
 
-Prompt Compiler 플러그인의 첫 번째 시작 프롬프트를 보내거나 다음 메시지로 작업을 시작한다.
+대상 작업을 실행하지 않고 프롬프트만 계속 다듬으려면 다음처럼 `$prompt-coach`를 선택해 작업을 시작한다.
 
 ```text
+$prompt-coach
+
 이 작업 동안 모든 요청의 충분성을 점검하고,
 결과를 바꾸는 정보가 부족할 때만 최대 두 차례, 한 번에 1~3개만 질문해
 최종 프롬프트를 작성해줘. 명시하지 않으면 실행하지 마.
@@ -49,11 +88,14 @@ Prompt Compiler 플러그인의 첫 번째 시작 프롬프트를 보내거나 �
 명시적인 실행 요청이 없으면 대상 작업을 수행하지 않는다.
 ```
 
-### Prompt Coach 동작 회귀 평가
+### Prompt Compiler·Coach 동작 회귀 평가
 
-정적 기준 데이터와 독립 forward test에서 관찰한 사용자 대화 transcript를 별도로 저장하고 채점한다. 이 평가는 질문 수, 출력 표지와 실행·자동 연계 주장을 판정하며, 별도 tool trace가 없으면 실제 외부 side effect 부재를 증명하지 않는다.
+정적 기준 데이터와 독립 forward test에서 관찰한 사용자 대화 transcript를 별도로 저장하고 채점한다. 이 평가는 17개 오케스트레이션 사례에서 질문 수, 작업 단위 활성화, 질문 답변 후 이어가기, 후속 변경분, 대기 요청 대체·취소, preview 승인 무효화, capability 부족과 부분 완료 보고, 출력 표지와 실행·자동 연계 주장을 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재를 증명하지 않는다.
 
 ```bash
+python3 skills/prompt-compiler/scripts/eval_orchestration.py validate
+python3 skills/prompt-compiler/scripts/eval_orchestration.py score \
+  skills/prompt-compiler/evals/orchestration-observed-2026-08-12.jsonl
 python3 skills/prompt-coach/scripts/eval_harness.py validate
 python3 skills/prompt-coach/scripts/eval_harness.py score \
   skills/prompt-coach/evals/observed-results-2026-08-11.jsonl
@@ -65,6 +107,12 @@ Prompt Compiler v3.2-ko는 사용자의 평범하거나 모호한 자연어 요�
 
 ```text
 User Request
+    ↓
+Task Scope / Pending Request Check
+    ↓
+Prompt Sufficiency Gate
+    ↓
+Internal Execution Spec
     ↓
 Intent Frame
     ↓
@@ -392,12 +440,12 @@ $prompt-coach
 필요한 질문으로 구체화한 뒤 최종 프롬프트를 만들어줘.
 ```
 
-기본적으로 대상 작업은 실행하지 않는다. 최종 프롬프트 작성 후 실제 실행까지 원하면 실행 의사를 명시하고 현재 요청에 두 스킬을 함께 선택해야 한다.
+기본적으로 대상 작업은 실행하지 않는다. 최종 프롬프트를 먼저 다듬은 뒤 실제 실행까지 원하는 요청은 `prompt-compiler`를 주 진입점으로 사용한다.
 
 ```text
-$prompt-coach $prompt-compiler
+$prompt-compiler
 
-요구사항을 필요한 만큼 구체화해 최종 프롬프트를 보여준 뒤 실행해줘.
+요구사항을 필요한 만큼 구체화하고, 필요한 경우에만 질문한 뒤 실행해줘.
 ```
 
 ### 기본: Compile and Execute
@@ -408,6 +456,43 @@ $prompt-compiler
 ```
 
 내부적으로 필요한 구조만 만든 뒤 실제 분석 결과를 반환합니다.
+
+---
+
+### Task-scoped Compile and Execute
+
+```text
+$prompt-compiler
+
+이 작업의 이후 요청마다 필요한 경우에만 질문하고,
+충분하면 실행과 검증까지 이어가줘.
+```
+
+현재 작업의 후속 요청마다 충분성 gate를 적용한다. 새 작업까지 자동으로 유지되는 전역 모드는 아니다.
+
+---
+
+### Preview Then Act
+
+```text
+$prompt-compiler
+
+변경안을 먼저 보여주고 내가 승인한 뒤에만 적용해줘.
+```
+
+preview 단계와 실제 외부 write·파괴적 행동을 분리한다. 승인 범위는 확인한 변경안, target과 action에 결합된다.
+
+---
+
+### Explain Refinement and Execute
+
+```text
+$prompt-compiler
+
+어떤 부분을 보완했는지와 중요한 가정을 짧게 밝히고 실행해줘.
+```
+
+private reasoning이나 raw IR 대신 적용한 보완, 결과에 영향을 준 가정과 실제 검증만 요약한다. 일부만 완료되면 완료·미완료·검증을 분리해 보고한다.
 
 ---
 
@@ -624,6 +709,12 @@ prompt-compiler/
     │   ├── schemas/
     │   ├── evals/
     │   └── scripts/
+    ├── prompt-coach/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── assets/
+    │   ├── evals/
+    │   └── scripts/
     └── prompt-evaluator/
         ├── SKILL.md
         ├── agents/openai.yaml
@@ -730,7 +821,7 @@ v3.2-ko의 우선 목표는 기능의 양이 아니라 **측정 가능한 신뢰
 
 ## 한 문장 요약
 
-**Prompt Compiler v3.2-ko는 사용자의 자연어 요청을 의도와 권한을 보존한 실행 가능한 작업 구조로 컴파일하고, 별도 평가 스킬로 프롬프트 품질과 회귀 위험을 검증하는 워크플로입니다.**
+**Prompt Compiler 패키지 0.6.0은 자연어 요청을 필요한 만큼 보완해 실행·검증하고, 같은 작업의 후속 변경에서는 확정된 제약을 보존한 채 영향받은 산출물·승인·검증만 갱신하는 워크플로입니다.**
 
 
 ---

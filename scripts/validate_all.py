@@ -17,9 +17,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
-ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-11.jsonl"
+ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-12.jsonl"
 PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
 PROMPT_COACH_OBSERVED_PATH = PROMPT_COACH_DIR / "evals" / "observed-results-2026-08-11.jsonl"
+PROMPT_COMPILER_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
+PROMPT_ORCHESTRATION_OBSERVED_PATH = (
+    PROMPT_COMPILER_DIR / "evals" / "orchestration-observed-2026-08-12.jsonl"
+)
 UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
 TOOLKIT_REGISTRY_PATH = (
@@ -90,7 +94,14 @@ REQUIRED_SKILL_FILES = {
         "evals/observed-results-2026-08-11.jsonl",
         "scripts/eval_harness.py",
     ),
-    ("prompt-compiler", "prompt-compiler"): ("references/language-policy.md",),
+    ("prompt-compiler", "prompt-compiler"): (
+        "references/language-policy.md",
+        "references/front-door-modes.md",
+        "references/task-state-and-delta.md",
+        "evals/orchestration-cases.jsonl",
+        "evals/orchestration-observed-2026-08-12.jsonl",
+        "scripts/eval_orchestration.py",
+    ),
     ("prompt-compiler", "prompt-evaluator"): (
         "references/evaluation-rubric.md",
         "assets/icon.svg",
@@ -134,6 +145,24 @@ REQUIRED_SKILL_MARKERS = {
         "clarify-before-compile",
         "질문 1~3개",
         "최대 두 차례",
+    ),
+    ("prompt-compiler", "prompt-compiler"): (
+        "Prompt Front Door",
+        "Prompt Sufficiency Gate",
+        "pass-through",
+        "refine-directly",
+        "clarify-before-compile",
+        "intent-compile-and-execute",
+        "task-scoped-compile-and-execute",
+        "delta-compile-and-execute",
+        "preview-then-act",
+        "Clarification Resume",
+        "Partial Completion Receipt",
+        "Task State Capsule",
+        "Approval Binding",
+        "continue",
+        "replace",
+        "별도 모델 호출",
     ),
     ("uiux-advisor", "implement-ui-motion"): (
         "Anime.js",
@@ -378,6 +407,11 @@ def validate_repository_scripts(failures: list[str]) -> None:
     check(
         PROMPT_COACH_OBSERVED_PATH.is_file(),
         "missing independent Prompt Coach behavior observation snapshot",
+        failures,
+    )
+    check(
+        PROMPT_ORCHESTRATION_OBSERVED_PATH.is_file(),
+        "missing independent Prompt Compiler orchestration observation snapshot",
         failures,
     )
 
@@ -746,11 +780,23 @@ def main() -> int:
     validate_frontend_toolkits(failures)
 
     python = sys.executable
-    prompt_dir = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
+    prompt_dir = PROMPT_COMPILER_DIR
     uiux_dir = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor"
     run([python, "scripts/validate_package.py"], prompt_dir, failures)
     run([python, "scripts/eval_harness.py", "--help"], prompt_dir, failures, echo=False)
     run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
+    run([python, "scripts/eval_orchestration.py", "validate"], prompt_dir, failures)
+    run([python, "scripts/eval_orchestration.py", "self-test"], prompt_dir, failures)
+    run(
+        [
+            python,
+            "scripts/eval_orchestration.py",
+            "score",
+            str(PROMPT_ORCHESTRATION_OBSERVED_PATH),
+        ],
+        prompt_dir,
+        failures,
+    )
     run([python, "scripts/eval_harness.py", "validate"], PROMPT_COACH_DIR, failures)
     run([python, "scripts/eval_harness.py", "self-test"], PROMPT_COACH_DIR, failures)
     run(
