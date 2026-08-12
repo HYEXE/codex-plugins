@@ -1,6 +1,6 @@
 ---
 name: uiux-advisor
-description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명, 대안 비교, 컴포넌트·제품 명세와 리서치·검증 계획을 작성한다. 접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다룰 때 사용한다. 스크린샷·URL·코드·사용자 흐름을 감사하는 것이 주목적이면 uiux-auditor를 사용한다. 실제 모션 구현은 implement-ui-motion, 차트 구현은 build-data-visualization, 외부 UI 도구를 조합한 화면 개선은 compose-creative-ui, 토큰·컴포넌트 시스템 구축은 build-design-system을 사용한다.
+description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명, 대안 비교, 컴포넌트·제품 명세와 리서치·검증 계획을 작성한다. 접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다룰 때 사용한다. 스크린샷·URL·코드·사용자 흐름 감사는 uiux-auditor를 사용한다. 키보드·포커스·제스처·비동기 상태의 실제 구현은 implement-ui-interaction, 모션 구현은 implement-ui-motion, 차트 구현은 build-data-visualization, Rive·2D·3D 그래픽 구현은 build-interactive-graphics, 화면 조합은 compose-creative-ui, 시스템 구축은 build-design-system을 사용한다.
 ---
 
 # UI/UX Advisor
@@ -21,10 +21,11 @@ description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명,
 5. 프론트엔드 도구를 비교해야 하면 구조화 레지스트리를 검색한다.
 
    ```bash
-   python3 scripts/search_toolkits.py --role "<role>" --ecosystem "<ecosystem>"
+   python3 scripts/search_toolkits.py --role "<role>" --ecosystem "<ecosystem>" --recommend --max-risk "<risk>" --top 5
    ```
 
 6. `time_sensitive: true`이거나 도구 도입을 결정하면 현재 공식 자료를 확인하고, 확인할 수 없는 항목을 미검증으로 표시한다.
+   추천 순서는 리스크·생태계 직접 지원·도입 방식을 설명하는 후보 정렬이지 보편적 품질 점수가 아니다. 현재 설치 여부·기능 적합성·검증 비용은 실제 저장소에서 따로 판단한다.
 7. 답변에서 `표준 요구`, `출처 기반 종합`, `실무 권고`, `맥락적 추론`을 구분한다.
 
 ## 산출 모드

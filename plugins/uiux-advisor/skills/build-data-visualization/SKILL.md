@@ -68,3 +68,4 @@ Bklit UI는 shadcn/ui registry와 프로젝트 구성이 전제다. 설치 전�
 - 여러 제품 화면이 공유하는 chart token과 component API를 시스템화하면 `build-design-system`을 함께 적용한다.
 - 차트 밖의 페이지 배경, hero, 카드와 텍스트 효과 조합은 `compose-creative-ui`를 사용한다.
 - 시각화 전이의 복잡한 타임라인 구현은 `implement-ui-motion`의 모션 계약도 적용한다.
+- canvas·map·network의 gesture, keyboard와 focus 동작 구현은 `implement-ui-interaction`의 입력 계약도 적용한다.

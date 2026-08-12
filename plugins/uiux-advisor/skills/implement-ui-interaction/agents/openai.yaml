@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI Interaction Implementer"
+  short_description: "키보드·포커스·제스처·상태가 정확한 UI 구현"
+  default_prompt: "Use $implement-ui-interaction to implement this interaction with accessible input, focus, state, and recovery behavior."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

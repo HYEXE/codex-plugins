@@ -34,6 +34,12 @@
 {"id":"audit-live-url","selected_skill":"uiux-auditor"}
 {"id":"audit-prototype","selected_skill":"uiux-auditor"}
 {"id":"audit-rendered-code","selected_skill":"uiux-auditor"}
+{"id":"interaction-dialog-focus","selected_skill":"implement-ui-interaction"}
+{"id":"interaction-floating-popover","selected_skill":"implement-ui-interaction"}
+{"id":"interaction-carousel-controls","selected_skill":"implement-ui-interaction"}
+{"id":"interaction-gesture-reorder","selected_skill":"implement-ui-interaction"}
+{"id":"interaction-agent-state","selected_skill":"implement-ui-interaction"}
+{"id":"interaction-async-combobox","selected_skill":"implement-ui-interaction"}
 {"id":"motion-anime-timeline","selected_skill":"implement-ui-motion"}
 {"id":"motion-interrupt-dialog","selected_skill":"implement-ui-motion"}
 {"id":"motion-layout-gesture","selected_skill":"implement-ui-motion"}
@@ -63,3 +69,8 @@
 {"id":"compile-task-scoped-execution","selected_skill":"prompt-compiler"}
 {"id":"compile-preview-then-act","selected_skill":"prompt-compiler"}
 {"id":"compile-resume-after-answer","selected_skill":"prompt-compiler"}
+{"id":"graphics-rive-agent-state","selected_skill":"build-interactive-graphics"}
+{"id":"graphics-pixijs-node-canvas","selected_skill":"build-interactive-graphics"}
+{"id":"graphics-three-product-viewer","selected_skill":"build-interactive-graphics"}
+{"id":"graphics-r3f-showroom","selected_skill":"build-interactive-graphics"}
+{"id":"graphics-theatre-sequence","selected_skill":"build-interactive-graphics"}

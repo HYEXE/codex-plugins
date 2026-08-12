@@ -1,0 +1,4 @@
+interface:
+  display_name: "Interactive Graphics Builder"
+  short_description: "Rive·2D·3D 그래픽을 안전하고 빠르게 구현"
+  default_prompt: "Use $build-interactive-graphics to implement this interactive visual with a measurable fallback and performance budget."

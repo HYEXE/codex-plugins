@@ -54,5 +54,6 @@ description: 기존 코드베이스의 디자인 토큰, 테마, 컴포넌트 AP
 - 디자인 시스템 원칙이나 token 계층을 설명만 하면 `uiux-advisor`를 사용한다.
 - 기존 시스템의 문제를 식별하고 우선순위만 정하면 `uiux-auditor`를 사용한다.
 - 한 화면의 hero, 배경, 카드와 텍스트 효과를 조합하면 `compose-creative-ui`를 사용한다.
-- 단일 component의 상태 전환 동작이 핵심이면 `implement-ui-motion`을 사용한다.
+- 단일 component의 시각 전환이 핵심이면 `implement-ui-motion`을 사용한다.
+- 단일 widget의 keyboard, focus, touch, gesture와 비동기 상태 동작이 핵심이면 `implement-ui-interaction`을 사용한다.
 - chart component의 데이터 의미와 시각 인코딩이 핵심이면 `build-data-visualization`을 사용한다.
