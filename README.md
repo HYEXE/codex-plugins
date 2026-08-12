@@ -7,7 +7,7 @@
 | 플러그인 | 번들 스킬 | 용도 |
 | --- | --- | --- |
 | `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 필요한 경우 질문으로 니즈를 구체화해 정확한 프롬프트를 작성하고, 확정된 요청을 실행 구조로 컴파일·평가 |
-| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-motion`, `build-data-visualization`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 모션·차트·창의적 UI·디자인 시스템 구현 |
+| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 상호작용·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
 
@@ -28,17 +28,21 @@ codex-workflows/
 │       └── skills/
 │           ├── build-design-system/
 │           ├── build-data-visualization/
+│           ├── build-interactive-graphics/
 │           ├── compose-creative-ui/
+│           ├── implement-ui-interaction/
 │           ├── implement-ui-motion/
 │           ├── uiux-advisor/
 │           └── uiux-auditor/
 ├── tests/
 │   ├── skill-routing.jsonl
-│   ├── skill-routing-observed-2026-08-11.jsonl
+│   ├── skill-routing-observed-2026-08-12.jsonl
+│   ├── toolkit-search-cases.jsonl
 │   └── uiux-search-cases.jsonl
 └── scripts/
     ├── check_version_bumps.py
     ├── eval_routing.py
+    ├── eval_toolkit_search.py
     ├── eval_uiux_search.py
     ├── update_plugins.ps1
     ├── update_plugins.sh
@@ -54,6 +58,7 @@ codex-workflows/
 ```bash
 python3 scripts/validate_all.py
 python3 scripts/eval_routing.py validate
+python3 scripts/eval_toolkit_search.py
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py validate
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py score plugins/prompt-compiler/skills/prompt-coach/evals/observed-results-2026-08-11.jsonl
 python3 scripts/eval_uiux_search.py
@@ -61,13 +66,14 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·출처 형식과 검색 회귀를 확인한다. Prompt Coach 평가는 사용자에게 보인 transcript에서 질문 수, 출력 표지와 실행·자동 연계 주장을 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 평가 도구, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·capability·surface·risk·fallback·출처 형식과 검색 회귀를 확인한다. Prompt Coach 평가는 사용자에게 보인 transcript에서 질문 수, 출력 표지와 실행·자동 연계 주장을 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
 
-프론트엔드 도구는 역할과 생태계로 검색할 수 있다.
+프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있다. `--recommend`는 필터된 후보를 낮은 리스크, framework 직접 지원, 가벼운 도입 방식 순으로 정렬하며 보편적 품질 점수로 해석하지 않는다.
 
 ```bash
 python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
-  --role design-system --ecosystem react
+  --capability carousel --surface carousel --ecosystem react \
+  --recommend --max-risk medium --top 3
 ```
 
 라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과를 함께 갱신해야 한다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있다.

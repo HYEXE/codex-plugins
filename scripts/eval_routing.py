@@ -15,7 +15,9 @@ DEFAULT_CASES = ROOT / "tests" / "skill-routing.jsonl"
 KNOWN_SKILLS = {
     "build-design-system",
     "build-data-visualization",
+    "build-interactive-graphics",
     "compose-creative-ui",
+    "implement-ui-interaction",
     "implement-ui-motion",
     "prompt-coach",
     "prompt-compiler",

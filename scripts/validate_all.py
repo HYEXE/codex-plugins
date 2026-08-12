@@ -17,10 +17,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
-ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-11.jsonl"
+ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-12.jsonl"
 PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
 PROMPT_COACH_OBSERVED_PATH = PROMPT_COACH_DIR / "evals" / "observed-results-2026-08-11.jsonl"
 UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
+TOOLKIT_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_toolkit_search.py"
+TOOLKIT_SEARCH_CASES_PATH = ROOT / "tests" / "toolkit-search-cases.jsonl"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
 TOOLKIT_REGISTRY_PATH = (
     ROOT
@@ -77,8 +79,10 @@ EXPECTED_PLUGINS = {
     "uiux-advisor": (
         "uiux-advisor",
         "uiux-auditor",
+        "implement-ui-interaction",
         "implement-ui-motion",
         "build-data-visualization",
+        "build-interactive-graphics",
         "compose-creative-ui",
         "build-design-system",
     ),
@@ -104,6 +108,12 @@ REQUIRED_SKILL_FILES = {
         "references/audit-rubric.md",
         "assets/icon.svg",
     ),
+    ("uiux-advisor", "implement-ui-interaction"): (
+        "references/interaction-toolkit-selection.md",
+        "references/interaction-contract-and-qa.md",
+        "references/agent-tool-state-ux.md",
+        "assets/icon.svg",
+    ),
     ("uiux-advisor", "implement-ui-motion"): (
         "references/motion-toolkit-selection.md",
         "references/motion-contract-and-qa.md",
@@ -112,6 +122,12 @@ REQUIRED_SKILL_FILES = {
     ("uiux-advisor", "build-data-visualization"): (
         "references/visualization-toolkit-selection.md",
         "references/chart-contract-and-qa.md",
+        "assets/icon.svg",
+    ),
+    ("uiux-advisor", "build-interactive-graphics"): (
+        "references/graphics-toolkit-selection.md",
+        "references/graphics-accessibility-and-fallback.md",
+        "references/render-loop-performance-and-qa.md",
         "assets/icon.svg",
     ),
     ("uiux-advisor", "compose-creative-ui"): (
@@ -143,6 +159,15 @@ REQUIRED_SKILL_MARKERS = {
         "GSAP",
         "prefers-reduced-motion",
     ),
+    ("uiux-advisor", "implement-ui-interaction"): (
+        "Floating UI",
+        "Embla",
+        "@use-gesture",
+        "React Spring",
+        "AutoAnimate",
+        "keyboard",
+        "focus",
+    ),
     ("uiux-advisor", "build-data-visualization"): (
         "Bklit UI",
         "Recharts",
@@ -150,6 +175,15 @@ REQUIRED_SKILL_MARKERS = {
         "Observable Plot",
         "D3",
         "텍스트 또는 표",
+    ),
+    ("uiux-advisor", "build-interactive-graphics"): (
+        "Rive",
+        "PixiJS",
+        "Three.js",
+        "React Three Fiber",
+        "Theatre.js",
+        "semantic DOM",
+        "prefers-reduced-motion",
     ),
     ("uiux-advisor", "compose-creative-ui"): (
         "Magic UI",
@@ -365,6 +399,8 @@ def validate_repository_scripts(failures: list[str]) -> None:
     for path in (
         ROUTING_EVALUATOR_PATH,
         UIUX_SEARCH_EVALUATOR_PATH,
+        TOOLKIT_SEARCH_EVALUATOR_PATH,
+        TOOLKIT_SEARCH_CASES_PATH,
         VERSION_CHECK_PATH,
         TOOLKIT_SEARCH_PATH,
     ):
@@ -397,11 +433,7 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
         return
 
     schema_version = payload.get("schema_version")
-    check(
-        isinstance(schema_version, str) and SEMVER_PATTERN.fullmatch(schema_version) is not None,
-        "uiux-advisor: invalid toolkit schema_version",
-        failures,
-    )
+    check(schema_version == "2.0.0", "uiux-advisor: toolkit schema_version must be 2.0.0", failures)
     snapshot_date = payload.get("snapshot_date")
     try:
         parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
@@ -418,7 +450,7 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
     check(isinstance(tools, list), "uiux-advisor: toolkit tools must be an array", failures)
     if not isinstance(tools, list):
         return
-    check(len(tools) >= 20, f"uiux-advisor: expected at least 20 toolkits, got {len(tools)}", failures)
+    check(len(tools) >= 35, f"uiux-advisor: expected at least 35 toolkits, got {len(tools)}", failures)
 
     allowed_kinds = {"api", "library", "registry", "specification", "workbench"}
     allowed_roles = {
@@ -429,6 +461,8 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
         "design-system",
         "documentation",
         "testing",
+        "interaction",
+        "interactive-graphics",
     }
     allowed_ecosystems = {
         "web",
@@ -465,6 +499,21 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
         "style-dictionary",
         "storybook",
         "css-custom-properties",
+        "html-interaction-elements",
+        "react-spring",
+        "autoanimate",
+        "floating-ui",
+        "use-gesture",
+        "css-scroll-snap",
+        "embla-carousel",
+        "swiper",
+        "lenis",
+        "rive",
+        "three-js",
+        "react-three-fiber",
+        "drei",
+        "pixijs",
+        "theatre-js",
     }
 
     ids: list[str] = []
@@ -526,6 +575,29 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
                 f"uiux-advisor: {label} has unknown ecosystems",
                 failures,
             )
+        for field in ("capabilities", "surfaces"):
+            values = tool.get(field)
+            valid_values = (
+                isinstance(values, list)
+                and bool(values)
+                and all(
+                    isinstance(value, str) and SLUG_PATTERN.fullmatch(value) is not None
+                    for value in values
+                )
+            )
+            check(valid_values, f"uiux-advisor: {label} has invalid {field}", failures)
+            if valid_values:
+                check(
+                    len(values) == len(set(values)),
+                    f"uiux-advisor: {label} has duplicate {field}",
+                    failures,
+                )
+        check(tool.get("risk") in {"low", "medium", "high"}, f"uiux-advisor: {label} has invalid risk", failures)
+        check(
+            isinstance(tool.get("fallback"), str) and bool(tool["fallback"].strip()),
+            f"uiux-advisor: {label} missing fallback",
+            failures,
+        )
         official_url = tool.get("official_url")
         check(
             isinstance(official_url, str) and official_url.startswith("https://"),
@@ -766,6 +838,73 @@ def main() -> int:
         failures,
         echo=False,
     )
+    run(
+        [
+            python,
+            "scripts/search_toolkits.py",
+            "--capability",
+            "anchor-positioning",
+            "--surface",
+            "popover",
+            "--ecosystem",
+            "react",
+            "--risk",
+            "low",
+            "--json",
+        ],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
+    run(
+        [
+            python,
+            "scripts/search_toolkits.py",
+            "--capability",
+            "high-performance-two-dimensional",
+            "--surface",
+            "canvas",
+            "--risk",
+            "high",
+            "--json",
+        ],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
+    run(
+        [python, "scripts/search_toolkits.py", "--list-values", "capability"],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
+    run(
+        [python, "scripts/search_toolkits.py", "--list-values", "adoption"],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
+    run(
+        [
+            python,
+            "scripts/search_toolkits.py",
+            "--capability",
+            "carousel",
+            "--surface",
+            "carousel",
+            "--ecosystem",
+            "react",
+            "--max-risk",
+            "medium",
+            "--recommend",
+            "--top",
+            "3",
+            "--json",
+        ],
+        uiux_dir,
+        failures,
+        echo=False,
+    )
     for role, ecosystem in (
         ("creative-ui", "svelte"),
         ("motion", "angular"),
@@ -792,6 +931,7 @@ def main() -> int:
         failures,
     )
     run([python, str(UIUX_SEARCH_EVALUATOR_PATH)], ROOT, failures)
+    run([python, str(TOOLKIT_SEARCH_EVALUATOR_PATH)], ROOT, failures)
     run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
 
     if failures:

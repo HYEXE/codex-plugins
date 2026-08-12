@@ -1,6 +1,6 @@
 ---
 name: compose-creative-ui
-description: 기존 프론트엔드의 정체성과 디자인 시스템을 보존하면서 shadcn/ui registry, Magic UI, Aceternity UI, React Bits, Radix, Base UI, React Aria, Ark UI 등 호환 가능한 컴포넌트·시각 효과 도구를 선별해 화면 구성 자체를 구현·검증한다. 사용자가 랜딩 페이지, hero, 배경, 카드, bento, 텍스트 효과나 밋밋한 화면의 시각적 조합 개선을 요청할 때 사용한다. 버튼·카드의 단일 상태 전환은 implement-ui-motion을, 여러 화면이 공유하는 토큰·컴포넌트 시스템 구축은 build-design-system을, 일반 UI/UX 조언은 uiux-advisor를, 기존 화면 감사는 uiux-auditor를 사용한다.
+description: 기존 프론트엔드의 정체성과 디자인 시스템을 보존하면서 shadcn/ui registry, Magic UI, Aceternity UI, React Bits, Radix, Base UI, React Aria, Ark UI 등 호환 가능한 컴포넌트·시각 효과 도구를 선별해 화면 구성 자체를 구현·검증한다. 사용자가 랜딩 페이지, hero, 배경, 카드, bento, 텍스트 효과나 밋밋한 화면의 시각적 조합 개선을 요청할 때 사용한다. 시간·공간 변화는 implement-ui-motion을, 키보드·포커스·제스처·상태 동작은 implement-ui-interaction을, 공유 시스템은 build-design-system을, 조언은 uiux-advisor를, 감사는 uiux-auditor를 사용한다.
 ---
 
 # Creative UI Composer
@@ -69,7 +69,8 @@ description: 기존 프론트엔드의 정체성과 디자인 시스템을 보�
 - 시각 방향과 컴포넌트 원칙만 비교하면 `uiux-advisor`를 사용한다.
 - 기존 결과의 문제만 식별하면 `uiux-auditor`를 사용한다.
 - 배경, 콘텐츠 블록, 카드나 텍스트 효과를 조합해 화면 구성을 개선하는 것이 주목적이면 이 스킬을 사용한다.
-- hover, press, focus, 열기·닫기처럼 상태 전환 동작 하나를 구현하는 것이 주목적이면 `implement-ui-motion`을 사용한다.
+- hover·press·열기·닫기의 시각 전환 하나가 주목적이면 `implement-ui-motion`을 사용한다.
+- keyboard, focus, touch, gesture와 비동기 상태가 정확한 widget 동작이 주목적이면 `implement-ui-interaction`을 사용한다.
 - 여러 화면이 공유하는 token, theme, component API와 문서화를 구축하면 `build-design-system`을 사용한다.
 - 복잡한 timeline, scroll 또는 SVG 모션을 직접 구현하면 `implement-ui-motion`을 함께 적용한다.
 - 데이터 의미와 chart encoding이 중심이면 `build-data-visualization`을 사용한다.

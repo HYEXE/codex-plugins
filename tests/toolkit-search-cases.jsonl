@@ -1,0 +1,13 @@
+{"id":"floating-popover","filters":{"capability":"anchor-positioning","surface":"popover","ecosystem":"react","risk":"low"},"must_include":["floating-ui"],"forbidden_ids":["three-js"]}
+{"id":"gesture-pinch","filters":{"role":"interaction","capability":"pinch","ecosystem":"react"},"must_include":["use-gesture"]}
+{"id":"native-carousel","filters":{"capability":"carousel","surface":"carousel","risk":"low"},"must_include":["css-scroll-snap"],"forbidden_ids":["swiper"]}
+{"id":"headless-carousel","filters":{"capability":"carousel","surface":"carousel","ecosystem":"react","risk":"medium"},"must_include":["embla-carousel","swiper"]}
+{"id":"physics-response","filters":{"capability":"physics-animation","ecosystem":"react"},"must_include":["react-spring"]}
+{"id":"agent-vector-state","filters":{"role":"interactive-graphics","surface":"agent-status"},"must_include":["rive"],"forbidden_ids":["autoanimate"]}
+{"id":"two-dimensional-canvas","filters":{"capability":"high-performance-two-dimensional","surface":"canvas","risk":"high"},"must_include":["pixijs"]}
+{"id":"react-three-dimensional","filters":{"capability":"react-three-dimensional","ecosystem":"react"},"must_include":["react-three-fiber"],"forbidden_ids":["three-js"]}
+{"id":"low-risk-list-motion","filters":{"capability":"layout-animation","surface":"list","risk":"low"},"must_include":["autoanimate"],"forbidden_ids":["motion"]}
+{"id":"recommended-carousel-order","filters":{"capability":"carousel","surface":"carousel","ecosystem":"react","max_risk":"medium","recommend":true,"top":3},"must_include":["css-scroll-snap","embla-carousel","swiper"],"ordered_prefix":["css-scroll-snap","embla-carousel","swiper"]}
+{"id":"native-adoption-filter","filters":{"capability":"carousel","adoption":"native"},"must_include":["css-scroll-snap"],"forbidden_ids":["embla-carousel","swiper"]}
+{"id":"graphics-risk-ceiling","filters":{"role":"interactive-graphics","max_risk":"medium","recommend":true},"must_include":[],"expect_empty":true,"forbidden_ids":["rive","pixijs","three-js","react-three-fiber","theatre-js"]}
+{"id":"recommended-agent-state-graphics","filters":{"role":"interactive-graphics","surface":"agent-status","max_risk":"high","recommend":true,"top":1},"must_include":["rive"],"ordered_prefix":["rive"],"forbidden_ids":["autoanimate"]}
