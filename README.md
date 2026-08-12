@@ -102,7 +102,33 @@ codex plugin add uiux-advisor@codex-workflows-kr
 
 ## 업데이트
 
-저장소에 새 버전이 push돼도 각 PC의 Git marketplace snapshot과 설치 cache는 자동으로 바뀌지 않는다. 운영체제별 스크립트가 marketplace를 갱신하고 두 플러그인을 다시 설치한다.
+저장소에 새 버전이 push돼도 각 PC에 이미 설치된 플러그인은 자동으로 바뀌지 않는다. 업데이트에는 서로 독립적인 세 상태가 관여한다.
+
+1. **저장소 소스**: Git 또는 로컬 작업 복사본의 실제 플러그인 파일
+2. **marketplace snapshot**: Git marketplace가 특정 시점의 저장소를 내려받아 보관한 복사본
+3. **설치 cache**: Codex가 현재 로드할 수 있도록 플러그인별로 설치한 복사본
+
+Git marketplace를 사용하는 PC에서는 marketplace snapshot을 갱신한 뒤 플러그인을 다시 설치해야 한다. 로컬 marketplace는 작업 복사본을 직접 가리키므로 snapshot 갱신은 필요 없지만, 변경된 소스를 설치 cache에 반영하기 위한 재설치는 필요하다.
+
+### 업데이트 스크립트가 하는 일
+
+운영체제별 스크립트는 다음 명령을 순서대로 실행한다.
+
+```text
+codex plugin marketplace upgrade codex-workflows-kr
+codex plugin add prompt-compiler@codex-workflows-kr
+codex plugin add uiux-advisor@codex-workflows-kr
+```
+
+첫 번째 명령은 Git marketplace snapshot을 최신 커밋으로 갱신한다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체한다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않는다.
+
+플러그인 소스 자체를 변경했다면 설치 전에 해당 `.codex-plugin/plugin.json`의 SemVer를 올리고 저장소 검증을 실행한다.
+
+```bash
+python3 scripts/validate_all.py
+```
+
+### Git marketplace 업데이트
 
 macOS/Linux:
 
@@ -116,21 +142,63 @@ Windows PowerShell:
 pwsh -NoProfile -File .\scripts\update_plugins.ps1
 ```
 
-실제 변경 없이 실행할 명령을 먼저 확인할 수 있다.
+실제 변경 전에 실행될 명령만 확인하려면 dry run을 사용한다.
 
 ```bash
 ./scripts/update_plugins.sh --dry-run
 ```
 
-최초 설정, CLI 경로 지정, launchd·cron·Windows 작업 스케줄러 자동화는 [플러그인 업데이트 가이드](docs/plugin-updates.md)를 참고한다. 설치 또는 업데이트 후에는 Codex를 재시작하거나 새 작업을 열어 변경 사항을 불러온다.
+```powershell
+pwsh -NoProfile -File .\scripts\update_plugins.ps1 -DryRun
+```
 
-## 로컬 개발
+### 로컬 marketplace 업데이트
 
-GitHub에 push하기 전 로컬 소스를 별도로 검증하려면 저장소 루트를 marketplace로 등록할 수 있다. 같은 이름의 Git marketplace가 이미 등록돼 있다면 충돌을 피하기 위해 기존 source를 먼저 확인한다.
+로컬 작업 복사본을 직접 테스트하려면 최초 한 번만 저장소 루트를 marketplace로 등록한다.
 
 ```bash
 codex plugin marketplace add /absolute/path/to/codex-workflows
 ```
+
+그 뒤 소스가 변경될 때마다 두 플러그인을 다시 설치한다. 로컬 marketplace에는 원격 snapshot이 없으므로 `marketplace upgrade`를 실행하지 않는다.
+
+```bash
+codex plugin add prompt-compiler@codex-workflows-kr
+codex plugin add uiux-advisor@codex-workflows-kr
+```
+
+### Windows 실행 정책 대응
+
+조직 또는 PC의 실행 정책이 서명되지 않은 `update_plugins.ps1`을 차단하면 `-ExecutionPolicy Bypass`로 우회하지 않는다. 대신 허용된 Codex CLI를 찾아 위 명령을 직접 실행한다. 아래 예시의 `marketplace upgrade`는 Git marketplace에서만 필요하며, 로컬 marketplace에서는 해당 줄을 생략한다.
+
+```powershell
+$Codex = Get-ChildItem "$env:LOCALAPPDATA\OpenAI\Codex\bin" `
+  -Recurse -Filter codex.exe |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1 -ExpandProperty FullName
+
+& $Codex plugin marketplace upgrade codex-workflows-kr
+& $Codex plugin add "prompt-compiler@codex-workflows-kr"
+& $Codex plugin add "uiux-advisor@codex-workflows-kr"
+```
+
+### 업데이트 확인과 적용
+
+설치 후 marketplace 경로와 플러그인 상태를 확인한다.
+
+```bash
+codex plugin marketplace list
+codex plugin list
+```
+
+완료 기준은 다음과 같다.
+
+- `codex-workflows-kr`가 의도한 Git 또는 로컬 저장소를 가리킨다.
+- `prompt-compiler`와 `uiux-advisor`가 모두 `installed, enabled` 상태다.
+- 표시된 버전이 각 플러그인의 manifest 버전과 일치한다.
+- 저장소 작업 트리에 업데이트 과정이 만든 의도하지 않은 변경이 없다.
+
+이미 열려 있던 작업은 이전 plugin snapshot을 계속 사용할 수 있다. 설치 또는 업데이트 후에는 Codex를 재시작하거나 새 작업을 열어 변경 사항을 불러온다. 최초 설정, CLI 경로 지정, launchd·cron·Windows 작업 스케줄러 자동화는 [플러그인 업데이트 가이드](docs/plugin-updates.md)를 참고한다.
 
 ## 배포 상태와 권리
 
