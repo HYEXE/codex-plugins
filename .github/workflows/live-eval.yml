@@ -1,0 +1,133 @@
+name: Live 플러그인 평가
+
+on:
+  workflow_dispatch:
+    inputs:
+      case_set:
+        description: 실행할 평가 범위
+        required: true
+        type: choice
+        default: critical
+        options:
+          - critical
+          - sample
+          - full
+      attempts:
+        description: case별 반복 횟수
+        required: true
+        type: number
+        default: 1
+      model:
+        description: 고정할 Codex model ID
+        required: true
+        type: string
+        default: gpt-5.6
+      reasoning_effort:
+        description: Codex reasoning effort
+        required: true
+        type: choice
+        default: medium
+        options:
+          - low
+          - medium
+          - high
+  schedule:
+    - cron: "17 18 * * 1"
+  workflow_call:
+    inputs:
+      case_set:
+        required: false
+        type: string
+        default: full
+      attempts:
+        required: false
+        type: number
+        default: 1
+      model:
+        required: false
+        type: string
+        default: gpt-5.6
+      reasoning_effort:
+        required: false
+        type: string
+        default: medium
+    secrets:
+      CODEX_LIVE_EVAL_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-eval-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: "1"
+  CODEX_CLI_VERSION: "0.147.0"
+  EVAL_CASE_SET: ${{ inputs.case_set || 'critical' }}
+  EVAL_ATTEMPTS: ${{ inputs.attempts || 1 }}
+  EVAL_MODEL: ${{ inputs.model || 'gpt-5.6' }}
+  EVAL_REASONING_EFFORT: ${{ inputs.reasoning_effort || 'medium' }}
+
+jobs:
+  evaluate:
+    name: ${{ matrix.suite }} live eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - routing
+          - tool-trace
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Python 설정
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+
+      - name: Node.js 설정
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+
+      - name: 고정 버전 Codex CLI 설치
+        run: npm install --global "@openai/codex@${CODEX_CLI_VERSION}"
+
+      - name: live eval 구성 검증
+        run: |
+          python -m unittest tests.test_live_eval
+          python scripts/live_eval.py validate
+
+      - name: 격리된 live eval 실행
+        env:
+          CODEX_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
+        run: |
+          if [ -z "$CODEX_API_KEY" ]; then
+            echo "CODEX_LIVE_EVAL_API_KEY secret가 필요합니다." >&2
+            exit 1
+          fi
+          python scripts/live_eval.py run \
+            --suite "${{ matrix.suite }}" \
+            --case-set "$EVAL_CASE_SET" \
+            --attempts "$EVAL_ATTEMPTS" \
+            --model "$EVAL_MODEL" \
+            --reasoning-effort "$EVAL_REASONING_EFFORT" \
+            --output-dir "artifacts/live-eval-${{ matrix.suite }}"
+
+      - name: raw event와 provenance 업로드
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: live-eval-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/live-eval-${{ matrix.suite }}/
+          if-no-files-found: warn
+          retention-days: 30

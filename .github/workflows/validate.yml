@@ -30,6 +30,8 @@ jobs:
             os: ubuntu-latest
           - name: Windows
             os: windows-latest
+          - name: macOS
+            os: macos-latest
 
     steps:
       - name: 저장소 체크아웃
@@ -46,6 +48,12 @@ jobs:
       - name: 저장소 통합 검증
         run: python scripts/validate_all.py
 
+      - name: validator 단위 테스트
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: live eval 구성 검증
+        run: python scripts/live_eval.py validate
+
       - name: 플러그인 버전 증가 검증
         if: runner.os == 'Linux' && github.event_name != 'workflow_dispatch'
         shell: bash
@@ -55,11 +63,16 @@ jobs:
         run: python scripts/check_version_bumps.py --base "$BASE_SHA" --head "$HEAD_SHA"
 
       - name: Bash 업데이트 스크립트 검증
-        if: runner.os == 'Linux'
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           bash -n scripts/update_plugins.sh
           ./scripts/update_plugins.sh --dry-run
+
+      - name: ShellCheck 정적 분석
+        if: runner.os == 'Linux'
+        shell: bash
+        run: shellcheck scripts/update_plugins.sh
 
       - name: PowerShell 업데이트 스크립트 검증
         if: runner.os == 'Windows'
