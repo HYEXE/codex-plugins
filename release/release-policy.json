@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "repository_tag_prefix": "codex-workflows-v",
+  "channels": {
+    "stable": "codex-workflows-v*",
+    "nightly": "main"
+  },
+  "plugins": {
+    "prompt-compiler": {
+      "tag_prefix": "prompt-compiler-v",
+      "manifest": "plugins/prompt-compiler/.codex-plugin/plugin.json"
+    },
+    "uiux-advisor": {
+      "tag_prefix": "uiux-advisor-v",
+      "manifest": "plugins/uiux-advisor/.codex-plugin/plugin.json"
+    }
+  },
+  "required_public_release_files": [
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "required_attribution_sources": [
+    "plugins/uiux-advisor/skills/uiux-advisor/references/kb/SOURCE_REGISTRY.md",
+    "plugins/uiux-advisor/skills/uiux-advisor/references/kb/sources.json"
+  ],
+  "forbidden_release_markers": [
+    "[LICENSE-TBD]",
+    "[확인 필요: 라이선스]"
+  ]
+}

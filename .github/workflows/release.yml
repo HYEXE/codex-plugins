@@ -1,0 +1,81 @@
+name: 플러그인 Release
+
+on:
+  push:
+    tags:
+      - "codex-workflows-v*"
+      - "prompt-compiler-v*"
+      - "uiux-advisor-v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Release 준비 검증
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Python 설정
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+
+      - name: tag와 공개 배포 준비 상태 검증
+        run: |
+          python scripts/validate_release_tag.py --tag "$GITHUB_REF_NAME"
+          python scripts/check_release_readiness.py
+          python scripts/validate_all.py
+          python -m unittest discover -s tests -p "test_*.py"
+
+  live-eval:
+    name: Release live eval
+    needs: validate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/live-eval.yml
+    with:
+      case_set: full
+      attempts: 1
+      model: gpt-5.6
+      reasoning_effort: medium
+    secrets:
+      CODEX_LIVE_EVAL_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
+
+  publish:
+    name: GitHub Release 생성
+    needs:
+      - validate
+      - live-eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Release metadata 생성
+        run: python scripts/validate_release_tag.py --tag "$GITHUB_REF_NAME" --json > release-metadata.json
+
+      - name: GitHub Release 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --generate-notes \
+            --title "$GITHUB_REF_NAME" \
+            release-metadata.json
