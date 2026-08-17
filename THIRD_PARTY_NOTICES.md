@@ -2,6 +2,8 @@
 
 Codex Workflows includes original workflow instructions, validation code, evaluation fixtures, and project-specific assets. It also cites and summarizes publicly available standards, design guidance, and tool documentation.
 
+The repository's original code and content are licensed under the Apache License, Version 2.0. This notice does not replace or modify the separate terms that apply to referenced third-party materials.
+
 ## UI/UX knowledge sources
 
 The UI/UX knowledge base records source titles, publishers, URLs, scope, and intended use in:
@@ -21,7 +23,7 @@ Third-party packages and GitHub Actions named in scripts or workflows are resolv
 
 Before a public release, maintainers must:
 
-1. confirm the repository license;
+1. retain the repository's Apache-2.0 license text;
 2. review newly added copied or adapted assets and text;
 3. verify license metadata for any newly bundled dependency;
 4. update this notice when redistribution obligations change.

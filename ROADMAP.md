@@ -11,12 +11,12 @@
 - [x] Ubuntu, Windows, macOS CI와 validator unit test, ShellCheck
 - [x] immutable repository/plugin tag 검증과 gated GitHub Release workflow
 - [x] third-party attribution 정책과 public release gate
-- [ ] 공개 라이선스 확정과 `LICENSE` 추가
+- [x] 공개 라이선스를 Apache-2.0으로 확정하고 `LICENSE` 추가
 - [ ] `CODEX_LIVE_EVAL_API_KEY` repository secret 설정
 - [ ] 최초 stable tag와 GitHub Release 게시
 - [ ] 저장소 visibility를 public으로 전환
 
-마지막 네 항목은 법적 선택, 비밀정보 설정 또는 원격 변경이므로 별도 확인 후 진행한다.
+남은 세 항목은 비밀정보 설정 또는 원격 변경이므로 별도 확인 후 진행한다.
 
 ## Next
 

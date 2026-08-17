@@ -234,7 +234,8 @@ codex plugin list
 
 ## 배포 상태와 권리
 
+- 이 저장소의 자체 코드와 콘텐츠는 [Apache License 2.0](LICENSE)으로 배포한다.
 - `uiux-advisor`의 세부 출처는 `references/kb/SOURCE_REGISTRY.md`와 `sources.json`에 기록돼 있다.
 - 제3자 attribution과 재배포 검토 원칙은 `THIRD_PARTY_NOTICES.md`에 기록돼 있다.
-- 공개 라이선스가 확정되어 `LICENSE`가 추가되기 전에는 public release readiness gate가 실패한다.
+- public release readiness gate는 Apache-2.0 원문과 필수 attribution 파일이 유지되는지 검사한다.
 - 실제 배포 전에는 현재 커밋의 검증 결과, plugin package/protocol 버전, 지원 범위, 지식베이스 최신성과 full live eval을 다시 확인한다.

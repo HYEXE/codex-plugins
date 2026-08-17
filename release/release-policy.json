@@ -19,6 +19,16 @@
     "LICENSE",
     "THIRD_PARTY_NOTICES.md"
   ],
+  "repository_license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "required_markers": [
+      "Apache License",
+      "Version 2.0, January 2004",
+      "END OF TERMS AND CONDITIONS"
+    ]
+  },
   "required_attribution_sources": [
     "plugins/uiux-advisor/skills/uiux-advisor/references/kb/SOURCE_REGISTRY.md",
     "plugins/uiux-advisor/skills/uiux-advisor/references/kb/sources.json"

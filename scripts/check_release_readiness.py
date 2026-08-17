@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,29 @@ def check_release_readiness(root: Path, policy: dict[str, Any]) -> list[str]:
     ):
         failures.append("required_attribution_sources must be a string array")
         attribution_sources = []
+    license_policy = policy.get("repository_license")
+    if not isinstance(license_policy, dict):
+        failures.append("repository_license must be an object")
+        license_policy = {}
+    license_spdx = license_policy.get("spdx")
+    license_file = license_policy.get("file")
+    license_sha256 = license_policy.get("sha256")
+    license_markers = license_policy.get("required_markers")
+    if not isinstance(license_spdx, str) or not license_spdx:
+        failures.append("repository_license.spdx must be a non-empty string")
+    if not isinstance(license_file, str) or not license_file:
+        failures.append("repository_license.file must be a non-empty string")
+    if (
+        not isinstance(license_sha256, str)
+        or len(license_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in license_sha256)
+    ):
+        failures.append("repository_license.sha256 must be a lowercase SHA-256")
+    if not isinstance(license_markers, list) or any(
+        not isinstance(marker, str) or not marker for marker in license_markers
+    ):
+        failures.append("repository_license.required_markers must be a string array")
+        license_markers = []
 
     for relative in required_files:
         target = (root / relative).resolve()
@@ -64,6 +88,29 @@ def check_release_readiness(root: Path, policy: dict[str, Any]) -> list[str]:
             continue
         if not target.is_file():
             failures.append(f"missing required attribution source: {relative}")
+    if isinstance(license_file, str) and license_file:
+        if license_file not in required_files:
+            failures.append("repository license file must be a required public release file")
+        license_path = (root / license_file).resolve()
+        try:
+            license_path.relative_to(root.resolve())
+        except ValueError:
+            failures.append(f"repository license path escapes repository: {license_file}")
+        else:
+            if license_path.is_file():
+                license_bytes = license_path.read_bytes()
+                license_text = license_bytes.decode("utf-8")
+                if isinstance(license_sha256, str) and len(license_sha256) == 64:
+                    actual_sha256 = hashlib.sha256(license_bytes).hexdigest()
+                    if actual_sha256 != license_sha256:
+                        failures.append(
+                            f"{license_file} hash does not match declared {license_spdx} text"
+                        )
+                for marker in license_markers:
+                    if marker not in license_text:
+                        failures.append(
+                            f"{license_file} does not match declared {license_spdx}: missing {marker}"
+                        )
     return failures
 
 
