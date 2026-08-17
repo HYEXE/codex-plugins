@@ -12,20 +12,32 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES = ROOT / "tests" / "skill-routing.jsonl"
-KNOWN_SKILLS = {
-    "build-design-system",
-    "build-data-visualization",
-    "build-interactive-graphics",
-    "compose-creative-ui",
-    "implement-async-ui-state",
-    "implement-ui-interaction",
-    "implement-ui-motion",
-    "prompt-coach",
-    "prompt-compiler",
-    "prompt-evaluator",
-    "uiux-advisor",
-    "uiux-auditor",
-}
+MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
+
+
+def discover_known_skills() -> set[str]:
+    payload = json.loads(MARKETPLACE_PATH.read_text(encoding="utf-8"))
+    entries = payload.get("plugins") if isinstance(payload, dict) else None
+    if not isinstance(entries, list):
+        raise ValueError("marketplace plugins must be an array")
+    skills: set[str] = set()
+    for entry in entries:
+        source = entry.get("source") if isinstance(entry, dict) else None
+        relative = source.get("path") if isinstance(source, dict) else None
+        if not isinstance(relative, str) or not relative:
+            raise ValueError("marketplace plugin source.path must be a non-empty string")
+        plugin_dir = (ROOT / relative).resolve()
+        try:
+            plugin_dir.relative_to(ROOT.resolve())
+        except ValueError as exc:
+            raise ValueError(f"marketplace plugin path escapes repository: {relative}") from exc
+        skills.update(path.parent.name for path in plugin_dir.glob("skills/*/SKILL.md"))
+    if not skills:
+        raise ValueError("marketplace contains no discoverable skills")
+    return skills
+
+
+KNOWN_SKILLS = discover_known_skills()
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:

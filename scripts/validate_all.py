@@ -13,39 +13,22 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from check_freshness import classify_freshness
+from validate_observation_manifest import validate_manifest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
-ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-14.jsonl"
+ROUTING_OBSERVATIONS_PATH = ROOT / "tests" / "observations.json"
 PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
-PROMPT_COACH_OBSERVED_PATH = PROMPT_COACH_DIR / "evals" / "observed-results-2026-08-11.jsonl"
 PROMPT_COMPILER_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
-PROMPT_ORCHESTRATION_OBSERVED_PATH = (
-    PROMPT_COMPILER_DIR / "evals" / "orchestration-observed-2026-08-12.jsonl"
-)
 UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
 TOOLKIT_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_toolkit_search.py"
 TOOLKIT_SEARCH_CASES_PATH = ROOT / "tests" / "toolkit-search-cases.jsonl"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
-TOOLKIT_REGISTRY_PATH = (
-    ROOT
-    / "plugins"
-    / "uiux-advisor"
-    / "skills"
-    / "uiux-advisor"
-    / "references"
-    / "frontend-toolkit-registry.json"
-)
-TOOLKIT_SEARCH_PATH = (
-    ROOT
-    / "plugins"
-    / "uiux-advisor"
-    / "skills"
-    / "uiux-advisor"
-    / "scripts"
-    / "search_toolkits.py"
-)
+LIVE_EVAL_PATH = ROOT / "scripts" / "live_eval.py"
+OBSERVATION_VALIDATOR_PATH = ROOT / "scripts" / "validate_observation_manifest.py"
 SEMVER_PATTERN = re.compile(
     r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
     r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\."
@@ -58,9 +41,6 @@ UPDATE_SCRIPT_MARKERS = {
     "bash": (
         ROOT / "scripts" / "update_plugins.sh",
         (
-            "codex-workflows-kr",
-            "prompt-compiler",
-            "uiux-advisor",
             "run_codex plugin marketplace upgrade",
             "run_codex plugin add",
             "--dry-run",
@@ -69,180 +49,10 @@ UPDATE_SCRIPT_MARKERS = {
     "powershell": (
         ROOT / "scripts" / "update_plugins.ps1",
         (
-            "codex-workflows-kr",
-            "prompt-compiler",
-            "uiux-advisor",
             '@("plugin", "marketplace", "upgrade"',
             '@("plugin", "add"',
             "$DryRun",
         ),
-    ),
-}
-EXPECTED_PLUGINS = {
-    "prompt-compiler": ("prompt-coach", "prompt-compiler", "prompt-evaluator"),
-    "uiux-advisor": (
-        "uiux-advisor",
-        "uiux-auditor",
-        "implement-async-ui-state",
-        "implement-ui-interaction",
-        "implement-ui-motion",
-        "build-data-visualization",
-        "build-interactive-graphics",
-        "compose-creative-ui",
-        "build-design-system",
-    ),
-}
-REQUIRED_SKILL_FILES = {
-    ("prompt-compiler", "prompt-coach"): (
-        "assets/icon.svg",
-        "evals/cases.jsonl",
-        "evals/observed-results-2026-08-11.jsonl",
-        "scripts/eval_harness.py",
-    ),
-    ("prompt-compiler", "prompt-compiler"): (
-        "references/language-policy.md",
-        "references/front-door-modes.md",
-        "references/task-state-and-delta.md",
-        "evals/orchestration-cases.jsonl",
-        "evals/orchestration-observed-2026-08-12.jsonl",
-        "scripts/eval_orchestration.py",
-    ),
-    ("prompt-compiler", "prompt-evaluator"): (
-        "references/evaluation-rubric.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "uiux-advisor"): (
-        "scripts/search_kb.py",
-        "scripts/search_toolkits.py",
-        "references/frontend-toolkit-registry.json",
-    ),
-    ("uiux-advisor", "uiux-auditor"): (
-        "references/audit-rubric.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "implement-async-ui-state"): (
-        "references/async-state-contract-and-qa.md",
-        "references/agent-tool-state-ux.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "implement-ui-interaction"): (
-        "references/interaction-toolkit-selection.md",
-        "references/interaction-contract-and-qa.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "implement-ui-motion"): (
-        "references/motion-toolkit-selection.md",
-        "references/motion-contract-and-qa.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "build-data-visualization"): (
-        "references/visualization-toolkit-selection.md",
-        "references/chart-contract-and-qa.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "build-interactive-graphics"): (
-        "references/graphics-toolkit-selection.md",
-        "references/graphics-accessibility-and-fallback.md",
-        "references/render-loop-performance-and-qa.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "compose-creative-ui"): (
-        "references/component-toolkit-selection.md",
-        "references/composition-and-qa.md",
-        "assets/icon.svg",
-    ),
-    ("uiux-advisor", "build-design-system"): (
-        "references/design-system-workflow.md",
-        "references/token-and-component-contracts.md",
-        "references/framework-adapters.md",
-        "assets/icon.svg",
-    ),
-}
-REQUIRED_SKILL_MARKERS = {
-    ("prompt-compiler", "prompt-coach"): (
-        "Prompt Sufficiency Gate",
-        "pass-through",
-        "refine-directly",
-        "clarify-before-compile",
-        "질문 1~3개",
-        "최대 두 차례",
-    ),
-    ("prompt-compiler", "prompt-compiler"): (
-        "Prompt Front Door",
-        "Prompt Sufficiency Gate",
-        "pass-through",
-        "refine-directly",
-        "clarify-before-compile",
-        "intent-compile-and-execute",
-        "task-scoped-compile-and-execute",
-        "delta-compile-and-execute",
-        "preview-then-act",
-        "Clarification Resume",
-        "Partial Completion Receipt",
-        "Task State Capsule",
-        "Approval Binding",
-        "continue",
-        "replace",
-        "별도 모델 호출",
-    ),
-    ("uiux-advisor", "implement-async-ui-state"): (
-        "request·operation·job·item identity",
-        "stale·late response",
-        "idempotency",
-        "optimistic",
-        "partial success",
-        "reconnect",
-        "aria-live",
-    ),
-    ("uiux-advisor", "implement-ui-motion"): (
-        "Anime.js",
-        "Web Animations API",
-        "View Transition API",
-        "Motion",
-        "GSAP",
-        "prefers-reduced-motion",
-    ),
-    ("uiux-advisor", "implement-ui-interaction"): (
-        "Floating UI",
-        "Embla",
-        "@use-gesture",
-        "React Spring",
-        "AutoAnimate",
-        "keyboard",
-        "focus",
-    ),
-    ("uiux-advisor", "build-data-visualization"): (
-        "Bklit UI",
-        "Recharts",
-        "Apache ECharts",
-        "Observable Plot",
-        "D3",
-        "텍스트 또는 표",
-    ),
-    ("uiux-advisor", "build-interactive-graphics"): (
-        "Rive",
-        "PixiJS",
-        "Three.js",
-        "React Three Fiber",
-        "Theatre.js",
-        "semantic DOM",
-        "prefers-reduced-motion",
-    ),
-    ("uiux-advisor", "compose-creative-ui"): (
-        "Magic UI",
-        "Aceternity UI",
-        "React Bits",
-        "shadcn/ui",
-        "React Aria",
-        "Ark UI",
-    ),
-    ("uiux-advisor", "build-design-system"): (
-        "DTCG",
-        "Style Dictionary",
-        "Storybook",
-        "CSS Custom Properties",
-        "Vue",
-        "Svelte",
     ),
 }
 FORBIDDEN_SKILL_DOCS = ("README.md", "CHANGELOG.md")
@@ -255,6 +65,39 @@ def load_json(path: Path) -> Any:
 def check(condition: bool, message: str, failures: list[str]) -> None:
     if not condition:
         failures.append(message)
+
+
+def resolve_config_path(config_path: Path, value: Any, label: str, failures: list[str]) -> Path:
+    if not isinstance(value, str) or not value:
+        failures.append(f"{label}: path must be a non-empty string")
+        return config_path.parent
+    resolved = (config_path.parent / value).resolve()
+    try:
+        resolved.relative_to(config_path.parents[1].resolve())
+    except ValueError:
+        failures.append(f"{label}: path escapes plugin directory: {value}")
+        return config_path.parent
+    return resolved
+
+
+def load_quality_gates(plugin_name: str, failures: list[str]) -> tuple[Path, dict[str, Any]]:
+    config_path = ROOT / "plugins" / plugin_name / ".codex-plugin" / "quality-gates.json"
+    if not config_path.is_file():
+        failures.append(f"{plugin_name}: missing .codex-plugin/quality-gates.json")
+        return config_path, {}
+    try:
+        config = load_json(config_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"{plugin_name}: invalid quality-gates.json: {exc}")
+        return config_path, {}
+    if not isinstance(config, dict):
+        failures.append(f"{plugin_name}: quality-gates.json must be an object")
+        return config_path, {}
+    check(config.get("schema_version") == "1.0.0", f"{plugin_name}: quality gate schema_version must be 1.0.0", failures)
+    check(config.get("plugin") == plugin_name, f"{plugin_name}: quality gate plugin mismatch", failures)
+    skills = config.get("skills")
+    check(isinstance(skills, dict) and bool(skills), f"{plugin_name}: quality gate skills must be a non-empty object", failures)
+    return config_path, config
 
 
 def parse_frontmatter(path: Path) -> dict[str, str]:
@@ -283,18 +126,30 @@ def run(command: list[str], cwd: Path, failures: list[str], *, echo: bool = True
         failures.append(f"command failed in {cwd.relative_to(ROOT)}: {' '.join(command)}\n{detail}")
 
 
-def validate_marketplace(failures: list[str]) -> None:
+def validate_marketplace(failures: list[str]) -> list[str]:
     check(MARKETPLACE_PATH.is_file(), "missing .agents/plugins/marketplace.json", failures)
     if not MARKETPLACE_PATH.is_file():
-        return
-    payload = load_json(MARKETPLACE_PATH)
+        return []
+    try:
+        payload = load_json(MARKETPLACE_PATH)
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"invalid marketplace JSON: {exc}")
+        return []
     check(payload.get("name") == "codex-workflows-kr", "unexpected marketplace name", failures)
     entries = payload.get("plugins")
     check(isinstance(entries, list), "marketplace plugins must be an array", failures)
     if not isinstance(entries, list):
-        return
+        return []
     names = [entry.get("name") for entry in entries if isinstance(entry, dict)]
-    check(names == list(EXPECTED_PLUGINS), f"unexpected marketplace order: {names}", failures)
+    check(
+        all(
+            isinstance(name, str) and SLUG_PATTERN.fullmatch(name) is not None
+            for name in names
+        ),
+        "marketplace plugin names must be lowercase slugs",
+        failures,
+    )
+    check(len(names) == len(set(names)), f"duplicate marketplace plugin names: {names}", failures)
     for entry in entries:
         if not isinstance(entry, dict):
             failures.append("marketplace entry must be an object")
@@ -302,7 +157,6 @@ def validate_marketplace(failures: list[str]) -> None:
         name = entry.get("name")
         source = entry.get("source")
         policy = entry.get("policy")
-        check(name in EXPECTED_PLUGINS, f"unknown marketplace plugin: {name}", failures)
         check(
             isinstance(source, dict)
             and source.get("source") == "local"
@@ -319,9 +173,16 @@ def validate_marketplace(failures: list[str]) -> None:
             failures,
         )
         check(bool(entry.get("category")), f"missing marketplace category for {name}", failures)
+    return [name for name in names if isinstance(name, str) and name]
 
 
-def validate_skill(plugin_name: str, plugin_dir: Path, skill_name: str, failures: list[str]) -> None:
+def validate_skill(
+    plugin_name: str,
+    plugin_dir: Path,
+    skill_name: str,
+    skill_gate: dict[str, Any],
+    failures: list[str],
+) -> None:
     skill_dir = plugin_dir / "skills" / skill_name
     skill_path = skill_dir / "SKILL.md"
     check(skill_path.is_file(), f"{plugin_name}: missing {skill_name}/SKILL.md", failures)
@@ -339,10 +200,21 @@ def validate_skill(plugin_name: str, plugin_dir: Path, skill_name: str, failures
     for filename in FORBIDDEN_SKILL_DOCS:
         check(not (skill_dir / filename).exists(), f"{plugin_name}: move {skill_name}/{filename} outside the skill", failures)
 
-    for relative in REQUIRED_SKILL_FILES.get((plugin_name, skill_name), ()):
+    required_files = skill_gate.get("required_files", [])
+    check(
+        isinstance(required_files, list) and all(isinstance(value, str) and value for value in required_files),
+        f"{plugin_name}: {skill_name} required_files must be a string array",
+        failures,
+    )
+    for relative in required_files if isinstance(required_files, list) else []:
         check((skill_dir / relative).is_file(), f"{plugin_name}: {skill_name} missing {relative}", failures)
 
-    required_markers = REQUIRED_SKILL_MARKERS.get((plugin_name, skill_name), ())
+    required_markers = skill_gate.get("required_markers", [])
+    check(
+        isinstance(required_markers, list) and all(isinstance(value, str) and value for value in required_markers),
+        f"{plugin_name}: {skill_name} required_markers must be a string array",
+        failures,
+    )
     if required_markers:
         markdown_text = "\n".join(
             path.read_text(encoding="utf-8") for path in sorted(skill_dir.rglob("*.md"))
@@ -367,12 +239,14 @@ def validate_skill(plugin_name: str, plugin_dir: Path, skill_name: str, failures
             failures.append(f"{plugin_name}: invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
 
 
-def validate_plugin(plugin_name: str, skill_names: tuple[str, ...], failures: list[str]) -> None:
+def validate_plugin(
+    plugin_name: str, quality_config: dict[str, Any], failures: list[str]
+) -> tuple[str, ...]:
     plugin_dir = ROOT / "plugins" / plugin_name
     manifest_path = plugin_dir / ".codex-plugin" / "plugin.json"
     check(manifest_path.is_file(), f"{plugin_name}: missing plugin.json", failures)
     if not manifest_path.is_file():
-        return
+        return ()
 
     manifest = load_json(manifest_path)
     check(manifest.get("name") == plugin_name, f"{plugin_name}: manifest name mismatch", failures)
@@ -409,18 +283,33 @@ def validate_plugin(plugin_name: str, skill_names: tuple[str, ...], failures: li
             check((plugin_dir / value[2:]).is_file(), f"{plugin_name}: missing {field} asset {value}", failures)
 
     discovered = tuple(sorted(path.parent.name for path in (plugin_dir / "skills").glob("*/SKILL.md")))
-    check(discovered == tuple(sorted(skill_names)), f"{plugin_name}: unexpected skills {discovered}", failures)
-    for skill_name in skill_names:
-        validate_skill(plugin_name, plugin_dir, skill_name, failures)
+    configured = quality_config.get("skills")
+    configured_names = tuple(sorted(configured)) if isinstance(configured, dict) else ()
+    check(discovered == configured_names, f"{plugin_name}: quality gates do not match discovered skills {discovered}", failures)
+    for skill_name in discovered:
+        skill_gate = configured.get(skill_name, {}) if isinstance(configured, dict) else {}
+        check(isinstance(skill_gate, dict), f"{plugin_name}: invalid quality gate for {skill_name}", failures)
+        validate_skill(
+            plugin_name,
+            plugin_dir,
+            skill_name,
+            skill_gate if isinstance(skill_gate, dict) else {},
+            failures,
+        )
+    return discovered
 
 
-def validate_update_scripts(failures: list[str]) -> None:
+def validate_update_scripts(plugin_names: list[str], failures: list[str]) -> None:
+    marketplace = load_json(MARKETPLACE_PATH).get("name") if MARKETPLACE_PATH.is_file() else None
     for label, (path, markers) in UPDATE_SCRIPT_MARKERS.items():
         check(path.is_file(), f"missing {label} update script", failures)
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8")
-        for marker in markers:
+        dynamic_markers = [*markers, *plugin_names]
+        if isinstance(marketplace, str):
+            dynamic_markers.append(marketplace)
+        for marker in dynamic_markers:
             check(marker in text, f"{label} update script missing marker: {marker}", failures)
 
     bash_script = UPDATE_SCRIPT_MARKERS["bash"][0]
@@ -445,7 +334,8 @@ def validate_repository_scripts(failures: list[str]) -> None:
         TOOLKIT_SEARCH_EVALUATOR_PATH,
         TOOLKIT_SEARCH_CASES_PATH,
         VERSION_CHECK_PATH,
-        TOOLKIT_SEARCH_PATH,
+        LIVE_EVAL_PATH,
+        OBSERVATION_VALIDATOR_PATH,
     ):
         check(path.is_file(), f"missing {path.relative_to(ROOT)}", failures)
     for script in sorted((ROOT / "scripts").glob("*.py")):
@@ -453,26 +343,30 @@ def validate_repository_scripts(failures: list[str]) -> None:
             compile(script.read_text(encoding="utf-8"), str(script), "exec")
         except SyntaxError as exc:
             failures.append(f"invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
-    check(ROUTING_OBSERVED_PATH.is_file(), "missing independent routing observation snapshot", failures)
-    check(
-        PROMPT_COACH_OBSERVED_PATH.is_file(),
-        "missing independent Prompt Coach behavior observation snapshot",
-        failures,
-    )
-    check(
-        PROMPT_ORCHESTRATION_OBSERVED_PATH.is_file(),
-        "missing independent Prompt Compiler orchestration observation snapshot",
-        failures,
-    )
 
 
-def validate_frontend_toolkits(failures: list[str]) -> None:
-    check(TOOLKIT_REGISTRY_PATH.is_file(), "uiux-advisor: missing frontend toolkit registry", failures)
-    if not TOOLKIT_REGISTRY_PATH.is_file():
+def validate_frontend_toolkits(
+    config_path: Path,
+    quality_config: dict[str, Any],
+    failures: list[str],
+    warnings: list[str],
+) -> None:
+    registry_config = quality_config.get("toolkit_registry")
+    if not isinstance(registry_config, dict):
+        failures.append("uiux-advisor: missing toolkit_registry quality gate")
+        return
+    registry_path = resolve_config_path(
+        config_path,
+        registry_config.get("path"),
+        "uiux-advisor toolkit_registry",
+        failures,
+    )
+    check(registry_path.is_file(), "uiux-advisor: missing frontend toolkit registry", failures)
+    if not registry_path.is_file():
         return
 
     try:
-        payload = load_json(TOOLKIT_REGISTRY_PATH)
+        payload = load_json(registry_path)
     except (OSError, json.JSONDecodeError) as exc:
         failures.append(f"uiux-advisor: invalid frontend toolkit registry: {exc}")
         return
@@ -481,7 +375,12 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
         return
 
     schema_version = payload.get("schema_version")
-    check(schema_version == "2.0.0", "uiux-advisor: toolkit schema_version must be 2.0.0", failures)
+    expected_schema = registry_config.get("schema_version")
+    check(
+        isinstance(expected_schema, str) and schema_version == expected_schema,
+        f"uiux-advisor: toolkit schema_version must be {expected_schema}",
+        failures,
+    )
     snapshot_date = payload.get("snapshot_date")
     try:
         parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
@@ -498,20 +397,29 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
     check(isinstance(tools, list), "uiux-advisor: toolkit tools must be an array", failures)
     if not isinstance(tools, list):
         return
-    check(len(tools) >= 35, f"uiux-advisor: expected at least 35 toolkits, got {len(tools)}", failures)
+    minimum_count = registry_config.get("minimum_count")
+    check(
+        isinstance(minimum_count, int) and minimum_count > 0,
+        "uiux-advisor: toolkit minimum_count must be a positive integer",
+        failures,
+    )
+    if isinstance(minimum_count, int):
+        check(
+            len(tools) >= minimum_count,
+            f"uiux-advisor: expected at least {minimum_count} toolkits, got {len(tools)}",
+            failures,
+        )
 
     allowed_kinds = {"api", "library", "registry", "specification", "workbench"}
-    allowed_roles = {
-        "motion",
-        "data-visualization",
-        "creative-ui",
-        "primitive",
-        "design-system",
-        "documentation",
-        "testing",
-        "interaction",
-        "interactive-graphics",
-    }
+    configured_roles = registry_config.get("required_roles")
+    check(
+        isinstance(configured_roles, list)
+        and bool(configured_roles)
+        and all(isinstance(role, str) and role for role in configured_roles),
+        "uiux-advisor: toolkit required_roles must be a non-empty string array",
+        failures,
+    )
+    allowed_roles = set(configured_roles) if isinstance(configured_roles, list) else set()
     allowed_ecosystems = {
         "web",
         "vanilla",
@@ -525,44 +433,24 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
     allowed_adoption = {"native", "package", "registry", "source-copy", "specification"}
     allowed_status = {"candidate", "verified", "deprecated"}
     allowed_license_review = {"required-at-adoption", "verified", "not-applicable"}
-    required_ids = {
-        "anime-js",
-        "motion",
-        "gsap",
-        "bklit-ui",
-        "recharts",
-        "apache-echarts",
-        "observable-plot",
-        "d3",
-        "shadcn-ui",
-        "magic-ui",
-        "aceternity-ui",
-        "react-bits",
-        "css-visual-effects",
-        "react-aria",
-        "base-ui",
-        "radix-primitives",
-        "ark-ui",
-        "design-tokens-format",
-        "style-dictionary",
-        "storybook",
-        "css-custom-properties",
-        "html-interaction-elements",
-        "react-spring",
-        "autoanimate",
-        "floating-ui",
-        "use-gesture",
-        "css-scroll-snap",
-        "embla-carousel",
-        "swiper",
-        "lenis",
-        "rive",
-        "three-js",
-        "react-three-fiber",
-        "drei",
-        "pixijs",
-        "theatre-js",
-    }
+    configured_ids = registry_config.get("required_ids")
+    check(
+        isinstance(configured_ids, list)
+        and bool(configured_ids)
+        and all(isinstance(tool_id, str) and tool_id for tool_id in configured_ids),
+        "uiux-advisor: toolkit required_ids must be a non-empty string array",
+        failures,
+    )
+    required_ids = set(configured_ids) if isinstance(configured_ids, list) else set()
+    freshness = registry_config.get("freshness")
+    warning_after = freshness.get("warning_after_days") if isinstance(freshness, dict) else None
+    error_after = freshness.get("error_after_days") if isinstance(freshness, dict) else None
+    valid_freshness = (
+        isinstance(warning_after, int)
+        and isinstance(error_after, int)
+        and 0 <= warning_after < error_after
+    )
+    check(valid_freshness, "uiux-advisor: invalid toolkit freshness budget", failures)
 
     ids: list[str] = []
     names: list[str] = []
@@ -664,6 +552,20 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
                 f"uiux-advisor: {label} has invalid checked_on",
                 failures,
             )
+            if parsed_checked is not None and valid_freshness:
+                status, age = classify_freshness(
+                    parsed_checked,
+                    warning_after_days=warning_after,
+                    error_after_days=error_after,
+                )
+                if status == "error":
+                    failures.append(
+                        f"uiux-advisor: {label} toolkit freshness exceeded: {age} days"
+                    )
+                elif status == "warning":
+                    warnings.append(
+                        f"uiux-advisor: {label} toolkit should be refreshed: {age} days"
+                    )
         except ValueError:
             failures.append(f"uiux-advisor: {label} has invalid checked_on")
         check(
@@ -690,9 +592,22 @@ def validate_frontend_toolkits(failures: list[str]) -> None:
     check(allowed_roles <= covered_roles, f"uiux-advisor: uncovered toolkit roles {sorted(allowed_roles - covered_roles)}", failures)
 
 
-def validate_uiux_kb(failures: list[str]) -> None:
-    skill_dir = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor"
-    kb_dir = skill_dir / "references" / "kb"
+def validate_uiux_kb(
+    config_path: Path,
+    quality_config: dict[str, Any],
+    failures: list[str],
+    warnings: list[str],
+) -> None:
+    kb_config = quality_config.get("knowledge_base")
+    if not isinstance(kb_config, dict):
+        failures.append("uiux-advisor: missing knowledge_base quality gate")
+        return
+    kb_dir = resolve_config_path(
+        config_path,
+        kb_config.get("path"),
+        "uiux-advisor knowledge_base",
+        failures,
+    )
     guides_path = kb_dir / "guides.jsonl"
     sources_path = kb_dir / "sources.json"
     check(guides_path.is_file(), "uiux-advisor: missing guides.jsonl", failures)
@@ -744,7 +659,18 @@ def validate_uiux_kb(failures: list[str]) -> None:
     markdown_paths = [record.get("markdown_path") for record in records]
     string_ids = [guide_id for guide_id in ids if isinstance(guide_id, str)]
     string_markdown_paths = [path for path in markdown_paths if isinstance(path, str)]
-    check(len(records) == 50, f"uiux-advisor: expected 50 records, got {len(records)}", failures)
+    expected_count = kb_config.get("expected_guide_count")
+    check(
+        isinstance(expected_count, int) and expected_count > 0,
+        "uiux-advisor: expected_guide_count must be a positive integer",
+        failures,
+    )
+    if isinstance(expected_count, int):
+        check(
+            len(records) == expected_count,
+            f"uiux-advisor: expected {expected_count} records, got {len(records)}",
+            failures,
+        )
     check(len(string_ids) == len(set(string_ids)), "uiux-advisor: duplicate guide IDs", failures)
     check(len(string_markdown_paths) == len(set(string_markdown_paths)), "uiux-advisor: duplicate guide Markdown paths", failures)
     known_guide_ids = {guide_id for guide_id in ids if isinstance(guide_id, str)}
@@ -764,6 +690,24 @@ def validate_uiux_kb(failures: list[str]) -> None:
         "version",
         "snapshot_date",
     )
+    freshness = kb_config.get("freshness")
+    time_warning = (
+        freshness.get("time_sensitive_warning_after_days") if isinstance(freshness, dict) else None
+    )
+    time_error = (
+        freshness.get("time_sensitive_error_after_days") if isinstance(freshness, dict) else None
+    )
+    stable_warning = (
+        freshness.get("stable_warning_after_days") if isinstance(freshness, dict) else None
+    )
+    stable_error = (
+        freshness.get("stable_error_after_days") if isinstance(freshness, dict) else None
+    )
+    valid_freshness = all(
+        isinstance(value, int)
+        for value in (time_warning, time_error, stable_warning, stable_error)
+    ) and 0 <= time_warning < time_error and 0 <= stable_warning < stable_error
+    check(valid_freshness, "uiux-advisor: invalid knowledge-base freshness budget", failures)
 
     for index, record in enumerate(records, 1):
         guide_id = record.get("id")
@@ -786,6 +730,24 @@ def validate_uiux_kb(failures: list[str]) -> None:
         try:
             parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
             check(parsed_snapshot is not None and parsed_snapshot <= date.today(), f"uiux-advisor: {label} has future snapshot_date", failures)
+            if parsed_snapshot is not None and valid_freshness:
+                if record.get("time_sensitive") is True:
+                    warning_after, error_after = time_warning, time_error
+                else:
+                    warning_after, error_after = stable_warning, stable_error
+                status, age = classify_freshness(
+                    parsed_snapshot,
+                    warning_after_days=warning_after,
+                    error_after_days=error_after,
+                )
+                if status == "error":
+                    failures.append(
+                        f"uiux-advisor: {label} guide freshness exceeded: {age} days"
+                    )
+                elif status == "warning":
+                    warnings.append(
+                        f"uiux-advisor: {label} guide should be refreshed: {age} days"
+                    )
         except ValueError:
             failures.append(f"uiux-advisor: {label} has invalid snapshot_date")
         check(isinstance(record.get("time_sensitive"), bool), f"uiux-advisor: {label} time_sensitive must be boolean", failures)
@@ -836,7 +798,12 @@ def validate_uiux_kb(failures: list[str]) -> None:
 
     unused_sources = sorted(known_source_ids - used_source_ids)
     check(not unused_sources, f"uiux-advisor: unused source registry entries {unused_sources}", failures)
-    check(len(list((kb_dir / "guides").rglob("*.md"))) == 50, "uiux-advisor: guide file count mismatch", failures)
+    if isinstance(expected_count, int):
+        check(
+            len(list((kb_dir / "guides").rglob("*.md"))) == expected_count,
+            "uiux-advisor: guide file count mismatch",
+            failures,
+        )
 
     broken: list[str] = []
     link_pattern = re.compile(r"\[[^\]]+\]\(([^)#]+\.md)(?:#[^)]+)?\)")
@@ -857,13 +824,40 @@ def validate_uiux_kb(failures: list[str]) -> None:
 
 def main() -> int:
     failures: list[str] = []
-    validate_marketplace(failures)
-    for plugin_name, skill_names in EXPECTED_PLUGINS.items():
-        validate_plugin(plugin_name, skill_names, failures)
-    validate_update_scripts(failures)
+    warnings: list[str] = []
+    plugin_names = validate_marketplace(failures)
+    quality_gates: dict[str, tuple[Path, dict[str, Any]]] = {}
+    discovered_skills: dict[str, tuple[str, ...]] = {}
+    for plugin_name in plugin_names:
+        config_path, quality_config = load_quality_gates(plugin_name, failures)
+        quality_gates[plugin_name] = (config_path, quality_config)
+        discovered_skills[plugin_name] = validate_plugin(plugin_name, quality_config, failures)
+    validate_update_scripts(plugin_names, failures)
     validate_repository_scripts(failures)
-    validate_uiux_kb(failures)
-    validate_frontend_toolkits(failures)
+
+    routing_observations, observation_failures = validate_manifest(ROUTING_OBSERVATIONS_PATH)
+    failures.extend(observation_failures)
+    prompt_observations: dict[str, dict[str, Any]] = {}
+    prompt_gate_entry = quality_gates.get("prompt-compiler")
+    if prompt_gate_entry:
+        prompt_config_path, prompt_quality = prompt_gate_entry
+        prompt_manifest = resolve_config_path(
+            prompt_config_path,
+            prompt_quality.get("observation_manifest"),
+            "prompt-compiler observation_manifest",
+            failures,
+        )
+        prompt_observations, observation_failures = validate_manifest(
+            prompt_manifest,
+            boundary=ROOT / "plugins" / "prompt-compiler",
+        )
+        failures.extend(observation_failures)
+
+    uiux_gate_entry = quality_gates.get("uiux-advisor")
+    if uiux_gate_entry:
+        uiux_config_path, uiux_quality = uiux_gate_entry
+        validate_uiux_kb(uiux_config_path, uiux_quality, failures, warnings)
+        validate_frontend_toolkits(uiux_config_path, uiux_quality, failures, warnings)
 
     python = sys.executable
     prompt_dir = PROMPT_COMPILER_DIR
@@ -873,23 +867,27 @@ def main() -> int:
     run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
     run([python, "scripts/eval_orchestration.py", "validate"], prompt_dir, failures)
     run([python, "scripts/eval_orchestration.py", "self-test"], prompt_dir, failures)
-    run(
-        [
-            python,
-            "scripts/eval_orchestration.py",
-            "score",
-            str(PROMPT_ORCHESTRATION_OBSERVED_PATH),
-        ],
-        prompt_dir,
-        failures,
-    )
+    orchestration = prompt_observations.get("prompt-orchestration")
+    if orchestration and isinstance(orchestration.get("results_path"), Path):
+        run(
+            [
+                python,
+                "scripts/eval_orchestration.py",
+                "score",
+                str(orchestration["results_path"]),
+            ],
+            prompt_dir,
+            failures,
+        )
     run([python, "scripts/eval_harness.py", "validate"], PROMPT_COACH_DIR, failures)
     run([python, "scripts/eval_harness.py", "self-test"], PROMPT_COACH_DIR, failures)
-    run(
-        [python, "scripts/eval_harness.py", "score", str(PROMPT_COACH_OBSERVED_PATH)],
-        PROMPT_COACH_DIR,
-        failures,
-    )
+    prompt_coach = prompt_observations.get("prompt-coach")
+    if prompt_coach and isinstance(prompt_coach.get("results_path"), Path):
+        run(
+            [python, "scripts/eval_harness.py", "score", str(prompt_coach["results_path"])],
+            PROMPT_COACH_DIR,
+            failures,
+        )
     run([python, "scripts/search_kb.py", "--id", "23"], uiux_dir, failures)
     run([python, "scripts/search_toolkits.py", "--id", "anime-js"], uiux_dir, failures, echo=False)
     run(
@@ -985,22 +983,30 @@ def main() -> int:
             echo=False,
         )
     run([python, str(ROUTING_EVALUATOR_PATH), "validate"], ROOT, failures)
-    run(
-        [python, str(ROUTING_EVALUATOR_PATH), "score", str(ROUTING_OBSERVED_PATH)],
-        ROOT,
-        failures,
-    )
+    routing = routing_observations.get("routing")
+    if routing and isinstance(routing.get("results_path"), Path):
+        run(
+            [python, str(ROUTING_EVALUATOR_PATH), "score", str(routing["results_path"])],
+            ROOT,
+            failures,
+        )
     run([python, str(UIUX_SEARCH_EVALUATOR_PATH)], ROOT, failures)
     run([python, str(TOOLKIT_SEARCH_EVALUATOR_PATH)], ROOT, failures)
     run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
+    run([python, str(LIVE_EVAL_PATH), "validate"], ROOT, failures)
+
+    if warnings:
+        print("\nMONOREPO VALIDATION WARNINGS")
+        for warning in warnings:
+            print(f"- {warning}")
 
     if failures:
         print("\nMONOREPO VALIDATION FAILED")
         for failure in failures:
             print(f"- {failure}")
         return 1
-    skill_count = sum(len(skill_names) for skill_names in EXPECTED_PLUGINS.values())
-    print(f"\nMONOREPO VALIDATION PASSED: {len(EXPECTED_PLUGINS)} plugins, {skill_count} skills")
+    skill_count = sum(len(skill_names) for skill_names in discovered_skills.values())
+    print(f"\nMONOREPO VALIDATION PASSED: {len(plugin_names)} plugins, {skill_count} skills")
     return 0
 
 

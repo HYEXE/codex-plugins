@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "plugin": "prompt-compiler",
+  "skills": {
+    "prompt-coach": {
+      "required_files": [
+        "assets/icon.svg",
+        "evals/cases.jsonl",
+        "evals/observed-results-2026-08-11.jsonl",
+        "scripts/eval_harness.py"
+      ],
+      "required_markers": [
+        "Prompt Sufficiency Gate",
+        "pass-through",
+        "refine-directly",
+        "clarify-before-compile",
+        "질문 1~3개",
+        "최대 두 차례"
+      ]
+    },
+    "prompt-compiler": {
+      "required_files": [
+        "references/language-policy.md",
+        "references/front-door-modes.md",
+        "references/task-state-and-delta.md",
+        "evals/orchestration-cases.jsonl",
+        "evals/orchestration-observed-2026-08-12.jsonl",
+        "scripts/eval_orchestration.py"
+      ],
+      "required_markers": [
+        "Prompt Front Door",
+        "Prompt Sufficiency Gate",
+        "pass-through",
+        "refine-directly",
+        "clarify-before-compile",
+        "intent-compile-and-execute",
+        "task-scoped-compile-and-execute",
+        "delta-compile-and-execute",
+        "preview-then-act",
+        "Clarification Resume",
+        "Partial Completion Receipt",
+        "Task State Capsule",
+        "Approval Binding",
+        "continue",
+        "replace",
+        "별도 모델 호출"
+      ]
+    },
+    "prompt-evaluator": {
+      "required_files": [
+        "references/evaluation-rubric.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": []
+    }
+  },
+  "observation_manifest": "../evals/observations.json"
+}

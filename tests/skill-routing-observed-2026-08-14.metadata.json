@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "routing",
+  "provenance_status": "legacy-partial",
+  "source": "independent-forward-test",
+  "observed_at": "2026-08-14T00:00:00Z",
+  "model": null,
+  "codex_version": null,
+  "plugin_versions": {
+    "prompt-compiler": "0.6.0",
+    "uiux-advisor": "0.8.0"
+  },
+  "dataset": "skill-routing.jsonl",
+  "dataset_sha256": "3df477c8db7c0540607ab793058f11d2226ab6e995da8e7152cb34cbc6d1246f",
+  "results": "skill-routing-observed-2026-08-14.jsonl",
+  "results_sha256": "1ee923d79ed43fe4cb78a47a3cdc0bd1d9a062f101d91ed4e41603e480baf296",
+  "observation_scope": "selected-skill-only",
+  "notes": "Historical snapshot retained without a verified model or Codex build. New live runs must use complete provenance."
+}

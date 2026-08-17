@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0.0",
+  "plugin": "uiux-advisor",
+  "skills": {
+    "uiux-advisor": {
+      "required_files": [
+        "scripts/search_kb.py",
+        "scripts/search_toolkits.py",
+        "references/frontend-toolkit-registry.json"
+      ],
+      "required_markers": []
+    },
+    "uiux-auditor": {
+      "required_files": [
+        "references/audit-rubric.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": []
+    },
+    "implement-async-ui-state": {
+      "required_files": [
+        "references/async-state-contract-and-qa.md",
+        "references/agent-tool-state-ux.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "request·operation·job·item identity",
+        "stale·late response",
+        "idempotency",
+        "optimistic",
+        "partial success",
+        "reconnect",
+        "aria-live"
+      ]
+    },
+    "implement-ui-interaction": {
+      "required_files": [
+        "references/interaction-toolkit-selection.md",
+        "references/interaction-contract-and-qa.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "Floating UI",
+        "Embla",
+        "@use-gesture",
+        "React Spring",
+        "AutoAnimate",
+        "keyboard",
+        "focus"
+      ]
+    },
+    "implement-ui-motion": {
+      "required_files": [
+        "references/motion-toolkit-selection.md",
+        "references/motion-contract-and-qa.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "Anime.js",
+        "Web Animations API",
+        "View Transition API",
+        "Motion",
+        "GSAP",
+        "prefers-reduced-motion"
+      ]
+    },
+    "build-data-visualization": {
+      "required_files": [
+        "references/visualization-toolkit-selection.md",
+        "references/chart-contract-and-qa.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "Bklit UI",
+        "Recharts",
+        "Apache ECharts",
+        "Observable Plot",
+        "D3",
+        "텍스트 또는 표"
+      ]
+    },
+    "build-interactive-graphics": {
+      "required_files": [
+        "references/graphics-toolkit-selection.md",
+        "references/graphics-accessibility-and-fallback.md",
+        "references/render-loop-performance-and-qa.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "Rive",
+        "PixiJS",
+        "Three.js",
+        "React Three Fiber",
+        "Theatre.js",
+        "semantic DOM",
+        "prefers-reduced-motion"
+      ]
+    },
+    "compose-creative-ui": {
+      "required_files": [
+        "references/component-toolkit-selection.md",
+        "references/composition-and-qa.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "Magic UI",
+        "Aceternity UI",
+        "React Bits",
+        "shadcn/ui",
+        "React Aria",
+        "Ark UI"
+      ]
+    },
+    "build-design-system": {
+      "required_files": [
+        "references/design-system-workflow.md",
+        "references/token-and-component-contracts.md",
+        "references/framework-adapters.md",
+        "assets/icon.svg"
+      ],
+      "required_markers": [
+        "DTCG",
+        "Style Dictionary",
+        "Storybook",
+        "CSS Custom Properties",
+        "Vue",
+        "Svelte"
+      ]
+    }
+  },
+  "toolkit_registry": {
+    "path": "../skills/uiux-advisor/references/frontend-toolkit-registry.json",
+    "schema_version": "2.0.0",
+    "minimum_count": 35,
+    "required_roles": [
+      "motion",
+      "data-visualization",
+      "creative-ui",
+      "primitive",
+      "design-system",
+      "documentation",
+      "testing",
+      "interaction",
+      "interactive-graphics"
+    ],
+    "required_ids": [
+      "anime-js",
+      "motion",
+      "gsap",
+      "bklit-ui",
+      "recharts",
+      "apache-echarts",
+      "observable-plot",
+      "d3",
+      "shadcn-ui",
+      "magic-ui",
+      "aceternity-ui",
+      "react-bits",
+      "css-visual-effects",
+      "react-aria",
+      "base-ui",
+      "radix-primitives",
+      "ark-ui",
+      "design-tokens-format",
+      "style-dictionary",
+      "storybook",
+      "css-custom-properties",
+      "html-interaction-elements",
+      "react-spring",
+      "autoanimate",
+      "floating-ui",
+      "use-gesture",
+      "css-scroll-snap",
+      "embla-carousel",
+      "swiper",
+      "lenis",
+      "rive",
+      "three-js",
+      "react-three-fiber",
+      "drei",
+      "pixijs",
+      "theatre-js"
+    ],
+    "freshness": {
+      "warning_after_days": 180,
+      "error_after_days": 365
+    }
+  },
+  "knowledge_base": {
+    "path": "../skills/uiux-advisor/references/kb",
+    "expected_guide_count": 50,
+    "freshness": {
+      "time_sensitive_warning_after_days": 90,
+      "time_sensitive_error_after_days": 180,
+      "stable_warning_after_days": 365,
+      "stable_error_after_days": 730
+    }
+  }
+}

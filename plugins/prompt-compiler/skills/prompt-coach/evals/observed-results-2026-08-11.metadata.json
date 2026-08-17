@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "prompt-coach",
+  "provenance_status": "legacy-partial",
+  "source": "independent-forward-test",
+  "observed_at": "2026-08-11T00:00:00Z",
+  "model": null,
+  "codex_version": null,
+  "plugin_versions": {
+    "prompt-compiler": "0.6.0"
+  },
+  "dataset": "cases.jsonl",
+  "dataset_sha256": "243bc87f5e654af0f1cfa6a67ec7eed9add4da53971bb61b58821e1437a6880b",
+  "results": "observed-results-2026-08-11.jsonl",
+  "results_sha256": "fc56e53afd25c4ce4b36d4d1a840ec3d79ce212ea7326a10f742aa89fb7e07bb",
+  "observation_scope": "user-facing-transcript",
+  "notes": "Historical snapshot retained without a verified model or Codex build."
+}

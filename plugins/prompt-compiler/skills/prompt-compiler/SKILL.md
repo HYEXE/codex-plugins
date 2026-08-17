@@ -3,7 +3,10 @@ name: prompt-compiler
 description: 사용자의 자연어 요청을 충분성 관점에서 점검하고 필요한 경우에만 핵심 질문으로 보완한 뒤 내부 실행 명세로 컴파일해 현재 턴에서 수행·검증하는 한국어 중심 Intent Compiler Skill. 사용자가 Prompt Compiler 플러그인이나 이 스킬을 명시적으로 호출하거나, 요청 개선 후 실행, 같은 작업의 후속 요청 점검, 정정·취소·새 목표 전환, preview 후 승인 또는 분석·리서치·글쓰기·아티팩트·도구 작업의 안정적 오케스트레이션을 원할 때 사용한다. 확정된 제약·권한은 유지하고 변경분만 delta compilation하며 오래된 가정·승인·검증 상태를 무효화한다. 재사용 가능한 최종 프롬프트 자체만 만드는 것이 주목적이면 prompt-coach를, 기존 프롬프트의 품질 진단·전후 비교·회귀 평가가 주목적이면 prompt-evaluator를 사용한다.
 ---
 
-# Prompt Compiler v3.2
+# Prompt Compiler Protocol v3.2-ko
+
+Plugin package: `prompt-compiler 0.7.0`  
+Protocol spec: `v3.2-ko`
 
 자연어 요청을 단순히 “더 좋은 문장”으로 고치는 것이 아니라, 요청의 충분성을 먼저 확인하고 사용자의 의도를 보존한 **내부 실행 명세**로 컴파일해 결과까지 만든다.
 

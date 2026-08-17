@@ -1,5 +1,17 @@
 # Changelog
 
+## Package 0.7.0 — Declarative Quality Gates and Observation Provenance
+
+변경:
+- 플러그인이 필요한 skill 파일과 의미적 marker를 `.codex-plugin/quality-gates.json`에서 직접 선언하도록 변경
+- 날짜가 포함된 독립 관찰 snapshot을 안정적인 `evals/observations.json` manifest로 선택하도록 변경
+- dataset과 observed result의 SHA-256, 관찰 시각, plugin 버전과 알려진 provenance 공백을 metadata로 기록
+- 플러그인 패키지 버전 `0.7.0`과 내부 protocol spec `v3.2-ko`를 사용자 문서와 skill 본문에서 명확히 구분
+
+사실적 경계:
+- 기존 snapshot의 누락된 model·Codex build 정보는 추정하지 않고 `legacy-partial`로 보존한다.
+- 완전한 provenance는 새 live eval 실행에서 생성한다.
+
 ## Package 0.6.0 — Task State and Delta Compilation
 
 변경:

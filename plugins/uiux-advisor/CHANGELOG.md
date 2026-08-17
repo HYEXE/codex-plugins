@@ -1,0 +1,20 @@
+# Changelog
+
+## Package 0.9.0 — Declarative Quality Gates and Freshness Budgets
+
+변경:
+- skill별 필수 파일과 의미적 marker를 `.codex-plugin/quality-gates.json`에서 선언
+- UI/UX knowledge base의 guide 개수와 freshness budget을 플러그인 설정으로 이동
+- frontend toolkit registry의 schema, 최소 항목 수, 필수 역할·도구와 freshness budget을 플러그인 설정으로 이동
+
+freshness 정책:
+- time-sensitive guide는 90일 이후 warning, 180일 이후 release-blocking error
+- stable guide는 365일 이후 warning, 730일 이후 release-blocking error
+- toolkit 검증일은 180일 이후 warning, 365일 이후 release-blocking error
+
+## Package 0.8.0 — Async Operation State
+
+변경:
+- 요청·스트림·background job·batch lifecycle을 전담하는 `implement-async-ui-state` skill 추가
+- widget input contract와 비동기 operation state의 routing 경계를 분리
+- 중복·순서·취소·재시도·부분 성공·reconnect·optimistic 상태의 구현 및 검증 규칙 추가

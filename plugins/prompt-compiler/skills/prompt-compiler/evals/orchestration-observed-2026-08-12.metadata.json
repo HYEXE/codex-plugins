@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "prompt-orchestration",
+  "provenance_status": "legacy-partial",
+  "source": "independent-forward-test",
+  "observed_at": "2026-08-12T00:00:00Z",
+  "model": null,
+  "codex_version": null,
+  "plugin_versions": {
+    "prompt-compiler": "0.6.0"
+  },
+  "dataset": "orchestration-cases.jsonl",
+  "dataset_sha256": "f316884bc30fc3ec1adc50e2c8e200619208c6cddf1c243d774ec78aecbf2936",
+  "results": "orchestration-observed-2026-08-12.jsonl",
+  "results_sha256": "2ab7e2a353f2f6daee34823f4987c66edf123b2ad23319bd2001a99077748965",
+  "observation_scope": "user-facing-transcript",
+  "notes": "Historical snapshot retained without a verified model or Codex build and without tool traces."
+}
