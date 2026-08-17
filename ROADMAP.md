@@ -12,6 +12,7 @@
 - [x] immutable repository/plugin tag 검증과 gated GitHub Release workflow
 - [x] third-party attribution 정책과 public release gate
 - [x] 공개 라이선스를 Apache-2.0으로 확정하고 `LICENSE` 추가
+- [x] 로컬 저장 인증과 CI API key를 분리한 live eval 인증 모드
 - [ ] `CODEX_LIVE_EVAL_API_KEY` repository secret 설정
 - [ ] 최초 stable tag와 GitHub Release 게시
 - [ ] 저장소 visibility를 public으로 전환

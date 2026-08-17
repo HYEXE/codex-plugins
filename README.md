@@ -96,7 +96,18 @@ git diff --check
 
 저장된 behavior snapshot은 안정적인 `observations.json` manifest가 선택한다. metadata에 dataset/result SHA-256, 관찰 시각, plugin 버전과 provenance 상태를 기록하며, 과거 실행에서 확인할 수 없는 model·Codex build는 추정하지 않고 `legacy-partial`로 표시한다. 오케스트레이션 transcript 평가는 질문 수, 이어가기, preview 승인 경계와 외부 행동 주장을 판정하지만 그 자체로 side effect 부재를 증명하지 않는다.
 
-`live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA가 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 수동·주기·release workflow에서 수행한다.
+`live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA와 인증 방식이 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 수동·주기·release workflow에서 수행한다.
+
+로컬 live eval은 기본적으로 현재 Codex CLI의 저장된 로그인을 재사용한다. `saved` 모드는 원본 `auth.json`을 변경하거나 결과 artifact에 포함하지 않고, 실행 중에만 권한이 제한된 임시 `CODEX_HOME`으로 복사한다. 사용자는 먼저 `codex login status`로 자신의 인증 방식을 확인해야 한다. 파일 기반 로그인 cache가 없는 환경에서는 Codex의 credential storage를 file로 설정해 다시 로그인하거나 `api-key` 모드를 사용한다.
+
+```bash
+python3 scripts/live_eval.py run \
+  --suite routing \
+  --case-set critical \
+  --auth-mode saved
+```
+
+공개 CI와 release workflow는 저장된 개인 로그인을 배포하지 않는다. 저장소 운영자가 자신의 OpenAI Platform 키를 `CODEX_LIVE_EVAL_API_KEY` secret으로 설정하며, workflow는 이를 단일 실행 step의 `CODEX_API_KEY`로만 전달하고 `--auth-mode api-key`를 명시한다. 플러그인을 설치한 일반 사용자는 자신의 Codex 로그인 또는 자신의 API 키로 실행하므로 저장소 운영자의 키나 사용료를 공유하지 않는다.
 
 프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있다. `--recommend`는 필터된 후보를 낮은 리스크, framework 직접 지원, 가벼운 도입 방식 순으로 정렬하며 보편적 품질 점수로 해석하지 않는다.
 

@@ -27,7 +27,9 @@ tag push 뒤 `.github/workflows/release.yml`은 다음 순서로 실행된다.
 4. 고정된 Codex CLI와 지정 모델로 full routing/tool-trace live eval을 실행한다.
 5. 모든 gate가 통과한 경우에만 GitHub Release를 생성한다.
 
-live eval에는 repository secret `CODEX_LIVE_EVAL_API_KEY`가 필요하다. 키는 실제 실행 step에만 전달하며 artifact에는 raw event, transcript, tool trace와 비밀이 아닌 provenance만 보존한다.
+GitHub-hosted live eval에는 저장소 운영자의 repository secret `CODEX_LIVE_EVAL_API_KEY`가 필요하다. 키는 실제 실행 step에만 전달하며 artifact에는 raw event, transcript, tool trace와 비밀이 아닌 provenance만 보존한다. 이 키는 저장소나 플러그인에 포함되지 않으며 설치 사용자는 자신의 Codex 로그인 또는 자신의 API 키를 사용한다.
+
+로컬에서는 `codex login`으로 저장된 인증을 재사용할 수 있다. 기본 `saved` 모드는 파일 기반 `auth.json`만 임시 격리 환경에 복사하고 실행 종료 시 함께 폐기한다. 공개 또는 신뢰할 수 없는 CI에 개인 `auth.json`을 복사하지 않는다.
 
 ## 로컬 사전 점검
 
@@ -39,6 +41,7 @@ python3 scripts/validate_all.py
 python3 -m unittest discover -s tests -p "test_*.py"
 python3 scripts/live_eval.py run --suite routing --case-set full --dry-run
 python3 scripts/live_eval.py run --suite tool-trace --case-set full --dry-run
+python3 scripts/live_eval.py run --suite routing --case-set critical --auth-mode saved
 ```
 
 실제 tag 생성·push, 저장소 공개 전환과 GitHub Release 생성은 각각 별도의 원격 변경이다. 로컬 gate가 통과한 뒤 명시적으로 승인된 경우에만 수행한다.

@@ -121,6 +121,7 @@ jobs:
             --attempts "$EVAL_ATTEMPTS" \
             --model "$EVAL_MODEL" \
             --reasoning-effort "$EVAL_REASONING_EFFORT" \
+            --auth-mode api-key \
             --output-dir "artifacts/live-eval-${{ matrix.suite }}"
 
       - name: raw event와 provenance 업로드

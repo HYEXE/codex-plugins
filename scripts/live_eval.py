@@ -38,6 +38,7 @@ RUN_MANIFEST_FIELDS = {
     "schema_version",
     "run_id",
     "suite",
+    "auth_mode",
     "started_at",
     "completed_at",
     "model",
@@ -121,6 +122,56 @@ def sanitized_env(*, include_credentials: bool, extra: dict[str, str] | None = N
     if extra:
         environment.update(extra)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    return environment
+
+
+def default_codex_home() -> Path:
+    configured = os.environ.get("CODEX_HOME")
+    return Path(configured).expanduser() if configured else Path.home() / ".codex"
+
+
+def validate_saved_auth(codex_bin: str, codex_home: Path, timeout: int) -> None:
+    auth_path = codex_home / "auth.json"
+    if auth_path.is_symlink() or not auth_path.is_file():
+        raise LiveEvalError(
+            f"saved auth mode requires a regular file at {auth_path}; "
+            "sign in with Codex CLI using file-based credential storage"
+        )
+    process = run_command(
+        [codex_bin, "login", "status"],
+        cwd=ROOT,
+        environment=sanitized_env(
+            include_credentials=False,
+            extra={"CODEX_HOME": str(codex_home)},
+        ),
+        timeout=timeout,
+    )
+    if process.returncode:
+        detail = process.stderr.strip() or process.stdout.strip() or "not logged in"
+        raise LiveEvalError(f"saved Codex authentication is unavailable: {detail}")
+
+
+def seed_saved_auth(source_home: Path, target_home: Path) -> None:
+    source = source_home / "auth.json"
+    if source.is_symlink() or not source.is_file():
+        raise LiveEvalError(f"saved Codex authentication is unavailable at {source}")
+    target_home.mkdir(parents=True, exist_ok=True)
+    target_home.chmod(0o700)
+    target = target_home / "auth.json"
+    shutil.copyfile(source, target)
+    target.chmod(0o600)
+
+
+def codex_execution_env(*, auth_mode: str, codex_home: Path, extra: dict[str, str] | None = None) -> dict[str, str]:
+    environment_extra = {"CODEX_HOME": str(codex_home)}
+    if extra:
+        environment_extra.update(extra)
+    environment = sanitized_env(
+        include_credentials=auth_mode == "api-key",
+        extra=environment_extra,
+    )
+    if auth_mode == "api-key":
+        environment.pop("CODEX_ACCESS_TOKEN", None)
     return environment
 
 
@@ -303,10 +354,12 @@ def validate_run_manifest(run: dict[str, Any]) -> list[str]:
         failures.append(f"run manifest missing fields: {missing}")
     if extra:
         failures.append(f"run manifest has unknown fields: {extra}")
-    if run.get("schema_version") != "1.0.0":
-        failures.append("run manifest schema_version must be 1.0.0")
+    if run.get("schema_version") != "1.1.0":
+        failures.append("run manifest schema_version must be 1.1.0")
     if run.get("suite") not in {"routing", "tool-trace"}:
         failures.append("run manifest suite is invalid")
+    if run.get("auth_mode") not in {"saved", "api-key"}:
+        failures.append("run manifest auth_mode is invalid")
     if run.get("case_set") not in {"critical", "sample", "full"}:
         failures.append("run manifest case_set is invalid")
     if not isinstance(run.get("attempts"), int) or run.get("attempts", 0) < 1:
@@ -467,6 +520,7 @@ def external_event_items(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def codex_command(
     *,
     codex_bin: str,
+    auth_mode: str,
     model: str,
     reasoning_effort: str,
     workspace: Path,
@@ -490,6 +544,8 @@ def codex_command(
         "-c",
         f'model_reasoning_effort="{reasoning_effort}"',
     ]
+    if auth_mode == "saved":
+        command.extend(["-c", 'cli_auth_credentials_store="file"'])
     if output_schema is not None:
         command.extend(["--output-schema", str(output_schema)])
     if resume_thread is not None:
@@ -505,6 +561,7 @@ def run_codex_turn(
     *,
     codex_bin: str,
     codex_home: Path,
+    auth_mode: str,
     model: str,
     reasoning_effort: str,
     workspace: Path,
@@ -518,12 +575,17 @@ def run_codex_turn(
     stderr_path: Path,
     fake_action_log: Path | None = None,
 ) -> list[dict[str, Any]]:
-    environment_extra = {"CODEX_HOME": str(codex_home)}
+    environment_extra: dict[str, str] = {}
     if fake_action_log is not None:
         environment_extra["CODEX_FAKE_ACTION_LOG"] = str(fake_action_log)
-    environment = sanitized_env(include_credentials=True, extra=environment_extra)
+    environment = codex_execution_env(
+        auth_mode=auth_mode,
+        codex_home=codex_home,
+        extra=environment_extra,
+    )
     command = codex_command(
         codex_bin=codex_bin,
+        auth_mode=auth_mode,
         model=model,
         reasoning_effort=reasoning_effort,
         workspace=workspace,
@@ -762,9 +824,19 @@ def run_live(args: argparse.Namespace) -> int:
         for failure in failures:
             print(f"ERROR: {failure}")
         return 1
-    if not args.dry_run and not (os.environ.get("CODEX_API_KEY") or os.environ.get("OPENAI_API_KEY")):
-        print("ERROR: CODEX_API_KEY or OPENAI_API_KEY is required for live execution")
-        return 2
+    saved_auth_home: Path | None = None
+    if not args.dry_run:
+        if args.auth_mode == "api-key":
+            if not (os.environ.get("CODEX_API_KEY") or os.environ.get("OPENAI_API_KEY")):
+                print("ERROR: CODEX_API_KEY or OPENAI_API_KEY is required for api-key auth mode")
+                return 2
+        else:
+            saved_auth_home = default_codex_home().resolve()
+            try:
+                validate_saved_auth(args.codex_bin, saved_auth_home, args.timeout_seconds)
+            except LiveEvalError as exc:
+                print(f"ERROR: {exc}")
+                return 2
 
     policy = load_json(POLICY_PATH)
     policy_key = "tool_trace" if args.suite == "tool-trace" else args.suite
@@ -781,7 +853,8 @@ def run_live(args: argparse.Namespace) -> int:
 
     print(
         f"LIVE EVAL PLAN: suite={args.suite} case_set={args.case_set} "
-        f"cases={len(selected)} attempts={args.attempts} model={args.model}"
+        f"cases={len(selected)} attempts={args.attempts} model={args.model} "
+        f"auth_mode={args.auth_mode}"
     )
     if args.dry_run:
         for case in selected:
@@ -804,6 +877,8 @@ def run_live(args: argparse.Namespace) -> int:
         temp_root = Path(temp_value)
         codex_home = temp_root / "codex-home"
         installed_versions = prepare_codex_home(args.codex_bin, codex_home, args.timeout_seconds)
+        if saved_auth_home is not None:
+            seed_saved_auth(saved_auth_home, codex_home)
         expected_versions = plugin_versions()
         if installed_versions != expected_versions:
             raise LiveEvalError(
@@ -823,6 +898,7 @@ def run_live(args: argparse.Namespace) -> int:
                         events = run_codex_turn(
                             codex_bin=args.codex_bin,
                             codex_home=codex_home,
+                            auth_mode=args.auth_mode,
                             model=args.model,
                             reasoning_effort=args.reasoning_effort,
                             workspace=workspace,
@@ -861,6 +937,7 @@ def run_live(args: argparse.Namespace) -> int:
                             events = run_codex_turn(
                                 codex_bin=args.codex_bin,
                                 codex_home=codex_home,
+                                auth_mode=args.auth_mode,
                                 model=args.model,
                                 reasoning_effort=args.reasoning_effort,
                                 workspace=workspace,
@@ -910,9 +987,10 @@ def run_live(args: argparse.Namespace) -> int:
 
     completed_at = utc_now()
     run_manifest = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "run_id": run_id,
         "suite": args.suite,
+        "auth_mode": args.auth_mode,
         "started_at": started_at,
         "completed_at": completed_at,
         "model": args.model,
@@ -971,6 +1049,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--attempts", type=int, default=1)
     run_parser.add_argument("--model", default="gpt-5.6")
     run_parser.add_argument("--reasoning-effort", default="medium")
+    run_parser.add_argument(
+        "--auth-mode",
+        choices=("saved", "api-key"),
+        default="saved",
+        help="Reuse saved local Codex login or require an API key environment variable",
+    )
     run_parser.add_argument("--codex-bin", default="codex")
     run_parser.add_argument("--timeout-seconds", type=int, default=300)
     run_parser.add_argument("--output-dir", type=Path, default=ROOT / "artifacts" / "live-eval")

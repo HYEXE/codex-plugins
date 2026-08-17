@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,9 +31,10 @@ class LiveEvalConfigurationTests(unittest.TestCase):
 
     def test_run_manifest_requires_complete_provenance(self) -> None:
         manifest = {
-            "schema_version": "1.0.0",
+            "schema_version": "1.1.0",
             "run_id": "run-1",
             "suite": "routing",
+            "auth_mode": "saved",
             "started_at": "2026-08-17T00:00:00Z",
             "completed_at": "2026-08-17T00:01:00Z",
             "model": "gpt-5.6",
@@ -85,6 +87,7 @@ class EventParsingTests(unittest.TestCase):
     def test_resume_command_does_not_mark_session_ephemeral(self) -> None:
         command = live_eval.codex_command(
             codex_bin="codex",
+            auth_mode="saved",
             model="gpt-5.6",
             reasoning_effort="medium",
             workspace=Path("/tmp/work"),
@@ -95,11 +98,13 @@ class EventParsingTests(unittest.TestCase):
             prompt="approved",
         )
         self.assertNotIn("--ephemeral", command)
+        self.assertIn('cli_auth_credentials_store="file"', command)
         self.assertEqual(command[-3:], ["resume", "thread-1", "approved"])
 
     def test_first_resumable_turn_is_not_ephemeral(self) -> None:
         command = live_eval.codex_command(
             codex_bin="codex",
+            auth_mode="saved",
             model="gpt-5.6",
             reasoning_effort="medium",
             workspace=Path("/tmp/work"),
@@ -111,6 +116,50 @@ class EventParsingTests(unittest.TestCase):
         )
         self.assertNotIn("--ephemeral", command)
         self.assertEqual(command[-1], "preview")
+
+
+class AuthenticationTests(unittest.TestCase):
+    def test_saved_auth_is_copied_with_restricted_permissions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            root = Path(temp_value)
+            source_home = root / "source"
+            target_home = root / "target"
+            source_home.mkdir()
+            (source_home / "auth.json").write_text('{"test":"credential"}', encoding="utf-8")
+            (source_home / "config.toml").write_text("model = 'test'\n", encoding="utf-8")
+
+            live_eval.seed_saved_auth(source_home, target_home)
+
+            target_auth = target_home / "auth.json"
+            self.assertEqual(target_auth.read_text(encoding="utf-8"), '{"test":"credential"}')
+            self.assertEqual(target_auth.stat().st_mode & 0o777, 0o600)
+            self.assertFalse((target_home / "config.toml").exists())
+
+    def test_saved_auth_environment_excludes_all_credential_variables(self) -> None:
+        credentials = {
+            "CODEX_API_KEY": "test-codex-key",
+            "OPENAI_API_KEY": "test-openai-key",
+            "CODEX_ACCESS_TOKEN": "test-access-token",
+        }
+        with mock.patch.dict(os.environ, credentials, clear=False):
+            environment = live_eval.codex_execution_env(
+                auth_mode="saved",
+                codex_home=Path("/tmp/codex-home"),
+            )
+        self.assertTrue(live_eval.SECRET_ENV_NAMES.isdisjoint(environment))
+
+    def test_api_key_environment_excludes_access_token(self) -> None:
+        credentials = {
+            "CODEX_API_KEY": "test-codex-key",
+            "CODEX_ACCESS_TOKEN": "test-access-token",
+        }
+        with mock.patch.dict(os.environ, credentials, clear=False):
+            environment = live_eval.codex_execution_env(
+                auth_mode="api-key",
+                codex_home=Path("/tmp/codex-home"),
+            )
+        self.assertIn("CODEX_API_KEY", environment)
+        self.assertNotIn("CODEX_ACCESS_TOKEN", environment)
 
 
 class ScoringTests(unittest.TestCase):
