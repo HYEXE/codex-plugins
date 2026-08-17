@@ -4,27 +4,34 @@
 
 ## 포함 플러그인
 
-| 플러그인 | 번들 스킬 | 용도 |
-| --- | --- | --- |
-| `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| 플러그인 | package | 번들 스킬 | 용도 |
+| --- | --- | --- | --- |
+| `prompt-compiler` | `0.7.0` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
+| `uiux-advisor` | `0.9.0` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
 
 ```text
 codex-workflows/
 ├── .agents/plugins/marketplace.json
-├── .github/workflows/validate.yml
-├── docs/plugin-updates.md
+├── .github/workflows/
+│   ├── live-eval.yml
+│   ├── release.yml
+│   └── validate.yml
+├── docs/
+│   ├── history/
+│   ├── plugin-updates.md
+│   └── releases.md
+├── evals/live-eval-policy.json
 ├── plugins/
 │   ├── prompt-compiler/
-│   │   ├── .codex-plugin/plugin.json
+│   │   ├── .codex-plugin/{plugin.json,quality-gates.json}
 │   │   └── skills/
 │   │       ├── prompt-coach/
 │   │       ├── prompt-compiler/
 │   │       └── prompt-evaluator/
 │   └── uiux-advisor/
-│       ├── .codex-plugin/plugin.json
+│       ├── .codex-plugin/{plugin.json,quality-gates.json}
 │       └── skills/
 │           ├── build-design-system/
 │           ├── build-data-visualization/
@@ -36,19 +43,25 @@ codex-workflows/
 │           ├── uiux-advisor/
 │           └── uiux-auditor/
 ├── tests/
+│   ├── observations.json
 │   ├── skill-routing.jsonl
-│   ├── skill-routing-observed-2026-08-12.jsonl
 │   ├── skill-routing-observed-2026-08-14.jsonl
+│   ├── tool-trace-cases.jsonl
 │   ├── toolkit-search-cases.jsonl
 │   └── uiux-search-cases.jsonl
 └── scripts/
+    ├── check_freshness.py
+    ├── check_release_readiness.py
     ├── check_version_bumps.py
     ├── eval_routing.py
     ├── eval_toolkit_search.py
     ├── eval_uiux_search.py
+    ├── live_eval.py
     ├── update_plugins.ps1
     ├── update_plugins.sh
-    └── validate_all.py
+    ├── validate_all.py
+    ├── validate_observation_manifest.py
+    └── validate_release_tag.py
 ```
 
 저장소와 marketplace는 하나지만 각 플러그인은 독립적으로 설치하고 버전을 관리한다. 각 스킬의 실행 지침과 필요한 resources는 해당 스킬 폴더에 둔다.
@@ -65,6 +78,9 @@ codex-workflows/
 
 ```bash
 python3 scripts/validate_all.py
+python3 -m unittest discover -s tests -p "test_*.py"
+python3 scripts/validate_observation_manifest.py tests/observations.json plugins/prompt-compiler/evals/observations.json
+python3 scripts/live_eval.py validate
 python3 scripts/eval_routing.py validate
 python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py validate
 python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py score plugins/prompt-compiler/skills/prompt-compiler/evals/orchestration-observed-2026-08-12.jsonl
@@ -76,7 +92,11 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 오케스트레이션·구조 평가, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·capability·surface·risk·fallback·출처 형식과 검색 회귀를 확인한다. 오케스트레이션 평가는 질문 수, 작업 단위 활성화, 질문 답변 후 이어가기, preview 승인 경계, 부분 완료 보고, 프롬프트·계획 노출, 결과 제공, 재전송 요구와 자동 연계·외부 행동 주장을 사용자에게 보인 transcript에서 판정한다. 별도 tool trace가 없으면 실제 외부 side effect 부재의 증거로 사용하지 않는다. 외부 문서 URL의 실제 생존 여부, 현재 API와 라이선스는 스킬 실행 시 공식 출처에서 별도로 확인한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 오케스트레이션·구조 평가, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·capability·surface·risk·fallback·출처 형식과 검색 회귀를 확인한다. 플러그인별 skill 목록, 필수 파일·marker, KB·toolkit 수와 freshness budget은 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 자동 발견한다.
+
+저장된 behavior snapshot은 안정적인 `observations.json` manifest가 선택한다. metadata에 dataset/result SHA-256, 관찰 시각, plugin 버전과 provenance 상태를 기록하며, 과거 실행에서 확인할 수 없는 model·Codex build는 추정하지 않고 `legacy-partial`로 표시한다. 오케스트레이션 transcript 평가는 질문 수, 이어가기, preview 승인 경계와 외부 행동 주장을 판정하지만 그 자체로 side effect 부재를 증명하지 않는다.
+
+`live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA가 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 수동·주기·release workflow에서 수행한다.
 
 프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있다. `--recommend`는 필터된 후보를 낮은 리스크, framework 직접 지원, 가벼운 도입 방식 순으로 정렬하며 보편적 품질 점수로 해석하지 않는다.
 
@@ -86,21 +106,31 @@ python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
   --recommend --max-risk medium --top 3
 ```
 
-라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과를 함께 갱신해야 한다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있다.
+라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의한다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과와 metadata hash를 함께 갱신해야 한다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있다.
 
 ```bash
 python3 scripts/eval_routing.py score observed-routing.jsonl
 ```
 
-GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows 환경의 통합 검증과 운영체제별 업데이트 스크립트 dry run을 실행한다. 플러그인에 배포되는 파일이 바뀌면 해당 manifest의 SemVer가 기준 커밋보다 증가했는지도 검사한다.
+GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows·macOS 통합 검증, validator unit test, ShellCheck와 운영체제별 업데이트 스크립트 dry run을 실행한다. 플러그인에 배포되는 파일이 바뀌면 해당 manifest의 SemVer가 기준 커밋보다 증가했는지도 검사한다. 매주와 수동 dispatch에서는 critical live eval을, release tag에서는 full live eval을 실행한다.
 
-## GitHub marketplace 설치
+## GitHub marketplace 설치 채널
+
+GitHub Release가 게시된 뒤 일반 사용자에게는 immutable repository tag를 사용하는 stable 채널을 권장한다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-workflows --ref main
+codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
 codex plugin add prompt-compiler@codex-workflows-kr
 codex plugin add uiux-advisor@codex-workflows-kr
 ```
+
+다음 릴리스를 빠르게 확인하려면 `main` nightly 채널을 별도 환경에서 사용한다.
+
+```bash
+codex plugin marketplace add HYEXE/codex-workflows --ref main
+```
+
+tag 형식, release gate와 stable/nightly 운영 규칙은 [릴리스와 설치 채널](docs/releases.md)에 정리돼 있다.
 
 ## 업데이트
 
@@ -122,7 +152,7 @@ codex plugin add prompt-compiler@codex-workflows-kr
 codex plugin add uiux-advisor@codex-workflows-kr
 ```
 
-첫 번째 명령은 Git marketplace snapshot을 최신 커밋으로 갱신한다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체한다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않는다.
+첫 번째 명령은 Git marketplace snapshot을 등록된 ref에서 다시 가져온다. `main` nightly marketplace라면 최신 commit으로 이동하지만 immutable stable tag라면 같은 snapshot을 다시 확인할 뿐 더 새 stable tag로 자동 이동하지 않는다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체한다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않는다.
 
 플러그인 소스 자체를 변경했다면 설치 전에 해당 `.codex-plugin/plugin.json`의 SemVer를 올리고 저장소 검증을 실행한다.
 
@@ -205,5 +235,6 @@ codex plugin list
 ## 배포 상태와 권리
 
 - `uiux-advisor`의 세부 출처는 `references/kb/SOURCE_REGISTRY.md`와 `sources.json`에 기록돼 있다.
-- 코드, 자체 작성 콘텐츠, 제3자 자료 기반 콘텐츠의 라이선스와 재배포 가능성은 공개 배포 범위에 맞게 별도로 검토한다.
-- 실제 배포 전에는 현재 커밋의 검증 결과, 버전, 지원 범위와 지식베이스 최신성을 다시 확인한다.
+- 제3자 attribution과 재배포 검토 원칙은 `THIRD_PARTY_NOTICES.md`에 기록돼 있다.
+- 공개 라이선스가 확정되어 `LICENSE`가 추가되기 전에는 public release readiness gate가 실패한다.
+- 실제 배포 전에는 현재 커밋의 검증 결과, plugin package/protocol 버전, 지원 범위, 지식베이스 최신성과 full live eval을 다시 확인한다.

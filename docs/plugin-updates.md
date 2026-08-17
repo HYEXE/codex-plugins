@@ -1,6 +1,6 @@
 # 플러그인 업데이트
 
-`codex-workflows`의 Git marketplace와 설치된 플러그인은 각 사용자 PC에 snapshot과 cache로 저장된다. 저장소에 새 커밋을 push해도 설치본은 자동으로 바뀌지 않으므로, marketplace를 갱신한 뒤 두 플러그인을 다시 설치해야 한다.
+`codex-workflows`의 Git marketplace와 설치된 플러그인은 각 사용자 PC에 snapshot과 cache로 저장된다. 저장소에 새 커밋을 push해도 설치본은 자동으로 바뀌지 않으므로, marketplace를 갱신한 뒤 두 플러그인을 다시 설치해야 한다. 아래 업데이트 스크립트는 주로 `main` nightly 채널을 위한 것이다.
 
 업데이트 스크립트는 다음 명령을 순서대로 실행한다.
 
@@ -21,11 +21,29 @@ git clone https://github.com/HYEXE/codex-workflows.git
 cd codex-workflows
 ```
 
-그런 다음 marketplace를 등록한다.
+재현 가능한 stable 설치는 게시된 immutable repository tag를 사용한다.
+
+```bash
+codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
+```
+
+다음 릴리스를 확인하는 nightly 설치는 `main`을 사용한다.
 
 ```bash
 codex plugin marketplace add HYEXE/codex-workflows --ref main
 ```
+
+stable marketplace는 `upgrade`만으로 다음 stable tag로 이동하지 않는다. 새 릴리스로 올릴 때는 기존 marketplace 이름과 설치 상태를 확인한 뒤 marketplace를 제거하고 새 tag로 다시 등록한 다음 플러그인을 재설치한다.
+
+```bash
+codex plugin marketplace list
+codex plugin marketplace remove codex-workflows-kr
+codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
+codex plugin add prompt-compiler@codex-workflows-kr
+codex plugin add uiux-advisor@codex-workflows-kr
+```
+
+제거와 재등록은 로컬 Codex marketplace 설정을 바꾸므로 의도한 이름과 tag를 확인한 뒤 실행한다.
 
 등록 상태는 다음 명령으로 확인한다.
 
