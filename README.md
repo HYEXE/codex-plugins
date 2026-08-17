@@ -7,7 +7,7 @@
 | 플러그인 | 번들 스킬 | 용도 |
 | --- | --- | --- |
 | `prompt-compiler` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 상호작용·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `uiux-advisor` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
 
@@ -30,6 +30,7 @@ codex-workflows/
 │           ├── build-data-visualization/
 │           ├── build-interactive-graphics/
 │           ├── compose-creative-ui/
+│           ├── implement-async-ui-state/
 │           ├── implement-ui-interaction/
 │           ├── implement-ui-motion/
 │           ├── uiux-advisor/
@@ -37,6 +38,7 @@ codex-workflows/
 ├── tests/
 │   ├── skill-routing.jsonl
 │   ├── skill-routing-observed-2026-08-12.jsonl
+│   ├── skill-routing-observed-2026-08-14.jsonl
 │   ├── toolkit-search-cases.jsonl
 │   └── uiux-search-cases.jsonl
 └── scripts/

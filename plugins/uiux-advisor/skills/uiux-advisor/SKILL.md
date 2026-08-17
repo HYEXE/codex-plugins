@@ -1,6 +1,6 @@
 ---
 name: uiux-advisor
-description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명, 대안 비교, 컴포넌트·제품 명세와 리서치·검증 계획을 작성한다. 접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다룰 때 사용한다. 스크린샷·URL·코드·사용자 흐름 감사는 uiux-auditor를 사용한다. 키보드·포커스·제스처·비동기 상태의 실제 구현은 implement-ui-interaction, 모션 구현은 implement-ui-motion, 차트 구현은 build-data-visualization, Rive·2D·3D 그래픽 구현은 build-interactive-graphics, 화면 조합은 compose-creative-ui, 시스템 구축은 build-design-system을 사용한다.
+description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명, 대안 비교, 컴포넌트·제품 명세와 리서치·검증 계획을 작성한다. 접근성, 콘텐츠, 상호작용 상태, 윤리, 반응형, 디자인 시스템, QA와 성능을 다룰 때 사용한다. 스크린샷·URL·코드·사용자 흐름 감사는 uiux-auditor를 사용한다. 키보드·포커스·제스처 구현은 implement-ui-interaction, 요청·작업의 비동기 상태 구현은 implement-async-ui-state, 모션 구현은 implement-ui-motion, 차트 구현은 build-data-visualization, Rive·2D·3D 그래픽 구현은 build-interactive-graphics, 화면 조합은 compose-creative-ui, 시스템 구축은 build-design-system을 사용한다.
 ---
 
 # UI/UX Advisor

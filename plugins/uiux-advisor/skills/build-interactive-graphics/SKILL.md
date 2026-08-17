@@ -1,6 +1,6 @@
 ---
 name: build-interactive-graphics
-description: 기존 프론트엔드에 Rive 상태 머신, PixiJS 2D canvas, Three.js·React Three Fiber 3D, Theatre.js 연출을 실제로 구현하고 정적·DOM 폴백, 접근성, 렌더 루프, 자원 정리와 성능 예산을 검증한다. 사용자가 반응형 벡터 캐릭터, 노드 캔버스, 제품 3D 뷰어, 상태 연동 그래픽 또는 타임라인 기반 시각 장면을 코드로 만들어 달라고 할 때 사용한다. DOM 위젯의 키보드·포커스·제스처가 주 결과면 implement-ui-interaction, 시간 기반 DOM 모션이 주 결과면 implement-ui-motion, 데이터 인코딩이 주 결과면 build-data-visualization, 화면 구성이 주 결과면 compose-creative-ui를 사용한다.
+description: 기존 프론트엔드에 Rive 상태 머신, PixiJS 2D canvas, Three.js·React Three Fiber 3D, Theatre.js 연출을 실제로 구현하고 정적·DOM 폴백, 접근성, 렌더 루프, 자원 정리와 성능 예산을 검증한다. 사용자가 반응형 벡터 캐릭터, 노드 캔버스, 제품 3D 뷰어, 상태 연동 그래픽 또는 타임라인 기반 시각 장면을 코드로 만들어 달라고 할 때 사용한다. DOM 위젯의 키보드·포커스·제스처는 implement-ui-interaction을, 실제 비동기 작업 수명주기는 implement-async-ui-state를, 시간 기반 DOM 모션은 implement-ui-motion을, 데이터 인코딩은 build-data-visualization을, 화면 구성은 compose-creative-ui를 사용한다.
 ---
 
 # Interactive Graphics Builder
@@ -65,7 +65,8 @@ WebGL·canvas·asset 실패 복구:
 
 ## 경계
 
-- Dialog·Popover·Carousel·drag·gesture·agent 상태의 DOM 입력·포커스 계약이 주 결과면 `implement-ui-interaction`을 사용한다.
+- Dialog·Popover·Carousel·drag·gesture의 DOM 입력·포커스 계약이 주 결과면 `implement-ui-interaction`을 사용한다.
+- agent·tool 실행의 비동기 작업 수명주기가 주 결과면 `implement-async-ui-state`를 사용한다. Rive가 그 상태를 표현하는 것이 핵심이면 두 스킬의 계약을 함께 적용한다.
 - easing·timeline·scroll choreography가 있더라도 DOM 모션이 주 결과면 `implement-ui-motion`을 사용한다.
 - 값을 위치·길이·색·면적으로 인코딩해 분석하는 것이 주 목적이면 `build-data-visualization`을 사용한다.
 - hero·card·background·text effect의 시각 조합이 주 결과면 `compose-creative-ui`를 사용한다.

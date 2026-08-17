@@ -1,0 +1,6 @@
+interface:
+  display_name: "Async UI State Implementer"
+  short_description: "비동기 요청·작업 상태와 취소·재시도를 정확하게 구현"
+  default_prompt: "Use $implement-async-ui-state to implement this async UI flow with correct request identity, cancellation, recovery, and accessibility."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"

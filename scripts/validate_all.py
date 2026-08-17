@@ -17,7 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
-ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-12.jsonl"
+ROUTING_OBSERVED_PATH = ROOT / "tests" / "skill-routing-observed-2026-08-14.jsonl"
 PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
 PROMPT_COACH_OBSERVED_PATH = PROMPT_COACH_DIR / "evals" / "observed-results-2026-08-11.jsonl"
 PROMPT_COMPILER_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
@@ -83,6 +83,7 @@ EXPECTED_PLUGINS = {
     "uiux-advisor": (
         "uiux-advisor",
         "uiux-auditor",
+        "implement-async-ui-state",
         "implement-ui-interaction",
         "implement-ui-motion",
         "build-data-visualization",
@@ -119,10 +120,14 @@ REQUIRED_SKILL_FILES = {
         "references/audit-rubric.md",
         "assets/icon.svg",
     ),
+    ("uiux-advisor", "implement-async-ui-state"): (
+        "references/async-state-contract-and-qa.md",
+        "references/agent-tool-state-ux.md",
+        "assets/icon.svg",
+    ),
     ("uiux-advisor", "implement-ui-interaction"): (
         "references/interaction-toolkit-selection.md",
         "references/interaction-contract-and-qa.md",
-        "references/agent-tool-state-ux.md",
         "assets/icon.svg",
     ),
     ("uiux-advisor", "implement-ui-motion"): (
@@ -179,6 +184,15 @@ REQUIRED_SKILL_MARKERS = {
         "continue",
         "replace",
         "별도 모델 호출",
+    ),
+    ("uiux-advisor", "implement-async-ui-state"): (
+        "request·operation·job·item identity",
+        "stale·late response",
+        "idempotency",
+        "optimistic",
+        "partial success",
+        "reconnect",
+        "aria-live",
     ),
     ("uiux-advisor", "implement-ui-motion"): (
         "Anime.js",

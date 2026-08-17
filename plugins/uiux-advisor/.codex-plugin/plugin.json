@@ -1,15 +1,15 @@
 {
   "name": "uiux-advisor",
-  "version": "0.7.0",
-  "description": "근거 기반 UI/UX 가이드·감사와 접근 가능한 상호작용, 모션, 데이터 시각화, 인터랙티브 2D·3D 그래픽, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
+  "version": "0.8.0",
+  "description": "근거 기반 UI/UX 가이드·감사와 접근 가능한 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, 인터랙티브 2D·3D 그래픽, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "UI/UX Advisor",
-    "shortDescription": "UI/UX 근거를 상호작용·2D·3D 그래픽·디자인 시스템 구현까지 연결",
-    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 구조화된 도구 레지스트리에서 현재 프론트엔드에 맞는 상호작용, 모션, 데이터 시각화, Rive·PixiJS·Three.js 기반 그래픽, 시각 효과와 디자인 시스템 도구를 선별하고 폴백·성능 예산과 함께 구현·검증합니다.",
+    "shortDescription": "UI/UX 근거를 상호작용·비동기 상태·그래픽·시스템 구현까지 연결",
+    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 현재 프론트엔드에 맞는 widget 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, Rive·PixiJS·Three.js 기반 그래픽, 시각 효과와 디자인 시스템 도구를 선별하고 폴백·성능 예산과 함께 구현·검증합니다.",
     "developerName": "HYEXEN",
     "category": "Productivity",
     "capabilities": [
@@ -19,7 +19,8 @@
       "리서치와 검증 계획 수립",
       "근거 가이드와 출처 추적",
       "화면과 사용자 흐름의 증거 기반 감사",
-      "키보드·포커스·터치·제스처와 비동기 작업 상태가 정확한 UI 상호작용 구현",
+      "키보드·포커스·터치·제스처가 정확한 UI 상호작용 구현",
+      "요청·스트림·background job·batch의 중복·순서·취소·재시도·부분 성공 상태 구현",
       "Floating UI·Embla·use-gesture·React Spring·AutoAnimate 기반 상호작용 도구 선택",
       "Anime.js·Motion·GSAP·네이티브 API 기반 UI 모션 구현",
       "Bklit UI·Recharts·ECharts·D3 기반 데이터 시각화 구현",
@@ -32,7 +33,7 @@
     ],
     "defaultPrompt": [
       "이 UI 문제의 원리와 대안을 근거와 트레이드오프로 비교해줘.",
-      "이 상호작용을 키보드·포커스·터치·오류 복구까지 포함해 구현하고 검증해줘.",
+      "이 UI의 상호작용과 비동기 작업 상태를 접근성과 오류 복구까지 포함해 구현하고 검증해줘.",
       "이 사용자 흐름을 심각도와 근거 확실도에 따라 감사해줘."
     ],
     "composerIcon": "./skills/uiux-advisor/assets/icon.svg",

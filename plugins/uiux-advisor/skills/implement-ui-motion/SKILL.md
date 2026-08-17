@@ -1,6 +1,6 @@
 ---
 name: implement-ui-motion
-description: 기존 프론트엔드에서 시간·공간 변화의 표현 자체가 주된 결과물인 모션과 마이크로인터랙션을 설계하고 CSS, Web Animations API, View Transition API, Anime.js, Motion 또는 GSAP 중 가장 단순한 기술로 구현·검증한다. 사용자가 애니메이션 적용, 버튼·카드의 시각 피드백, 페이지·레이아웃 전환, 스크롤·타임라인·SVG 모션, 라이브러리 선택, reduced-motion 또는 모션 성능 수정을 요청할 때 사용한다. 키보드·포커스·터치·제스처 입력이나 비동기 상태 정확성이 주된 결과물이면 implement-ui-interaction을, 화면 구성은 compose-creative-ui를, 원칙·명세는 uiux-advisor를, 감사는 uiux-auditor를 사용한다.
+description: 기존 프론트엔드에서 시간·공간 변화의 표현 자체가 주된 결과물인 모션과 마이크로인터랙션을 설계하고 CSS, Web Animations API, View Transition API, Anime.js, Motion 또는 GSAP 중 가장 단순한 기술로 구현·검증한다. 사용자가 애니메이션 적용, 버튼·카드의 시각 피드백, 페이지·레이아웃 전환, 스크롤·타임라인·SVG 모션, 라이브러리 선택, reduced-motion 또는 모션 성능 수정을 요청할 때 사용한다. 키보드·포커스·터치·제스처 입력은 implement-ui-interaction을, 요청·작업의 비동기 상태 정확성은 implement-async-ui-state를, 화면 구성은 compose-creative-ui를, 원칙·명세는 uiux-advisor를, 감사는 uiux-auditor를 사용한다.
 ---
 
 # UI Motion Implementer
@@ -67,5 +67,6 @@ description: 기존 프론트엔드에서 시간·공간 변화의 표현 자체
 - 차트의 데이터 의미와 시각 인코딩이 중심이면 `build-data-visualization`을 사용한다.
 - 여러 component가 공유하는 motion token과 공개 API를 시스템화하면 `build-design-system`을 함께 적용한다.
 - hover·press·열기·닫기의 시간·공간 변화와 시각 피드백이 주목적이면 이 스킬을 사용한다.
-- keyboard, focus, touch, gesture 인식과 widget·비동기 상태 계약이 주목적이면 `implement-ui-interaction`을 사용한다. 시각 반응도 복잡하면 두 스킬의 계약을 함께 적용한다.
+- keyboard, focus, touch, gesture 인식과 widget 계약이 주목적이면 `implement-ui-interaction`을 사용한다. 시각 반응도 복잡하면 두 스킬의 계약을 함께 적용한다.
+- 요청·stream·background job의 중복·취소·재시도와 상태 계약이 주목적이면 `implement-async-ui-state`를 사용한다.
 - 랜딩 페이지의 배경·카드·텍스트 효과를 레지스트리에서 조합하는 작업은 `compose-creative-ui`를 사용하되, 복잡한 모션 구현이 생기면 이 스킬의 계약을 함께 적용한다.

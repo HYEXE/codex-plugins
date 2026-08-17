@@ -17,6 +17,7 @@ KNOWN_SKILLS = {
     "build-data-visualization",
     "build-interactive-graphics",
     "compose-creative-ui",
+    "implement-async-ui-state",
     "implement-ui-interaction",
     "implement-ui-motion",
     "prompt-coach",

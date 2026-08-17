@@ -7,13 +7,13 @@
 | 항목 | 확인 질문 |
 | --- | --- |
 | 진입 | 어떤 사용자·시스템 event가 시작하며 중복 event는 어떻게 처리하는가? |
-| 상태 원본 | visual, DOM, URL, server 중 무엇이 실제 상태의 진실 원본인가? |
+| 상태 원본 | visual, DOM, URL 중 무엇이 widget 상태의 진실 원본인가? |
 | 입력 | keyboard, pointer, touch, gesture와 assistive technology 경로가 동등한가? |
 | focus | 시작, 이동, trap 또는 roving, 닫힘 뒤 복귀가 결정적인가? |
-| 진행 | 입력을 계속 받을 수 있는가, cancel과 timeout이 가능한가? |
+| 진행 | 입력 도중 focus와 활성 항목이 일관되며 중단 가능한가? |
 | 완료 | 시각 상태, accessible state와 application state가 일치하는가? |
-| 실패 | 보존된 작업, 영향 범위, retry 안전성과 대체 경로가 명확한가? |
-| 중단 | Escape, pointer cancel, route change, unmount와 late response를 어떻게 처리하는가? |
+| 실패 | invalid·disabled 상태와 대체 경로가 명확한가? |
+| 중단 | Escape, pointer cancel, route change와 unmount를 어떻게 처리하는가? |
 
 ## 패턴별 핵심 계약
 
@@ -36,7 +36,7 @@
 - DOM focus와 active descendant 중 하나의 전략을 일관되게 사용한다.
 - Arrow, Home, End, Enter, Escape와 typeahead 중 실제 패턴에 필요한 동작을 구현한다.
 - selected, active, expanded, disabled와 invalid 상태를 시각·접근성 표현에 동기화한다.
-- 비동기 option은 loading, no result, error, stale request와 IME 입력을 처리한다.
+- 비동기 option은 loading, no result, error, stale request와 IME 입력을 처리한다. request 상태 원본·전이와 ordering은 `implement-async-ui-state`가 맡고, option 탐색·선택·focus와 접근 가능한 표현은 이 스킬이 맡는다.
 
 ### Carousel
 
@@ -55,33 +55,24 @@
 - pointer cancel, window blur, multi-touch와 device rotation에서 상태를 복구한다.
 - dragging movement가 과업의 일부면 drag 없이 single pointer로 완료할 수 있는 동등한 조작을 제공한다. 예외 적용 여부는 실제 기능과 표준 조건을 확인한다.
 
-## 비동기·외부 작업
-
-- 접수와 완료를 구분하고 request 또는 job identity를 관리한다.
-- abort가 실제 server 작업을 취소하는지, UI만 기다림을 중단하는지 구분한다.
-- retry가 중복 생성·결제·전송을 만들 수 있으면 idempotency와 현재 상태 조회를 설계한다.
-- partial success는 성공 항목, 실패 항목과 재실행 범위를 분리한다.
-- late response가 더 최신 상태를 덮지 않게 request ordering을 처리한다.
-- 사용자 메시지와 debug detail을 분리하고 민감 정보를 오류에 노출하지 않는다.
-
 ## 브라우저 QA 시나리오
 
 1. 첫 진입, 재진입과 빠른 반복 실행
 2. keyboard-only 전체 과업과 역방향 탐색
 3. mouse, touch, coarse pointer와 hybrid input
 4. Escape, 외부 click, pointer cancel과 system interruption
-5. loading, timeout, offline, error, partial success, retry와 cancel
+5. loading, empty, invalid, disabled, error와 widget dismiss
 6. route change, back navigation, refresh와 component unmount
 7. 200%·400% zoom, 좁은 viewport, orientation과 virtual keyboard
 8. reduced motion, high contrast, dark mode와 forced colors
 9. 긴 한국어·영문, RTL, empty·large collection과 dynamic content
-10. slow CPU·network, background tab 복귀와 multiple tabs
+10. slow CPU, background tab 복귀와 multiple tabs
 
 ## 완료 보고
 
 - 구현한 상호작용과 상태 원본
 - keyboard·focus·touch·gesture 경로
 - 채택·제외한 primitive·engine과 이유
-- cancel, retry, undo와 partial failure 동작
+- dismiss, invalid input과 복구 동작
 - 자동·브라우저·접근성·성능 검증 결과
 - 확인하지 못한 browser, device와 assistive technology 조합
