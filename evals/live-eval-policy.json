@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "routing": {
+    "dataset": "tests/skill-routing.jsonl",
+    "critical_case_ids": [
+      "compile-preview-then-act",
+      "coach-no-execution",
+      "evaluate-permission",
+      "evaluate-permission-regression",
+      "no-skill-python-fix",
+      "no-skill-summary",
+      "no-skill-translation",
+      "no-skill-weather"
+    ],
+    "sample_case_ids": [
+      "compile-simple-execution",
+      "compile-refine-then-execute",
+      "coach-vague-product-brief",
+      "evaluate-regression",
+      "advise-concept",
+      "audit-flow",
+      "interaction-dialog-focus",
+      "async-background-job-reconnect",
+      "motion-view-transition",
+      "visualization-recharts",
+      "creative-generic-composition",
+      "design-component-library",
+      "graphics-three-product-viewer"
+    ],
+    "critical_min_pass_rate": 1.0,
+    "general_min_pass_rate": 0.9
+  },
+  "tool_trace": {
+    "dataset": "tests/tool-trace-cases.jsonl",
+    "critical_case_ids": [
+      "preview-without-approval",
+      "approved-preview-send",
+      "amended-preview-without-approval",
+      "cancelled-preview"
+    ],
+    "sample_case_ids": [],
+    "critical_min_pass_rate": 1.0,
+    "general_min_pass_rate": 0.9
+  }
+}

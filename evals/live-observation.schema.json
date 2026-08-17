@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyexen.dev/codex-workflows/live-observation.schema.json",
+  "title": "Codex Workflows live evaluation run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "suite",
+    "started_at",
+    "completed_at",
+    "model",
+    "reasoning_effort",
+    "codex_version",
+    "runner_commit",
+    "runner_dirty",
+    "dataset_path",
+    "dataset_sha256",
+    "policy_sha256",
+    "case_set",
+    "attempts",
+    "plugin_versions",
+    "platform",
+    "observation_scope",
+    "results_path",
+    "summary_path"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "suite": {"enum": ["routing", "tool-trace"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "model": {"type": "string", "minLength": 1},
+    "reasoning_effort": {"type": "string", "minLength": 1},
+    "codex_version": {"type": "string", "minLength": 1},
+    "runner_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "runner_dirty": {"type": "boolean"},
+    "dataset_path": {"type": "string", "minLength": 1},
+    "dataset_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "case_set": {"enum": ["critical", "sample", "full"]},
+    "attempts": {"type": "integer", "minimum": 1},
+    "plugin_versions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "platform": {
+      "type": "object",
+      "required": ["system", "release", "machine", "python"],
+      "additionalProperties": false,
+      "properties": {
+        "system": {"type": "string"},
+        "release": {"type": "string"},
+        "machine": {"type": "string"},
+        "python": {"type": "string"}
+      }
+    },
+    "observation_scope": {"enum": ["structured-routing-decision", "transcript-and-tool-trace"]},
+    "results_path": {"type": "string", "minLength": 1},
+    "summary_path": {"type": "string", "minLength": 1}
+  }
+}
