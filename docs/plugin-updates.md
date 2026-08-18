@@ -1,6 +1,6 @@
 # 플러그인 업데이트
 
-`codex-workflows`의 Git marketplace와 설치된 플러그인은 각 사용자 PC에 snapshot과 cache로 저장된다. 저장소에 새 커밋을 push해도 설치본은 자동으로 바뀌지 않으므로, marketplace를 갱신한 뒤 두 플러그인을 다시 설치해야 한다. 아래 업데이트 스크립트는 주로 `main` nightly 채널을 위한 것이다.
+`codex-plugins`의 Git marketplace와 설치된 플러그인은 각 사용자 PC에 snapshot과 cache로 저장된다. 저장소에 새 커밋을 push해도 설치본은 자동으로 바뀌지 않으므로, marketplace를 갱신한 뒤 두 플러그인을 다시 설치해야 한다. 아래 업데이트 스크립트는 주로 `main` nightly 채널을 위한 것이다.
 
 업데이트 스크립트는 다음 명령을 순서대로 실행한다.
 
@@ -17,20 +17,20 @@ Codex CLI가 설치돼 있어야 하며, marketplace는 PC마다 최초 한 번 
 업데이트 스크립트를 사용하려면 저장소를 한 번 clone한다. Git marketplace 등록은 스크립트를 실행할 사용자 작업 복사본을 만들지 않는다.
 
 ```bash
-git clone https://github.com/HYEXE/codex-workflows.git
-cd codex-workflows
+git clone https://github.com/HYEXE/codex-plugins.git
+cd codex-plugins
 ```
 
 재현 가능한 stable 설치는 게시된 immutable repository tag를 사용한다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
 ```
 
 다음 릴리스를 확인하는 nightly 설치는 `main`을 사용한다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-workflows --ref main
+codex plugin marketplace add HYEXE/codex-plugins --ref main
 ```
 
 stable marketplace는 `upgrade`만으로 다음 stable tag로 이동하지 않는다. 새 릴리스로 올릴 때는 기존 marketplace 이름과 설치 상태를 확인한 뒤 marketplace를 제거하고 새 tag로 다시 등록한 다음 플러그인을 재설치한다.
@@ -38,7 +38,7 @@ stable marketplace는 `upgrade`만으로 다음 stable tag로 이동하지 않�
 ```bash
 codex plugin marketplace list
 codex plugin marketplace remove codex-workflows-kr
-codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
 codex plugin add prompt-compiler@codex-workflows-kr
 codex plugin add uiux-advisor@codex-workflows-kr
 ```
@@ -107,7 +107,7 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -CodexPath "C:\absolute\path\
 
 ### macOS: launchd
 
-`~/Library/LaunchAgents/com.hyexe.codex-workflows-update.plist`를 만들고 아래의 절대 경로를 현재 환경에 맞게 바꾼다.
+`~/Library/LaunchAgents/com.hyexe.codex-plugins-update.plist`를 만들고 아래의 절대 경로를 현재 환경에 맞게 바꾼다.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -115,11 +115,11 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -CodexPath "C:\absolute\path\
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.hyexe.codex-workflows-update</string>
+  <string>com.hyexe.codex-plugins-update</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/ABSOLUTE/PATH/codex-workflows/scripts/update_plugins.sh</string>
+    <string>/ABSOLUTE/PATH/codex-plugins/scripts/update_plugins.sh</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -134,9 +134,9 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -CodexPath "C:\absolute\path\
     <integer>9</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/tmp/codex-workflows-update.log</string>
+  <string>/tmp/codex-plugins-update.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/codex-workflows-update-error.log</string>
+  <string>/tmp/codex-plugins-update-error.log</string>
 </dict>
 </plist>
 ```
@@ -144,8 +144,8 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -CodexPath "C:\absolute\path\
 등록하고 즉시 한 번 실행한다.
 
 ```bash
-launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.hyexe.codex-workflows-update.plist
-launchctl kickstart -k "gui/$(id -u)/com.hyexe.codex-workflows-update"
+launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.hyexe.codex-plugins-update.plist
+launchctl kickstart -k "gui/$(id -u)/com.hyexe.codex-plugins-update"
 ```
 
 ### Linux: cron
@@ -153,7 +153,7 @@ launchctl kickstart -k "gui/$(id -u)/com.hyexe.codex-workflows-update"
 `crontab -e`에서 저장소와 Codex CLI의 절대 경로를 사용한다. 다음 예시는 매주 월요일 오전 9시에 실행한다.
 
 ```cron
-0 9 * * 1 CODEX_BIN=/absolute/path/to/codex /absolute/path/to/codex-workflows/scripts/update_plugins.sh >> /tmp/codex-workflows-update.log 2>&1
+0 9 * * 1 CODEX_BIN=/absolute/path/to/codex /absolute/path/to/codex-plugins/scripts/update_plugins.sh >> /tmp/codex-plugins-update.log 2>&1
 ```
 
 ### Windows: 작업 스케줄러
@@ -161,10 +161,10 @@ launchctl kickstart -k "gui/$(id -u)/com.hyexe.codex-workflows-update"
 관리할 사용자 계정의 PowerShell에서 절대 저장소 경로를 지정한다. 다음 예시는 매주 월요일 오전 9시에 실행한다.
 
 ```powershell
-$Repo = "C:\absolute\path\to\codex-workflows"
+$Repo = "C:\absolute\path\to\codex-plugins"
 $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -File `"$Repo\scripts\update_plugins.ps1`""
 $Trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 9am
-Register-ScheduledTask -TaskName "CodexWorkflowsUpdate" -Action $Action -Trigger $Trigger -Description "Update Codex Workflows plugins"
+Register-ScheduledTask -TaskName "CodexPluginsUpdate" -Action $Action -Trigger $Trigger -Description "Update Codex Plugins"
 ```
 
 처음에는 각 스크립트의 dry run을 실행하고, 스케줄러가 사용하는 계정과 환경에서 로그가 남는지 확인한다.

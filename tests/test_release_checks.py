@@ -85,7 +85,12 @@ class ReleaseWorkflowTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", workflow)
         self.assertNotIn("\n  push:\n", workflow)
-        self.assertIn('ref: ${{ inputs.commit }}', workflow)
+        self.assertNotIn('ref: ${{ inputs.commit }}', workflow)
+        self.assertEqual(workflow.count("ref: refs/heads/main"), 2)
+        self.assertEqual(
+            workflow.count('if [ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT" ]; then'),
+            2,
+        )
         self.assertIn("local_live_eval_confirmed:", workflow)
         self.assertIn("local_live_eval_run_ids:", workflow)
         self.assertIn("scripts/create_release_attestation.py", workflow)

@@ -1,6 +1,6 @@
-# Codex Workflows
+# Codex Plugins
 
-한국어 중심의 Codex 워크플로를 독립적인 skills-only 플러그인으로 관리하는 모노레포입니다.
+한국어 중심의 Codex skills-only 플러그인을 독립적으로 관리하는 모노레포입니다.
 
 ## 포함 플러그인
 
@@ -12,7 +12,7 @@
 ## 구조
 
 ```text
-codex-workflows/
+codex-plugins/
 ├── .agents/plugins/marketplace.json
 ├── .github/workflows/
 │   ├── live-eval.yml
@@ -132,7 +132,7 @@ GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows·macOS 통�
 일반 사용자에게는 게시된 immutable repository tag를 사용하는 stable 채널을 권장합니다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-workflows --ref codex-workflows-vX.Y.Z
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
 codex plugin add prompt-compiler@codex-workflows-kr
 codex plugin add uiux-advisor@codex-workflows-kr
 ```
@@ -140,10 +140,12 @@ codex plugin add uiux-advisor@codex-workflows-kr
 다음 릴리스를 빠르게 확인하려면 `main` nightly 채널을 별도 환경에서 사용합니다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-workflows --ref main
+codex plugin marketplace add HYEXE/codex-plugins --ref main
 ```
 
 tag 형식, release gate와 stable/nightly 운영 규칙은 [릴리스와 설치 채널](docs/releases.md)에 정리돼 있습니다.
+
+저장소 이름을 `codex-plugins`로 변경했지만 기존 설치와 릴리스의 호환성을 위해 marketplace ID `codex-workflows-kr`와 repository tag 접두사 `codex-workflows-v`는 유지합니다.
 
 ## 업데이트
 
@@ -202,7 +204,7 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -DryRun
 로컬 작업 복사본을 직접 테스트하려면 최초 한 번만 저장소 루트를 marketplace로 등록합니다.
 
 ```bash
-codex plugin marketplace add /absolute/path/to/codex-workflows
+codex plugin marketplace add /absolute/path/to/codex-plugins
 ```
 
 그 뒤 소스가 변경될 때마다 두 플러그인을 다시 설치합니다. 로컬 marketplace에는 원격 snapshot이 없으므로 `marketplace upgrade`를 실행하지 않습니다.

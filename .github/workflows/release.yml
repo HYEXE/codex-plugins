@@ -46,14 +46,9 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.commit }}
+          ref: refs/heads/main
           persist-credentials: false
           fetch-depth: 0
-
-      - name: Python 설정
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.13"
 
       - name: release 대상 고정
         shell: bash
@@ -77,6 +72,11 @@ jobs:
             echo "이미 존재하는 immutable tag입니다: $RELEASE_TAG" >&2
             exit 1
           fi
+
+      - name: Python 설정
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
 
       - name: tag 명세와 공개 배포 준비 상태 검증
         env:
@@ -124,9 +124,27 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.commit }}
+          ref: refs/heads/main
           persist-credentials: false
           fetch-depth: 0
+
+      - name: publish 대상 고정
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ inputs.commit }}
+        run: |
+          if [[ ! "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "commit은 40자리 소문자 SHA여야 합니다." >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT" ]; then
+            echo "checkout 결과가 요청한 commit과 다릅니다." >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse origin/main)" != "$RELEASE_COMMIT" ]; then
+            echo "release 대상은 현재 origin/main HEAD여야 합니다." >&2
+            exit 1
+          fi
 
       - name: Release metadata와 로컬 live eval attestation 생성
         env:

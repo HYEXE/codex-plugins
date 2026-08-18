@@ -1,7 +1,7 @@
 {
   "name": "codex-workflows-kr",
   "interface": {
-    "displayName": "Codex Workflows KR"
+    "displayName": "Codex Plugins KR"
   },
   "plugins": [
     {
