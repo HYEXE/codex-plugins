@@ -240,7 +240,7 @@ def validate_marketplace(failures: list[str]) -> list[str]:
     except (OSError, json.JSONDecodeError) as exc:
         failures.append(f"invalid marketplace JSON: {exc}")
         return []
-    check(payload.get("name") == "codex-workflows-kr", "unexpected marketplace name", failures)
+    check(payload.get("name") == "codex-plugins-kr", "unexpected marketplace name", failures)
     entries = payload.get("plugins")
     check(isinstance(entries, list), "marketplace plugins must be an array", failures)
     if not isinstance(entries, list):

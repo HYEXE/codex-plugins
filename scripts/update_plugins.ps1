@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [string]$Marketplace = $env:CODEX_WORKFLOWS_MARKETPLACE,
+    [string]$Marketplace = $env:CODEX_PLUGINS_MARKETPLACE,
     [string]$CodexPath = $env:CODEX_BIN
 )
 
@@ -9,7 +9,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($Marketplace)) {
-    $Marketplace = "codex-workflows-kr"
+    $Marketplace = "codex-plugins-kr"
 }
 
 if ([string]::IsNullOrWhiteSpace($CodexPath)) {

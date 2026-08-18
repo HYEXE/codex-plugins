@@ -74,7 +74,7 @@ class ReleaseTagTests(unittest.TestCase):
     def test_repository_tag_uses_semver(self) -> None:
         policy = validate_release_tag.load_object(ROOT / "release" / "release-policy.json")
         failures, metadata = validate_release_tag.validate_tag(
-            "codex-workflows-v0.1.0", policy, ROOT
+            "codex-plugins-v0.1.0", policy, ROOT
         )
         self.assertEqual(failures, [])
         self.assertEqual(metadata["release_kind"], "repository")

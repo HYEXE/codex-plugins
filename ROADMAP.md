@@ -17,7 +17,7 @@
 - [x] live eval의 인증·plugin 발견·event·provenance·scoring 모듈 분리
 - [x] 외부 source URL·canonical·title·hash의 주간 비차단 보고
 - [x] API 기반 GitHub-hosted live eval을 release gate에서 선택적 수동 workflow로 분리
-- [x] 최초 stable tag `codex-workflows-v0.1.0`와 GitHub Release 게시
+- [x] 최초 stable tag `codex-plugins-v0.1.0`와 GitHub Release 게시
 - [x] 저장소 visibility를 public으로 전환
 
 최초 public release hardening 범위는 모두 완료했습니다.

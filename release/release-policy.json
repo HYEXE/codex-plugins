@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "repository_tag_prefix": "codex-workflows-v",
+  "repository_tag_prefix": "codex-plugins-v",
   "channels": {
-    "stable": "codex-workflows-v*",
+    "stable": "codex-plugins-v*",
     "nightly": "main"
   },
   "plugins": {

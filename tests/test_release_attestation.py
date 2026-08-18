@@ -24,7 +24,7 @@ RUN_IDS = ",".join(
 class ReleaseAttestationTests(unittest.TestCase):
     def test_builds_ordered_local_live_eval_attestation(self) -> None:
         result = attestation.build_attestation(
-            tag="codex-workflows-v0.1.0",
+            tag="codex-plugins-v0.1.0",
             commit="a" * 40,
             model="gpt-5.6-sol",
             codex_version="codex-cli 0.147.0",

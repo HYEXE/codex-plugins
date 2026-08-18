@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-marketplace="${CODEX_WORKFLOWS_MARKETPLACE:-codex-workflows-kr}"
+marketplace="${CODEX_PLUGINS_MARKETPLACE:-codex-plugins-kr}"
 codex_bin="${CODEX_BIN:-codex}"
 dry_run=false
 plugins=("prompt-compiler" "uiux-advisor")
@@ -20,7 +20,7 @@ Codex Plugins의 Git marketplace snapshot을 갱신하고 플러그인을 다시
   -h, --help          도움말을 표시합니다.
 
 환경 변수:
-  CODEX_WORKFLOWS_MARKETPLACE
+  CODEX_PLUGINS_MARKETPLACE
   CODEX_BIN
 EOF
 }

@@ -24,7 +24,7 @@ body:
     attributes:
       label: 사용 버전
       description: plugin version, repository tag와 Codex CLI version을 적어 주세요.
-      placeholder: codex-workflows-v0.1.0, codex-cli 0.147.0
+      placeholder: codex-plugins-v0.1.0, codex-cli 0.147.0
     validations:
       required: true
   - type: textarea
