@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Codex Workflows repository without third-party packages."""
+"""Validate the Codex Plugins repository without third-party packages."""
 
 from __future__ import annotations
 

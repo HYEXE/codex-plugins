@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Codex Workflows includes original workflow instructions, validation code, evaluation fixtures, and project-specific assets. It also cites and summarizes publicly available standards, design guidance, and tool documentation.
+Codex Plugins includes original workflow instructions, validation code, evaluation fixtures, and project-specific assets. It also cites and summarizes publicly available standards, design guidance, and tool documentation.
 
 The repository's original code and content are licensed under the Apache License, Version 2.0. This notice does not replace or modify the separate terms that apply to referenced third-party materials.
 

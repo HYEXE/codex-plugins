@@ -8,7 +8,7 @@ plugins=("prompt-compiler" "uiux-advisor")
 
 usage() {
   cat <<'EOF'
-Codex Workflows 플러그인의 Git marketplace snapshot을 갱신하고 다시 설치합니다.
+Codex Plugins의 Git marketplace snapshot을 갱신하고 플러그인을 다시 설치합니다.
 
 사용법:
   update_plugins.sh [--dry-run] [--marketplace NAME] [--codex-bin PATH]

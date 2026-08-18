@@ -6,7 +6,7 @@
 
 ## 시스템과 범위
 
-Codex Workflows는 로컬 Codex에 설치하는 skills-only 플러그인, 검증·평가 스크립트와 GitHub Actions workflow를 배포합니다. 별도의 호스팅 서비스, 사용자 계정 데이터베이스 또는 운영 API 서버는 제공하지 않습니다.
+Codex Plugins는 로컬 Codex에 설치하는 skills-only 플러그인, 검증·평가 스크립트와 GitHub Actions workflow를 배포합니다. 별도의 호스팅 서비스, 사용자 계정 데이터베이스 또는 운영 API 서버는 제공하지 않습니다.
 
 보안 검토 범위에는 다음 영역이 포함됩니다.
 
@@ -68,7 +68,7 @@ Pull Request의 코드와 문서, plugin에 전달되는 사용자 입력, 모�
 
 ## 취약점 신고
 
-보안 취약점은 공개 issue에 게시하지 말고 [GitHub 비공개 취약점 신고](https://github.com/HYEXE/codex-workflows/security/advisories/new)를 이용해 주세요.
+보안 취약점은 공개 issue에 게시하지 말고 [GitHub 비공개 취약점 신고](https://github.com/HYEXE/codex-plugins/security/advisories/new)를 이용해 주세요.
 
 신고에는 가능한 범위에서 다음 정보를 포함해 주세요.
 

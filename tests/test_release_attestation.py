@@ -30,7 +30,7 @@ class ReleaseAttestationTests(unittest.TestCase):
             codex_version="codex-cli 0.147.0",
             run_ids=RUN_IDS,
             actor="HYEXE",
-            repository="HYEXE/codex-workflows",
+            repository="HYEXE/codex-plugins",
             workflow_run_id="123",
             workflow_run_attempt="1",
         )

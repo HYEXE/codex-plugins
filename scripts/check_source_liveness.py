@@ -24,7 +24,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 KB_SOURCES = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor" / "references" / "kb" / "sources.json"
 TOOLKIT_REGISTRY = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor" / "references" / "frontend-toolkit-registry.json"
-USER_AGENT = "codex-workflows-source-liveness/1.0"
+USER_AGENT = "codex-plugins-source-liveness/1.0"
 MAX_BODY_BYTES = 512 * 1024
 
 
