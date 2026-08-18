@@ -172,7 +172,8 @@ class AuthenticationTests(unittest.TestCase):
 
             target_auth = target_home / "auth.json"
             self.assertEqual(target_auth.read_text(encoding="utf-8"), '{"test":"credential"}')
-            self.assertEqual(target_auth.stat().st_mode & 0o777, 0o600)
+            if os.name == "posix":
+                self.assertEqual(target_auth.stat().st_mode & 0o777, 0o600)
             self.assertFalse((target_home / "config.toml").exists())
 
     def test_saved_auth_environment_excludes_all_credential_variables(self) -> None:

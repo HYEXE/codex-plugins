@@ -55,7 +55,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as temp_value:
             root = Path(temp_value)
-            (root / "LICENSE").write_text(license_text, encoding="utf-8")
+            (root / "LICENSE").write_bytes(license_text.encode("utf-8"))
             (root / "THIRD_PARTY_NOTICES.md").write_text("Example notice\n", encoding="utf-8")
             self.assertEqual(check_release_readiness.check_release_readiness(root, policy), [])
 
