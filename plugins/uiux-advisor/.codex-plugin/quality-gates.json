@@ -128,6 +128,29 @@
       ]
     }
   },
+  "validators": [
+    {
+      "name": "knowledge-search-regression",
+      "cwd": "validators",
+      "argv": ["{python}", "eval_uiux_search.py"]
+    },
+    {
+      "name": "toolkit-search-regression",
+      "cwd": "validators",
+      "argv": ["{python}", "eval_toolkit_search.py"]
+    },
+    {
+      "name": "knowledge-cli-smoke",
+      "cwd": "../skills/uiux-advisor",
+      "argv": ["{python}", "scripts/search_kb.py", "--id", "23"]
+    },
+    {
+      "name": "toolkit-cli-smoke",
+      "cwd": "../skills/uiux-advisor",
+      "argv": ["{python}", "scripts/search_toolkits.py", "--capability", "carousel", "--surface", "carousel", "--ecosystem", "react", "--max-risk", "medium", "--recommend", "--top", "3", "--json"],
+      "echo": false
+    }
+  ],
   "toolkit_registry": {
     "path": "../skills/uiux-advisor/references/frontend-toolkit-registry.json",
     "schema_version": "2.0.0",

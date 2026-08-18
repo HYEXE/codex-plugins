@@ -1,14 +1,19 @@
 name: 플러그인 Release
 
 on:
-  push:
-    tags:
-      - "codex-workflows-v*"
-      - "prompt-compiler-v*"
-      - "uiux-advisor-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 생성할 stable tag
+        required: true
+        type: string
+      commit:
+        description: 검증하고 release할 main의 전체 commit SHA
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
@@ -22,6 +27,7 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ inputs.commit }}
           persist-credentials: false
           fetch-depth: 0
 
@@ -30,15 +36,55 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: tag와 공개 배포 준비 상태 검증
+      - name: release 대상 고정
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          python scripts/validate_release_tag.py --tag "$GITHUB_REF_NAME"
+          if [[ ! "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "commit은 40자리 소문자 SHA여야 합니다." >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT" ]; then
+            echo "checkout 결과가 요청한 commit과 다릅니다." >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse origin/main)" != "$RELEASE_COMMIT" ]; then
+            echo "release 대상은 현재 origin/main HEAD여야 합니다." >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "이미 존재하는 immutable tag입니다: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+      - name: tag 명세와 공개 배포 준비 상태 검증
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python scripts/validate_release_tag.py --tag "$RELEASE_TAG"
           python scripts/check_release_readiness.py
           python scripts/validate_all.py
           python -m unittest discover -s tests -p "test_*.py"
 
-  live-eval:
-    name: Release live eval
+  live-eval-critical:
+    name: Critical live eval 2회
+    needs: validate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/live-eval.yml
+    with:
+      case_set: critical
+      attempts: 2
+      model: gpt-5.6
+      reasoning_effort: medium
+      target_commit: ${{ inputs.commit }}
+    secrets:
+      CODEX_LIVE_EVAL_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
+
+  live-eval-full:
+    name: Full live eval 1회
     needs: validate
     permissions:
       contents: read
@@ -48,6 +94,7 @@ jobs:
       attempts: 1
       model: gpt-5.6
       reasoning_effort: medium
+      target_commit: ${{ inputs.commit }}
     secrets:
       CODEX_LIVE_EVAL_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
 
@@ -55,7 +102,8 @@ jobs:
     name: GitHub Release 생성
     needs:
       - validate
-      - live-eval
+      - live-eval-critical
+      - live-eval-full
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -64,18 +112,32 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ inputs.commit }}
           persist-credentials: false
           fetch-depth: 0
 
       - name: Release metadata 생성
-        run: python scripts/validate_release_tag.py --tag "$GITHUB_REF_NAME" --json > release-metadata.json
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python scripts/validate_release_tag.py --tag "$RELEASE_TAG" --json > release-metadata.json
 
       - name: GitHub Release 생성
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --verify-tag \
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          if [ "$current_main" != "$RELEASE_COMMIT" ]; then
+            echo "live eval 중 main이 변경되어 release를 중단합니다." >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "이미 존재하는 immutable tag입니다: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" \
+            --target "$RELEASE_COMMIT" \
             --generate-notes \
-            --title "$GITHUB_REF_NAME" \
+            --title "$RELEASE_TAG" \
             release-metadata.json

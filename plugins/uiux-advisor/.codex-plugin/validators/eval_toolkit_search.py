@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run deterministic UI/UX knowledge-base search regression cases."""
+"""Run deterministic frontend toolkit registry search regressions."""
 
 from __future__ import annotations
 
@@ -12,16 +12,14 @@ from types import ModuleType
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CASES = ROOT / "tests" / "uiux-search-cases.jsonl"
+PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CASES = PLUGIN_ROOT / ".codex-plugin" / "evals" / "toolkit-search-cases.jsonl"
 SEARCH_SCRIPT = (
-    ROOT
-    / "plugins"
-    / "uiux-advisor"
+    PLUGIN_ROOT
     / "skills"
     / "uiux-advisor"
     / "scripts"
-    / "search_kb.py"
+    / "search_toolkits.py"
 )
 
 
@@ -42,7 +40,7 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 def load_search_module() -> ModuleType:
     sys.dont_write_bytecode = True
-    spec = importlib.util.spec_from_file_location("uiux_search_kb", SEARCH_SCRIPT)
+    spec = importlib.util.spec_from_file_location("uiux_search_toolkits", SEARCH_SCRIPT)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load search module: {SEARCH_SCRIPT}")
     module = importlib.util.module_from_spec(spec)
@@ -53,6 +51,20 @@ def load_search_module() -> ModuleType:
 def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
     failures: list[str] = []
     seen: set[str] = set()
+    allowed_filters = {
+        "tool_id",
+        "role",
+        "ecosystem",
+        "kind",
+        "capability",
+        "surface",
+        "risk",
+        "max_risk",
+        "adoption",
+        "status",
+        "recommend",
+        "top",
+    }
     for index, case in enumerate(cases, 1):
         case_id = case.get("id")
         label = case_id if isinstance(case_id, str) and case_id else f"line-{index}"
@@ -62,23 +74,44 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
             failures.append(f"{label}: duplicate id")
         else:
             seen.add(case_id)
-        if not isinstance(case.get("query"), str) or not case["query"].strip():
-            failures.append(f"{label}: missing query")
-        top = case.get("top", 5)
-        if not isinstance(top, int) or top < 1 or top > 20:
-            failures.append(f"{label}: top must be between 1 and 20")
-        for field in ("top_one_of", "must_include", "forbidden_ids"):
+
+        filters = case.get("filters")
+        if not isinstance(filters, dict) or not filters:
+            failures.append(f"{label}: filters must be a non-empty object")
+            filters = {}
+        else:
+            unknown = sorted(set(filters) - allowed_filters)
+            if unknown:
+                failures.append(f"{label}: unknown filters {unknown}")
+            for name, value in filters.items():
+                if name == "recommend" and not isinstance(value, bool):
+                    failures.append(f"{label}: recommend must be boolean")
+                elif name == "top" and (not isinstance(value, int) or isinstance(value, bool) or value < 1):
+                    failures.append(f"{label}: top must be a positive integer")
+                elif name not in {"recommend", "top"} and (
+                    not isinstance(value, str) or not value
+                ):
+                    failures.append(f"{label}: {name} must be a non-empty string")
+
+        for field in ("must_include", "forbidden_ids"):
             value = case.get(field, [])
             if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
                 failures.append(f"{label}: {field} must be a string array")
             elif len(value) != len(set(value)):
                 failures.append(f"{label}: {field} contains duplicates")
-        if not case.get("top_one_of"):
-            failures.append(f"{label}: top_one_of must not be empty")
+        expect_empty = case.get("expect_empty", False)
+        if not isinstance(expect_empty, bool):
+            failures.append(f"{label}: expect_empty must be boolean")
+        if not case.get("must_include") and not expect_empty:
+            failures.append(f"{label}: must_include must not be empty unless expect_empty is true")
+        ordered_prefix = case.get("ordered_prefix", [])
+        if not isinstance(ordered_prefix, list) or any(not isinstance(item, str) for item in ordered_prefix):
+            failures.append(f"{label}: ordered_prefix must be a string array")
         if set(case.get("must_include", [])) & set(case.get("forbidden_ids", [])):
             failures.append(f"{label}: required and forbidden IDs overlap")
-    if len(cases) < 15:
-        failures.append(f"search suite needs at least 15 cases, got {len(cases)}")
+
+    if len(cases) < 8:
+        failures.append(f"toolkit search suite needs at least 8 cases, got {len(cases)}")
     return failures
 
 
@@ -91,8 +124,8 @@ def main() -> int:
     try:
         cases = load_jsonl(args.cases)
         module = load_search_module()
-        records = module.load_records()
-    except (OSError, ValueError, RuntimeError) as exc:
+        payload = module.load_registry(module.REGISTRY_PATH)
+    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}")
         return 1
 
@@ -103,18 +136,33 @@ def main() -> int:
         return 1
 
     failed_cases: list[str] = []
+    filter_names = (
+        "tool_id",
+        "role",
+        "ecosystem",
+        "kind",
+        "capability",
+        "surface",
+        "risk",
+        "max_risk",
+        "adoption",
+        "status",
+        "recommend",
+        "top",
+    )
     for case in cases:
-        results = module.search(
-            records,
-            case["query"],
-            case.get("top", 5),
-            case.get("category"),
-            case.get("source"),
-        )
-        result_ids = [result["id"] for result in results]
+        filters = case["filters"]
+        namespace = argparse.Namespace(**{
+            name: filters.get(name, False if name == "recommend" else None)
+            for name in filter_names
+        })
+        result_ids = [tool["id"] for tool in module.search(payload, namespace)]
         reasons: list[str] = []
-        if not result_ids or result_ids[0] not in case["top_one_of"]:
-            reasons.append(f"top result {result_ids[:1]} not in {case['top_one_of']}")
+        if case.get("expect_empty") and result_ids:
+            reasons.append(f"expected no matches, got {result_ids}")
+        ordered_prefix = case.get("ordered_prefix", [])
+        if ordered_prefix and result_ids[: len(ordered_prefix)] != ordered_prefix:
+            reasons.append(f"ordered prefix {result_ids[:len(ordered_prefix)]} != {ordered_prefix}")
         missing = sorted(set(case.get("must_include", [])) - set(result_ids))
         if missing:
             reasons.append(f"missing required IDs {missing}")
@@ -127,11 +175,11 @@ def main() -> int:
             failed_cases.append(f"{case['id']}: {'; '.join(reasons)}")
 
     if failed_cases:
-        print("UIUX SEARCH REGRESSION FAILED")
+        print("TOOLKIT SEARCH REGRESSION FAILED")
         for failure in failed_cases:
             print(f"- {failure}")
         return 1
-    print(f"UIUX SEARCH REGRESSION PASSED: {len(cases)} cases")
+    print(f"TOOLKIT SEARCH REGRESSION PASSED: {len(cases)} cases")
     return 0
 
 

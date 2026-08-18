@@ -1,5 +1,12 @@
 # Changelog
 
+## Package 0.7.1 — Declarative Evaluator Commands
+
+변경:
+- 날짜가 포함된 observation 결과 파일을 skill 필수 파일 목록에서 제거하고 `evals/observations.json`이 선택하도록 단일화
+- Prompt Compiler와 Prompt Coach의 specialized evaluator command를 `.codex-plugin/quality-gates.json`에 선언
+- 공통 validator가 shell 문자열 없이 선언된 Python argv와 observation 결과 경로를 연결하도록 변경
+
 ## Package 0.7.0 — Declarative Quality Gates and Observation Provenance
 
 변경:

@@ -6,7 +6,6 @@
       "required_files": [
         "assets/icon.svg",
         "evals/cases.jsonl",
-        "evals/observed-results-2026-08-11.jsonl",
         "scripts/eval_harness.py"
       ],
       "required_markers": [
@@ -24,7 +23,6 @@
         "references/front-door-modes.md",
         "references/task-state-and-delta.md",
         "evals/orchestration-cases.jsonl",
-        "evals/orchestration-observed-2026-08-12.jsonl",
         "scripts/eval_orchestration.py"
       ],
       "required_markers": [
@@ -54,5 +52,53 @@
       "required_markers": []
     }
   },
-  "observation_manifest": "../evals/observations.json"
+  "observation_manifest": "../evals/observations.json",
+  "validators": [
+    {
+      "name": "package",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/validate_package.py"]
+    },
+    {
+      "name": "compiler-help",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/eval_harness.py", "--help"],
+      "echo": false
+    },
+    {
+      "name": "compiler-golden",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"]
+    },
+    {
+      "name": "orchestration-validate",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/eval_orchestration.py", "validate"]
+    },
+    {
+      "name": "orchestration-self-test",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/eval_orchestration.py", "self-test"]
+    },
+    {
+      "name": "orchestration-observation",
+      "cwd": "../skills/prompt-compiler",
+      "argv": ["{python}", "scripts/eval_orchestration.py", "score", "{observation:prompt-orchestration}"]
+    },
+    {
+      "name": "coach-validate",
+      "cwd": "../skills/prompt-coach",
+      "argv": ["{python}", "scripts/eval_harness.py", "validate"]
+    },
+    {
+      "name": "coach-self-test",
+      "cwd": "../skills/prompt-coach",
+      "argv": ["{python}", "scripts/eval_harness.py", "self-test"]
+    },
+    {
+      "name": "coach-observation",
+      "cwd": "../skills/prompt-coach",
+      "argv": ["{python}", "scripts/eval_harness.py", "score", "{observation:prompt-coach}"]
+    }
+  ]
 }

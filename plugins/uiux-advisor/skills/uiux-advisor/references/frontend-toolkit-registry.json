@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0.0",
-  "snapshot_date": "2026-08-12",
+  "snapshot_date": "2026-08-18",
   "tools": [
     {
       "id": "html-interaction-elements",
@@ -199,8 +199,8 @@
       "surfaces": ["carousel", "gallery", "content-slider"],
       "risk": "medium",
       "adoption": "package",
-      "official_url": "https://www.embla-carousel.com/get-started/",
-      "checked_on": "2026-08-12",
+      "official_url": "https://www.embla-carousel.com/docs/get-started",
+      "checked_on": "2026-08-18",
       "status": "candidate",
       "license_review": "required-at-adoption",
       "fallback": "native scroll 영역과 이전·다음 button으로 모든 항목에 접근하게 한다.",

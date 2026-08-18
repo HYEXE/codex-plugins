@@ -1,5 +1,12 @@
 # Changelog
 
+## Package 0.9.1 — Bundled Search Validators
+
+변경:
+- knowledge-base와 toolkit 검색 회귀 evaluator 및 case dataset을 플러그인 `.codex-plugin` 내부로 이동
+- specialized evaluator와 CLI smoke command를 `quality-gates.json`에 선언
+- 외부 source URL·canonical·title·hash를 주간 비차단 보고서로 확인하는 저장소 workflow 추가
+
 ## Package 0.9.0 — Declarative Quality Gates and Freshness Budgets
 
 변경:

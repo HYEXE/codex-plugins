@@ -1,0 +1,53 @@
+name: 외부 자료 상태 보고
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 18 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-liveness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: URL·canonical·title·hash 점검
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Python 설정
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+
+      - name: 비차단 source liveness 보고서 생성
+        continue-on-error: true
+        run: |
+          python scripts/check_source_liveness.py \
+            --output-json artifacts/source-liveness/report.json \
+            --output-markdown artifacts/source-liveness/report.md
+
+      - name: Job summary 기록
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/source-liveness/report.md ]; then
+            cat artifacts/source-liveness/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 보고서 업로드
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-liveness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/source-liveness/
+          if-no-files-found: warn
+          retention-days: 30

@@ -5,7 +5,7 @@ description: 사용자의 자연어 요청을 충분성 관점에서 점검하�
 
 # Prompt Compiler Protocol v3.2-ko
 
-Plugin package: `prompt-compiler 0.7.0`  
+Plugin package: `prompt-compiler 0.7.1`  
 Protocol spec: `v3.2-ko`
 
 자연어 요청을 단순히 “더 좋은 문장”으로 고치는 것이 아니라, 요청의 충분성을 먼저 확인하고 사용자의 의도를 보존한 **내부 실행 명세**로 컴파일해 결과까지 만든다.
