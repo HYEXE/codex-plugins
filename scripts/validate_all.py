@@ -25,6 +25,7 @@ VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
 LIVE_EVAL_PATH = ROOT / "scripts" / "live_eval.py"
 OBSERVATION_VALIDATOR_PATH = ROOT / "scripts" / "validate_observation_manifest.py"
 SOURCE_LIVENESS_PATH = ROOT / "scripts" / "check_source_liveness.py"
+RELEASE_ATTESTATION_PATH = ROOT / "scripts" / "create_release_attestation.py"
 OBSERVATION_TOKEN = re.compile(r"\{observation:([a-z0-9-]+)\}")
 SEMVER_PATTERN = re.compile(
     r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
@@ -438,6 +439,7 @@ def validate_repository_scripts(failures: list[str]) -> None:
         LIVE_EVAL_PATH,
         OBSERVATION_VALIDATOR_PATH,
         SOURCE_LIVENESS_PATH,
+        RELEASE_ATTESTATION_PATH,
     ):
         check(path.is_file(), f"missing {path.relative_to(ROOT)}", failures)
     for script in sorted((ROOT / "scripts").rglob("*.py")):
