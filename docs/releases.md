@@ -29,7 +29,7 @@ tag push 뒤 `.github/workflows/release.yml`은 다음 순서로 실행된다.
 
 GitHub-hosted live eval에는 저장소 운영자의 repository secret `CODEX_LIVE_EVAL_API_KEY`가 필요하다. 키는 실제 실행 step에만 전달하며 artifact에는 raw event, transcript, tool trace와 비밀이 아닌 provenance만 보존한다. 이 키는 저장소나 플러그인에 포함되지 않으며 설치 사용자는 자신의 Codex 로그인 또는 자신의 API 키를 사용한다.
 
-로컬에서는 `codex login`으로 저장된 인증을 재사용할 수 있다. 기본 `saved` 모드는 파일 기반 `auth.json`만 임시 격리 환경에 복사하고 실행 종료 시 함께 폐기한다. 공개 또는 신뢰할 수 없는 CI에 개인 `auth.json`을 복사하지 않는다.
+로컬에서는 `codex login`으로 저장된 인증을 재사용할 수 있다. 기본 `saved` 모드는 ChatGPT 계정용 `gpt-5.6-sol`을 선택하고 파일 기반 `auth.json`만 임시 격리 환경에 복사한 뒤 실행 종료 시 함께 폐기한다. 공개 또는 신뢰할 수 없는 CI에 개인 `auth.json`을 복사하지 않는다.
 
 ## 로컬 사전 점검
 

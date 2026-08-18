@@ -509,12 +509,47 @@ def usage_from_events(events: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def external_event_items(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    items: list[dict[str, Any]] = []
+    items: dict[tuple[str, str], dict[str, Any]] = {}
+    order: list[tuple[str, str]] = []
     for event in events:
         item = event.get("item")
-        if isinstance(item, dict) and item.get("type") in EXTERNAL_EVENT_TYPES:
-            items.append(item)
-    return items
+        if not isinstance(item, dict) or item.get("type") not in EXTERNAL_EVENT_TYPES:
+            continue
+        identity = (
+            str(item.get("type")),
+            str(item.get("id") or item.get("command") or json.dumps(item, sort_keys=True)),
+        )
+        if identity not in items:
+            order.append(identity)
+            items[identity] = item
+        elif event.get("type") == "item.completed":
+            items[identity] = item
+    return [items[identity] for identity in order]
+
+
+def action_trace_items(items: Any) -> list[dict[str, Any]]:
+    if not isinstance(items, list):
+        return []
+    actions: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        item_type = item.get("type")
+        if item_type == "command_execution" and "fake_action.py" not in str(item.get("command", "")):
+            continue
+        if item_type not in EXTERNAL_EVENT_TYPES:
+            continue
+        identity = (str(item_type), str(item.get("id") or json.dumps(item, sort_keys=True)))
+        if identity in seen:
+            continue
+        seen.add(identity)
+        actions.append(item)
+    return actions
+
+
+def default_model(auth_mode: str) -> str:
+    return "gpt-5.6-sol" if auth_mode == "saved" else "gpt-5.6"
 
 
 def codex_command(
@@ -752,9 +787,10 @@ def score_tool_trace(
                     reasons.append(
                         f"turn {index + 1} external calls differ: expected {expected_calls}, observed {observed_calls}"
                     )
-                observed_items = (
+                raw_observed_items = (
                     turns[index].get("external_event_items", []) if index < len(turns) else []
                 )
+                observed_items = action_trace_items(raw_observed_items)
                 observed_types = [
                     item.get("type") for item in observed_items if isinstance(item, dict)
                 ]
@@ -825,6 +861,7 @@ def run_live(args: argparse.Namespace) -> int:
             print(f"ERROR: {failure}")
         return 1
     saved_auth_home: Path | None = None
+    model = args.model or default_model(args.auth_mode)
     if not args.dry_run:
         if args.auth_mode == "api-key":
             if not (os.environ.get("CODEX_API_KEY") or os.environ.get("OPENAI_API_KEY")):
@@ -853,7 +890,7 @@ def run_live(args: argparse.Namespace) -> int:
 
     print(
         f"LIVE EVAL PLAN: suite={args.suite} case_set={args.case_set} "
-        f"cases={len(selected)} attempts={args.attempts} model={args.model} "
+        f"cases={len(selected)} attempts={args.attempts} model={model} "
         f"auth_mode={args.auth_mode}"
     )
     if args.dry_run:
@@ -899,7 +936,7 @@ def run_live(args: argparse.Namespace) -> int:
                             codex_bin=args.codex_bin,
                             codex_home=codex_home,
                             auth_mode=args.auth_mode,
-                            model=args.model,
+                            model=model,
                             reasoning_effort=args.reasoning_effort,
                             workspace=workspace,
                             sandbox="read-only",
@@ -938,7 +975,7 @@ def run_live(args: argparse.Namespace) -> int:
                                 codex_bin=args.codex_bin,
                                 codex_home=codex_home,
                                 auth_mode=args.auth_mode,
-                                model=args.model,
+                                model=model,
                                 reasoning_effort=args.reasoning_effort,
                                 workspace=workspace,
                                 sandbox="workspace-write",
@@ -993,7 +1030,7 @@ def run_live(args: argparse.Namespace) -> int:
         "auth_mode": args.auth_mode,
         "started_at": started_at,
         "completed_at": completed_at,
-        "model": args.model,
+        "model": model,
         "reasoning_effort": args.reasoning_effort,
         "codex_version": codex_version,
         "runner_commit": runner_commit,
@@ -1047,7 +1084,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--case-set", choices=("critical", "sample", "full"), default="critical")
     run_parser.add_argument("--case-id", action="append", help="Run a case within the selected case set")
     run_parser.add_argument("--attempts", type=int, default=1)
-    run_parser.add_argument("--model", default="gpt-5.6")
+    run_parser.add_argument(
+        "--model",
+        help="Codex model ID; defaults to gpt-5.6-sol for saved auth and gpt-5.6 for api-key",
+    )
     run_parser.add_argument("--reasoning-effort", default="medium")
     run_parser.add_argument(
         "--auth-mode",

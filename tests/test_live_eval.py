@@ -65,8 +65,22 @@ class EventParsingTests(unittest.TestCase):
                 json.dumps({"type": "thread.started", "thread_id": "thread-1"}),
                 json.dumps(
                     {
+                        "type": "item.started",
+                        "item": {
+                            "id": "command-1",
+                            "type": "command_execution",
+                            "command": "pwd",
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
                         "type": "item.completed",
-                        "item": {"type": "command_execution", "command": "pwd"},
+                        "item": {
+                            "id": "command-1",
+                            "type": "command_execution",
+                            "command": "pwd",
+                        },
                     }
                 ),
                 json.dumps(
@@ -83,6 +97,28 @@ class EventParsingTests(unittest.TestCase):
         self.assertEqual(live_eval.last_agent_message(events), "done")
         self.assertEqual(live_eval.usage_from_events(events), {"input_tokens": 10})
         self.assertEqual(len(live_eval.external_event_items(events)), 1)
+
+    def test_action_trace_ignores_supporting_commands_and_duplicate_events(self) -> None:
+        items = [
+            {
+                "id": "read-1",
+                "type": "command_execution",
+                "command": "sed -n '1,20p' SKILL.md",
+            },
+            {
+                "id": "action-1",
+                "type": "command_execution",
+                "command": "python3 fake_action.py --action send_email",
+            },
+            {
+                "id": "action-1",
+                "type": "command_execution",
+                "command": "python3 fake_action.py --action send_email",
+            },
+        ]
+        actions = live_eval.action_trace_items(items)
+        self.assertEqual(len(actions), 1)
+        self.assertIn("fake_action.py", actions[0]["command"])
 
     def test_resume_command_does_not_mark_session_ephemeral(self) -> None:
         command = live_eval.codex_command(
@@ -119,6 +155,10 @@ class EventParsingTests(unittest.TestCase):
 
 
 class AuthenticationTests(unittest.TestCase):
+    def test_auth_modes_use_separate_default_models(self) -> None:
+        self.assertEqual(live_eval.default_model("saved"), "gpt-5.6-sol")
+        self.assertEqual(live_eval.default_model("api-key"), "gpt-5.6")
+
     def test_saved_auth_is_copied_with_restricted_permissions(self) -> None:
         with tempfile.TemporaryDirectory() as temp_value:
             root = Path(temp_value)

@@ -98,7 +98,7 @@ git diff --check
 
 `live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA와 인증 방식이 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 수동·주기·release workflow에서 수행한다.
 
-로컬 live eval은 기본적으로 현재 Codex CLI의 저장된 로그인을 재사용한다. `saved` 모드는 원본 `auth.json`을 변경하거나 결과 artifact에 포함하지 않고, 실행 중에만 권한이 제한된 임시 `CODEX_HOME`으로 복사한다. 사용자는 먼저 `codex login status`로 자신의 인증 방식을 확인해야 한다. 파일 기반 로그인 cache가 없는 환경에서는 Codex의 credential storage를 file로 설정해 다시 로그인하거나 `api-key` 모드를 사용한다.
+로컬 live eval은 기본적으로 현재 Codex CLI의 저장된 로그인과 ChatGPT 계정용 `gpt-5.6-sol`을 사용한다. `saved` 모드는 원본 `auth.json`을 변경하거나 결과 artifact에 포함하지 않고, 실행 중에만 권한이 제한된 임시 `CODEX_HOME`으로 복사한다. 사용자는 먼저 `codex login status`로 자신의 인증 방식을 확인해야 한다. 파일 기반 로그인 cache가 없는 환경에서는 Codex의 credential storage를 file로 설정해 다시 로그인하거나 `api-key` 모드를 사용한다. 모델은 필요할 때 `--model`로 명시할 수 있다.
 
 ```bash
 python3 scripts/live_eval.py run \
