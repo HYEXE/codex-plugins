@@ -86,10 +86,14 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", workflow)
         self.assertNotIn("\n  push:\n", workflow)
         self.assertIn('ref: ${{ inputs.commit }}', workflow)
-        self.assertIn('case_set: critical\n      attempts: 2', workflow)
-        self.assertIn('case_set: full\n      attempts: 1', workflow)
+        self.assertIn("local_live_eval_confirmed:", workflow)
+        self.assertIn("local_live_eval_run_ids:", workflow)
+        self.assertIn("scripts/create_release_attestation.py", workflow)
+        self.assertNotIn("live-eval-critical:", workflow)
+        self.assertNotIn("live-eval-full:", workflow)
         self.assertIn('--target "$RELEASE_COMMIT"', workflow)
-        self.assertLess(workflow.index("live-eval-critical:"), workflow.index("gh release create"))
+        self.assertIn("local-live-eval-attestation.json", workflow)
+        self.assertLess(workflow.index("로컬 live eval 확인 자료 검증"), workflow.index("gh release create"))
 
     def test_live_eval_is_manual_or_release_only(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "live-eval.yml").read_text(encoding="utf-8")

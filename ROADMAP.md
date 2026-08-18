@@ -9,18 +9,18 @@
 - [x] 플러그인별 선언형 `quality-gates.json` 자동 발견
 - [x] UI/UX knowledge base와 toolkit freshness budget
 - [x] Ubuntu, Windows, macOS CI와 validator unit test, ShellCheck
-- [x] validation과 반복 live eval 성공 후 immutable tag를 생성하는 gated GitHub Release workflow
+- [x] deterministic validation과 로컬 live eval attestation 후 immutable tag를 생성하는 gated GitHub Release workflow
 - [x] third-party attribution 정책과 public release gate
 - [x] 공개 라이선스를 Apache-2.0으로 확정하고 `LICENSE` 추가
 - [x] 로컬 저장 인증과 CI API key를 분리한 live eval 인증 모드
 - [x] specialized evaluator command와 observation 선택을 plugin quality gate에서 선언
 - [x] live eval의 인증·plugin 발견·event·provenance·scoring 모듈 분리
 - [x] 외부 source URL·canonical·title·hash의 주간 비차단 보고
-- [ ] `CODEX_LIVE_EVAL_API_KEY` repository secret 설정
+- [x] API 기반 GitHub-hosted live eval을 release gate에서 선택적 수동 workflow로 분리
 - [ ] 최초 stable tag와 GitHub Release 게시
 - [ ] 저장소 visibility를 public으로 전환
 
-남은 세 항목은 비밀정보 설정 또는 원격 변경이므로 별도 확인 후 진행한다.
+남은 두 항목은 원격 변경이므로 별도 확인 후 진행한다.
 
 ## Next
 

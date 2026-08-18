@@ -11,6 +11,25 @@ on:
         description: 검증하고 release할 main의 전체 commit SHA
         required: true
         type: string
+      local_live_eval_confirmed:
+        description: 입력한 로컬 live eval run이 release gate를 통과했는지 확인
+        required: true
+        type: boolean
+        default: false
+      local_live_eval_model:
+        description: 로컬 live eval model ID
+        required: true
+        type: string
+        default: gpt-5.6-sol
+      local_live_eval_codex_version:
+        description: 로컬 live eval Codex CLI version
+        required: true
+        type: string
+        default: codex-cli 0.147.0
+      local_live_eval_run_ids:
+        description: routing critical/full, tool-trace critical/full 순서의 쉼표 구분 run ID
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ inputs.tag }}
@@ -68,42 +87,35 @@ jobs:
           python scripts/validate_all.py
           python -m unittest discover -s tests -p "test_*.py"
 
-  live-eval-critical:
-    name: Critical live eval 2회
-    needs: validate
-    permissions:
-      contents: read
-    uses: ./.github/workflows/live-eval.yml
-    with:
-      case_set: critical
-      attempts: 2
-      model: gpt-5.6
-      reasoning_effort: medium
-      target_commit: ${{ inputs.commit }}
-    secrets:
-      CODEX_LIVE_EVAL_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
-
-  live-eval-full:
-    name: Full live eval 1회
-    needs: validate
-    permissions:
-      contents: read
-    uses: ./.github/workflows/live-eval.yml
-    with:
-      case_set: full
-      attempts: 1
-      model: gpt-5.6
-      reasoning_effort: medium
-      target_commit: ${{ inputs.commit }}
-    secrets:
-      CODEX_LIVE_EVAL_API_KEY: ${{ secrets.CODEX_LIVE_EVAL_API_KEY }}
+      - name: 로컬 live eval 확인 자료 검증
+        shell: bash
+        env:
+          LOCAL_LIVE_EVAL_CONFIRMED: ${{ inputs.local_live_eval_confirmed }}
+          LOCAL_LIVE_EVAL_MODEL: ${{ inputs.local_live_eval_model }}
+          LOCAL_LIVE_EVAL_CODEX_VERSION: ${{ inputs.local_live_eval_codex_version }}
+          LOCAL_LIVE_EVAL_RUN_IDS: ${{ inputs.local_live_eval_run_ids }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "$LOCAL_LIVE_EVAL_CONFIRMED" != "true" ]; then
+            echo "로컬 live eval release gate 통과 확인이 필요합니다." >&2
+            exit 1
+          fi
+          python scripts/create_release_attestation.py \
+            --tag "$RELEASE_TAG" \
+            --commit "$RELEASE_COMMIT" \
+            --model "$LOCAL_LIVE_EVAL_MODEL" \
+            --codex-version "$LOCAL_LIVE_EVAL_CODEX_VERSION" \
+            --run-ids "$LOCAL_LIVE_EVAL_RUN_IDS" \
+            --actor "$GITHUB_ACTOR" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output local-live-eval-attestation.json
 
   publish:
     name: GitHub Release 생성
-    needs:
-      - validate
-      - live-eval-critical
-      - live-eval-full
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -116,10 +128,26 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Release metadata 생성
+      - name: Release metadata와 로컬 live eval attestation 생성
         env:
+          LOCAL_LIVE_EVAL_MODEL: ${{ inputs.local_live_eval_model }}
+          LOCAL_LIVE_EVAL_CODEX_VERSION: ${{ inputs.local_live_eval_codex_version }}
+          LOCAL_LIVE_EVAL_RUN_IDS: ${{ inputs.local_live_eval_run_ids }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
           RELEASE_TAG: ${{ inputs.tag }}
-        run: python scripts/validate_release_tag.py --tag "$RELEASE_TAG" --json > release-metadata.json
+        run: |
+          python scripts/validate_release_tag.py --tag "$RELEASE_TAG" --json > release-metadata.json
+          python scripts/create_release_attestation.py \
+            --tag "$RELEASE_TAG" \
+            --commit "$RELEASE_COMMIT" \
+            --model "$LOCAL_LIVE_EVAL_MODEL" \
+            --codex-version "$LOCAL_LIVE_EVAL_CODEX_VERSION" \
+            --run-ids "$LOCAL_LIVE_EVAL_RUN_IDS" \
+            --actor "$GITHUB_ACTOR" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output local-live-eval-attestation.json
 
       - name: GitHub Release 생성
         env:
@@ -129,7 +157,7 @@ jobs:
         run: |
           current_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
           if [ "$current_main" != "$RELEASE_COMMIT" ]; then
-            echo "live eval 중 main이 변경되어 release를 중단합니다." >&2
+            echo "release gate 실행 중 main이 변경되어 release를 중단합니다." >&2
             exit 1
           fi
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
@@ -140,4 +168,5 @@ jobs:
             --target "$RELEASE_COMMIT" \
             --generate-notes \
             --title "$RELEASE_TAG" \
-            release-metadata.json
+            release-metadata.json \
+            local-live-eval-attestation.json
