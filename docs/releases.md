@@ -6,7 +6,7 @@
 
 | 채널 | Git ref | 용도 | 업데이트 방식 |
 | --- | --- | --- | --- |
-| stable | `codex-workflows-vX.Y.Z` | 일반 사용자와 재현 가능한 설치 | 새 stable tag를 명시해 marketplace를 다시 등록 |
+| stable | `codex-plugins-vX.Y.Z` | 일반 사용자와 재현 가능한 설치 | 새 stable tag를 명시해 marketplace를 다시 등록 |
 | nightly | `main` | 다음 릴리스 사전 검증 | `marketplace upgrade` 후 플러그인 재설치 |
 
 stable tag는 이미 게시된 뒤 이동하거나 다시 만들지 않는다. `prompt-compiler-vX.Y.Z`와 `uiux-advisor-vX.Y.Z`는 각 plugin manifest 버전과 정확히 일치해야 한다.
@@ -57,7 +57,7 @@ python3 scripts/live_eval.py run --suite tool-trace --case-set full --attempts 1
 
 ```bash
 gh workflow run release.yml --ref main \
-  -f tag=codex-workflows-v0.1.0 \
+  -f tag=codex-plugins-v0.1.0 \
   -f commit=<main-full-sha> \
   -f local_live_eval_confirmed=true \
   -f local_live_eval_model=gpt-5.6-sol \

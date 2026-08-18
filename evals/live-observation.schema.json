@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://hyexen.dev/codex-workflows/live-observation.schema.json",
+  "$id": "https://hyexen.dev/codex-plugins/live-observation.schema.json",
   "title": "Codex Plugins live evaluation run",
   "type": "object",
   "additionalProperties": false,

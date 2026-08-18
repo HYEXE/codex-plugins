@@ -132,9 +132,9 @@ GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows·macOS 통�
 일반 사용자에게는 게시된 immutable repository tag를 사용하는 stable 채널을 권장합니다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-plugins-vX.Y.Z
+codex plugin add prompt-compiler@codex-plugins-kr
+codex plugin add uiux-advisor@codex-plugins-kr
 ```
 
 다음 릴리스를 빠르게 확인하려면 `main` nightly 채널을 별도 환경에서 사용합니다.
@@ -145,7 +145,7 @@ codex plugin marketplace add HYEXE/codex-plugins --ref main
 
 tag 형식, release gate와 stable/nightly 운영 규칙은 [릴리스와 설치 채널](docs/releases.md)에 정리돼 있습니다.
 
-저장소 이름을 `codex-plugins`로 변경했지만 기존 설치와 릴리스의 호환성을 위해 marketplace ID `codex-workflows-kr`와 repository tag 접두사 `codex-workflows-v`는 유지합니다.
+repository tag는 `codex-plugins-vX.Y.Z`, marketplace ID는 `codex-plugins-kr`로 통일합니다.
 
 ## 업데이트
 
@@ -162,9 +162,9 @@ Git marketplace를 사용하는 PC에서는 marketplace snapshot을 갱신한 �
 운영체제별 스크립트는 다음 명령을 순서대로 실행합니다.
 
 ```text
-codex plugin marketplace upgrade codex-workflows-kr
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+codex plugin marketplace upgrade codex-plugins-kr
+codex plugin add prompt-compiler@codex-plugins-kr
+codex plugin add uiux-advisor@codex-plugins-kr
 ```
 
 첫 번째 명령은 Git marketplace snapshot을 등록된 ref에서 다시 가져옵니다. `main` nightly marketplace라면 최신 commit으로 이동하지만 immutable stable tag라면 같은 snapshot을 다시 확인할 뿐 더 새 stable tag로 자동 이동하지 않습니다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체합니다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않습니다.
@@ -210,8 +210,8 @@ codex plugin marketplace add /absolute/path/to/codex-plugins
 그 뒤 소스가 변경될 때마다 두 플러그인을 다시 설치합니다. 로컬 marketplace에는 원격 snapshot이 없으므로 `marketplace upgrade`를 실행하지 않습니다.
 
 ```bash
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+codex plugin add prompt-compiler@codex-plugins-kr
+codex plugin add uiux-advisor@codex-plugins-kr
 ```
 
 ### Windows 실행 정책 대응
@@ -224,9 +224,9 @@ $Codex = Get-ChildItem "$env:LOCALAPPDATA\OpenAI\Codex\bin" `
   Sort-Object LastWriteTime -Descending |
   Select-Object -First 1 -ExpandProperty FullName
 
-& $Codex plugin marketplace upgrade codex-workflows-kr
-& $Codex plugin add "prompt-compiler@codex-workflows-kr"
-& $Codex plugin add "uiux-advisor@codex-workflows-kr"
+& $Codex plugin marketplace upgrade codex-plugins-kr
+& $Codex plugin add "prompt-compiler@codex-plugins-kr"
+& $Codex plugin add "uiux-advisor@codex-plugins-kr"
 ```
 
 ### 업데이트 확인과 적용
@@ -240,7 +240,7 @@ codex plugin list
 
 완료 기준은 다음과 같습니다.
 
-- `codex-workflows-kr`가 의도한 Git 또는 로컬 저장소를 가리킵니다.
+- `codex-plugins-kr`가 의도한 Git 또는 로컬 저장소를 가리킵니다.
 - `prompt-compiler`와 `uiux-advisor`가 모두 `installed, enabled` 상태입니다.
 - 표시된 버전이 각 플러그인의 manifest 버전과 일치합니다.
 - 저장소 작업 트리에 업데이트 과정이 만든 의도하지 않은 변경이 없습니다.

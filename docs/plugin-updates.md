@@ -5,9 +5,9 @@
 업데이트 스크립트는 다음 명령을 순서대로 실행한다.
 
 ```text
-codex plugin marketplace upgrade codex-workflows-kr
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+codex plugin marketplace upgrade codex-plugins-kr
+codex plugin add prompt-compiler@codex-plugins-kr
+codex plugin add uiux-advisor@codex-plugins-kr
 ```
 
 ## 준비
@@ -24,7 +24,7 @@ cd codex-plugins
 재현 가능한 stable 설치는 게시된 immutable repository tag를 사용한다.
 
 ```bash
-codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-plugins-vX.Y.Z
 ```
 
 다음 릴리스를 확인하는 nightly 설치는 `main`을 사용한다.
@@ -37,10 +37,10 @@ stable marketplace는 `upgrade`만으로 다음 stable tag로 이동하지 않�
 
 ```bash
 codex plugin marketplace list
-codex plugin marketplace remove codex-workflows-kr
-codex plugin marketplace add HYEXE/codex-plugins --ref codex-workflows-vX.Y.Z
-codex plugin add prompt-compiler@codex-workflows-kr
-codex plugin add uiux-advisor@codex-workflows-kr
+codex plugin marketplace remove codex-plugins-kr
+codex plugin marketplace add HYEXE/codex-plugins --ref codex-plugins-vX.Y.Z
+codex plugin add prompt-compiler@codex-plugins-kr
+codex plugin add uiux-advisor@codex-plugins-kr
 ```
 
 제거와 재등록은 로컬 Codex marketplace 설정을 바꾸므로 의도한 이름과 tag를 확인한 뒤 실행한다.
