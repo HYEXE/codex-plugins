@@ -31,8 +31,6 @@ on:
           - low
           - medium
           - high
-  schedule:
-    - cron: "17 18 * * 1"
   workflow_call:
     inputs:
       case_set:
@@ -51,6 +49,10 @@ on:
         required: false
         type: string
         default: medium
+      target_commit:
+        required: false
+        type: string
+        default: ""
     secrets:
       CODEX_LIVE_EVAL_API_KEY:
         required: true
@@ -59,7 +61,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: live-eval-${{ github.workflow }}-${{ github.ref }}
+  group: live-eval-${{ github.workflow }}-${{ github.ref }}-${{ inputs.case_set || 'critical' }}
   cancel-in-progress: false
 
 env:
@@ -86,6 +88,7 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ inputs.target_commit || github.sha }}
           persist-credentials: false
           fetch-depth: 0
 
@@ -128,7 +131,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: live-eval-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: live-eval-${{ inputs.case_set || 'critical' }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/live-eval-${{ matrix.suite }}/
           if-no-files-found: warn
           retention-days: 30

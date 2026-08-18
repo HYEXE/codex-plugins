@@ -6,8 +6,8 @@
 
 | 플러그인 | package | 번들 스킬 | 용도 |
 | --- | --- | --- | --- |
-| `prompt-compiler` | `0.7.0` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `0.9.0` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `prompt-compiler` | `0.7.1` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
+| `uiux-advisor` | `0.9.1` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
 
 ## 구조
 
@@ -17,6 +17,7 @@ codex-workflows/
 ├── .github/workflows/
 │   ├── live-eval.yml
 │   ├── release.yml
+│   ├── source-liveness.yml
 │   └── validate.yml
 ├── docs/
 │   ├── history/
@@ -46,17 +47,15 @@ codex-workflows/
 │   ├── observations.json
 │   ├── skill-routing.jsonl
 │   ├── skill-routing-observed-2026-08-14.jsonl
-│   ├── tool-trace-cases.jsonl
-│   ├── toolkit-search-cases.jsonl
-│   └── uiux-search-cases.jsonl
+│   └── tool-trace-cases.jsonl
 └── scripts/
     ├── check_freshness.py
     ├── check_release_readiness.py
+    ├── check_source_liveness.py
     ├── check_version_bumps.py
     ├── eval_routing.py
-    ├── eval_toolkit_search.py
-    ├── eval_uiux_search.py
     ├── live_eval.py
+    ├── live_eval_lib/
     ├── update_plugins.ps1
     ├── update_plugins.sh
     ├── validate_all.py
@@ -84,19 +83,21 @@ python3 scripts/live_eval.py validate
 python3 scripts/eval_routing.py validate
 python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py validate
 python3 plugins/prompt-compiler/skills/prompt-compiler/scripts/eval_orchestration.py score plugins/prompt-compiler/skills/prompt-compiler/evals/orchestration-observed-2026-08-12.jsonl
-python3 scripts/eval_toolkit_search.py
+python3 plugins/uiux-advisor/.codex-plugin/validators/eval_toolkit_search.py
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py validate
 python3 plugins/prompt-compiler/skills/prompt-coach/scripts/eval_harness.py score plugins/prompt-compiler/skills/prompt-coach/evals/observed-results-2026-08-11.jsonl
-python3 scripts/eval_uiux_search.py
+python3 plugins/uiux-advisor/.codex-plugin/validators/eval_uiux_search.py
 python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, Prompt Compiler 오케스트레이션·구조 평가, Prompt Coach 정적 케이스와 독립 관찰 응답의 분리·채점, UI/UX 지식베이스 참조 무결성, 프론트엔드 도구 레지스트리 schema·역할·생태계·capability·surface·risk·fallback·출처 형식과 검색 회귀를 확인한다. 플러그인별 skill 목록, 필수 파일·marker, KB·toolkit 수와 freshness budget은 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 자동 발견한다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, observation manifest, UI/UX 지식베이스 참조 무결성과 freshness를 확인한다. 플러그인별 skill 목록, 필수 파일·marker, KB·toolkit 수, freshness budget과 specialized evaluator command는 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 안전한 Python argv로 자동 실행한다.
 
 저장된 behavior snapshot은 안정적인 `observations.json` manifest가 선택한다. metadata에 dataset/result SHA-256, 관찰 시각, plugin 버전과 provenance 상태를 기록하며, 과거 실행에서 확인할 수 없는 model·Codex build는 추정하지 않고 `legacy-partial`로 표시한다. 오케스트레이션 transcript 평가는 질문 수, 이어가기, preview 승인 경계와 외부 행동 주장을 판정하지만 그 자체로 side effect 부재를 증명하지 않는다.
 
-`live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA와 인증 방식이 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 수동·주기·release workflow에서 수행한다.
+`live_eval.py`는 별도 경로다. 고정 Codex CLI와 지정 모델을 격리된 plugin 설치 환경에서 실행해 새로운 routing observation과 raw JSONL event를 만들고, preview/approval 사례는 transcript assertion과 fake external action의 structured tool trace assertion을 함께 적용한다. 인증, marketplace plugin 발견, event parsing, provenance와 scoring은 `live_eval_lib` 모듈로 분리돼 있다. 결과에는 model, reasoning effort, Codex version, runner commit, plugin version, timestamp, case set, dataset/policy SHA와 인증 방식이 기록된다. 일반 PR에서는 API 호출 없이 deterministic validator만 사용하고, 실제 live 실행은 비용 통제를 위해 수동·release workflow에서만 수행한다.
+
+외부 UI/UX 자료의 URL, canonical URL, title과 content hash는 주간 `source-liveness.yml`에서 비차단 보고서로 확인한다. 외부 사이트의 일시 장애나 동적 콘텐츠 변화는 일반 PR과 release gate를 실패시키지 않으며, JSON·Markdown artifact를 사람이 검토한다.
 
 로컬 live eval은 기본적으로 현재 Codex CLI의 저장된 로그인과 ChatGPT 계정용 `gpt-5.6-sol`을 사용한다. `saved` 모드는 원본 `auth.json`을 변경하거나 결과 artifact에 포함하지 않고, 실행 중에만 권한이 제한된 임시 `CODEX_HOME`으로 복사한다. 사용자는 먼저 `codex login status`로 자신의 인증 방식을 확인해야 한다. 파일 기반 로그인 cache가 없는 환경에서는 Codex의 credential storage를 file로 설정해 다시 로그인하거나 `api-key` 모드를 사용한다. 모델은 필요할 때 `--model`로 명시할 수 있다.
 

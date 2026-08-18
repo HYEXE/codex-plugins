@@ -80,5 +80,24 @@ class ReleaseTagTests(unittest.TestCase):
         self.assertEqual(metadata["release_kind"], "repository")
 
 
+class ReleaseWorkflowTests(unittest.TestCase):
+    def test_release_validates_before_creating_tag(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("\n  push:\n", workflow)
+        self.assertIn('ref: ${{ inputs.commit }}', workflow)
+        self.assertIn('case_set: critical\n      attempts: 2', workflow)
+        self.assertIn('case_set: full\n      attempts: 1', workflow)
+        self.assertIn('--target "$RELEASE_COMMIT"', workflow)
+        self.assertLess(workflow.index("live-eval-critical:"), workflow.index("gh release create"))
+
+    def test_live_eval_is_manual_or_release_only(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "live-eval.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("workflow_call:", workflow)
+        self.assertNotIn("\n  schedule:\n", workflow)
+        self.assertIn('ref: ${{ inputs.target_commit || github.sha }}', workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
