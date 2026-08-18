@@ -1,0 +1,59 @@
+name: 버그 신고
+description: 재현 가능한 오류나 회귀를 알려 주세요.
+title: "fix: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        신고해 주셔서 감사합니다. API 키, 로그인 정보와 개인 데이터는 첨부하지 마세요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역
+      options:
+        - prompt-compiler
+        - uiux-advisor
+        - 검증 또는 평가
+        - 설치 또는 업데이트
+        - Release 또는 GitHub Actions
+        - 기타
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 사용 버전
+      description: plugin version, repository tag와 Codex CLI version을 적어 주세요.
+      placeholder: codex-workflows-v0.1.0, codex-cli 0.147.0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 재현 방법
+      description: 최소 재현 단계와 사용한 명령을 순서대로 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 예상 동작
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작과 로그
+      description: 비밀정보를 제거한 오류 메시지와 관련 로그만 첨부해 주세요.
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 확인 사항
+      options:
+        - label: 최신 stable tag 또는 현재 main에서 재현되는지 확인했습니다.
+          required: true
+        - label: 첨부 내용에 비밀정보와 개인정보가 없습니다.
+          required: true
