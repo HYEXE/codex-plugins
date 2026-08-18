@@ -1,4 +1,4 @@
-{"id":"floating-popover","filters":{"capability":"anchor-positioning","surface":"popover","ecosystem":"react","risk":"low"},"must_include":["floating-ui"],"forbidden_ids":["three-js"]}
+{"id":"floating-popover","filters":{"capability":"anchor-positioning","surface":"popover","ecosystem":"react","risk":"low"},"must_include":["floating-ui"],"ordered_prefix":[],"forbidden_ids":["three-js"]}
 {"id":"gesture-pinch","filters":{"role":"interaction","capability":"pinch","ecosystem":"react"},"must_include":["use-gesture"]}
 {"id":"native-carousel","filters":{"capability":"carousel","surface":"carousel","risk":"low"},"must_include":["css-scroll-snap"],"forbidden_ids":["swiper"]}
 {"id":"headless-carousel","filters":{"capability":"carousel","surface":"carousel","ecosystem":"react","risk":"medium"},"must_include":["embla-carousel","swiper"]}

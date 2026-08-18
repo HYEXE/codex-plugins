@@ -21,14 +21,11 @@ ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 ROUTING_EVALUATOR_PATH = ROOT / "scripts" / "eval_routing.py"
 ROUTING_OBSERVATIONS_PATH = ROOT / "tests" / "observations.json"
-PROMPT_COACH_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-coach"
-PROMPT_COMPILER_DIR = ROOT / "plugins" / "prompt-compiler" / "skills" / "prompt-compiler"
-UIUX_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_uiux_search.py"
-TOOLKIT_SEARCH_EVALUATOR_PATH = ROOT / "scripts" / "eval_toolkit_search.py"
-TOOLKIT_SEARCH_CASES_PATH = ROOT / "tests" / "toolkit-search-cases.jsonl"
 VERSION_CHECK_PATH = ROOT / "scripts" / "check_version_bumps.py"
 LIVE_EVAL_PATH = ROOT / "scripts" / "live_eval.py"
 OBSERVATION_VALIDATOR_PATH = ROOT / "scripts" / "validate_observation_manifest.py"
+SOURCE_LIVENESS_PATH = ROOT / "scripts" / "check_source_liveness.py"
+OBSERVATION_TOKEN = re.compile(r"\{observation:([a-z0-9-]+)\}")
 SEMVER_PATTERN = re.compile(
     r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
     r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\."
@@ -124,6 +121,113 @@ def run(command: list[str], cwd: Path, failures: list[str], *, echo: bool = True
     if process.returncode:
         detail = process.stderr.strip() or process.stdout.strip() or f"exit {process.returncode}"
         failures.append(f"command failed in {cwd.relative_to(ROOT)}: {' '.join(command)}\n{detail}")
+
+
+def load_plugin_observations(
+    plugin_name: str,
+    config_path: Path,
+    quality_config: dict[str, Any],
+    failures: list[str],
+) -> dict[str, dict[str, Any]]:
+    manifest_value = quality_config.get("observation_manifest")
+    if manifest_value is None:
+        return {}
+    manifest_path = resolve_config_path(
+        config_path,
+        manifest_value,
+        f"{plugin_name} observation_manifest",
+        failures,
+    )
+    observations, observation_failures = validate_manifest(
+        manifest_path,
+        boundary=config_path.parents[1],
+    )
+    failures.extend(observation_failures)
+    return observations
+
+
+def run_declared_validators(
+    plugin_name: str,
+    config_path: Path,
+    quality_config: dict[str, Any],
+    observations: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> None:
+    validators = quality_config.get("validators")
+    if not isinstance(validators, list) or not validators:
+        failures.append(f"{plugin_name}: validators must be a non-empty array")
+        return
+
+    seen: set[str] = set()
+    plugin_boundary = config_path.parents[1].resolve()
+    for index, validator in enumerate(validators, 1):
+        label = f"{plugin_name} validator {index}"
+        if not isinstance(validator, dict):
+            failures.append(f"{label} must be an object")
+            continue
+        name = validator.get("name")
+        if not isinstance(name, str) or not name:
+            failures.append(f"{label} needs a name")
+            continue
+        label = f"{plugin_name} validator {name}"
+        if name in seen:
+            failures.append(f"{label} is duplicated")
+            continue
+        seen.add(name)
+
+        cwd = resolve_config_path(config_path, validator.get("cwd"), f"{label} cwd", failures)
+        argv = validator.get("argv")
+        echo = validator.get("echo", True)
+        if not cwd.is_dir():
+            failures.append(f"{label} cwd is not a directory: {cwd}")
+            continue
+        if (
+            not isinstance(argv, list)
+            or len(argv) < 2
+            or any(not isinstance(value, str) or not value for value in argv)
+            or argv[0] != "{python}"
+        ):
+            failures.append(f"{label} argv must start with {{python}} and name a script")
+            continue
+        if not isinstance(echo, bool):
+            failures.append(f"{label} echo must be boolean")
+            continue
+
+        script_path = (cwd / argv[1]).resolve()
+        try:
+            script_path.relative_to(plugin_boundary)
+        except ValueError:
+            failures.append(f"{label} script escapes plugin directory: {argv[1]}")
+            continue
+        if not script_path.is_file():
+            failures.append(f"{label} script is missing: {script_path}")
+            continue
+
+        command: list[str] = []
+        invalid = False
+        for value in argv:
+            if value == "{python}":
+                command.append(sys.executable)
+                continue
+            match = OBSERVATION_TOKEN.fullmatch(value)
+            if match:
+                suite = observations.get(match.group(1))
+                results_path = suite.get("results_path") if isinstance(suite, dict) else None
+                if not isinstance(results_path, Path):
+                    failures.append(
+                        f"{label} references unavailable observation suite {match.group(1)}"
+                    )
+                    invalid = True
+                    break
+                command.append(str(results_path))
+                continue
+            if value.startswith("{") and value.endswith("}"):
+                failures.append(f"{label} has unknown token {value}")
+                invalid = True
+                break
+            command.append(value)
+        if not invalid:
+            run(command, cwd, failures, echo=echo)
 
 
 def validate_marketplace(failures: list[str]) -> list[str]:
@@ -330,15 +434,13 @@ def validate_update_scripts(plugin_names: list[str], failures: list[str]) -> Non
 def validate_repository_scripts(failures: list[str]) -> None:
     for path in (
         ROUTING_EVALUATOR_PATH,
-        UIUX_SEARCH_EVALUATOR_PATH,
-        TOOLKIT_SEARCH_EVALUATOR_PATH,
-        TOOLKIT_SEARCH_CASES_PATH,
         VERSION_CHECK_PATH,
         LIVE_EVAL_PATH,
         OBSERVATION_VALIDATOR_PATH,
+        SOURCE_LIVENESS_PATH,
     ):
         check(path.is_file(), f"missing {path.relative_to(ROOT)}", failures)
-    for script in sorted((ROOT / "scripts").glob("*.py")):
+    for script in sorted((ROOT / "scripts").rglob("*.py")):
         try:
             compile(script.read_text(encoding="utf-8"), str(script), "exec")
         except SyntaxError as exc:
@@ -837,151 +939,26 @@ def main() -> int:
 
     routing_observations, observation_failures = validate_manifest(ROUTING_OBSERVATIONS_PATH)
     failures.extend(observation_failures)
-    prompt_observations: dict[str, dict[str, Any]] = {}
-    prompt_gate_entry = quality_gates.get("prompt-compiler")
-    if prompt_gate_entry:
-        prompt_config_path, prompt_quality = prompt_gate_entry
-        prompt_manifest = resolve_config_path(
-            prompt_config_path,
-            prompt_quality.get("observation_manifest"),
-            "prompt-compiler observation_manifest",
+    for plugin_name, (config_path, quality_config) in quality_gates.items():
+        observations = load_plugin_observations(
+            plugin_name,
+            config_path,
+            quality_config,
             failures,
         )
-        prompt_observations, observation_failures = validate_manifest(
-            prompt_manifest,
-            boundary=ROOT / "plugins" / "prompt-compiler",
+        if "knowledge_base" in quality_config:
+            validate_uiux_kb(config_path, quality_config, failures, warnings)
+        if "toolkit_registry" in quality_config:
+            validate_frontend_toolkits(config_path, quality_config, failures, warnings)
+        run_declared_validators(
+            plugin_name,
+            config_path,
+            quality_config,
+            observations,
+            failures,
         )
-        failures.extend(observation_failures)
-
-    uiux_gate_entry = quality_gates.get("uiux-advisor")
-    if uiux_gate_entry:
-        uiux_config_path, uiux_quality = uiux_gate_entry
-        validate_uiux_kb(uiux_config_path, uiux_quality, failures, warnings)
-        validate_frontend_toolkits(uiux_config_path, uiux_quality, failures, warnings)
 
     python = sys.executable
-    prompt_dir = PROMPT_COMPILER_DIR
-    uiux_dir = ROOT / "plugins" / "uiux-advisor" / "skills" / "uiux-advisor"
-    run([python, "scripts/validate_package.py"], prompt_dir, failures)
-    run([python, "scripts/eval_harness.py", "--help"], prompt_dir, failures, echo=False)
-    run([python, "scripts/eval_harness.py", "score", "evals/golden_results.jsonl"], prompt_dir, failures)
-    run([python, "scripts/eval_orchestration.py", "validate"], prompt_dir, failures)
-    run([python, "scripts/eval_orchestration.py", "self-test"], prompt_dir, failures)
-    orchestration = prompt_observations.get("prompt-orchestration")
-    if orchestration and isinstance(orchestration.get("results_path"), Path):
-        run(
-            [
-                python,
-                "scripts/eval_orchestration.py",
-                "score",
-                str(orchestration["results_path"]),
-            ],
-            prompt_dir,
-            failures,
-        )
-    run([python, "scripts/eval_harness.py", "validate"], PROMPT_COACH_DIR, failures)
-    run([python, "scripts/eval_harness.py", "self-test"], PROMPT_COACH_DIR, failures)
-    prompt_coach = prompt_observations.get("prompt-coach")
-    if prompt_coach and isinstance(prompt_coach.get("results_path"), Path):
-        run(
-            [python, "scripts/eval_harness.py", "score", str(prompt_coach["results_path"])],
-            PROMPT_COACH_DIR,
-            failures,
-        )
-    run([python, "scripts/search_kb.py", "--id", "23"], uiux_dir, failures)
-    run([python, "scripts/search_toolkits.py", "--id", "anime-js"], uiux_dir, failures, echo=False)
-    run(
-        [python, "scripts/search_toolkits.py", "--role", "design-system", "--ecosystem", "react", "--json"],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    run(
-        [
-            python,
-            "scripts/search_toolkits.py",
-            "--capability",
-            "anchor-positioning",
-            "--surface",
-            "popover",
-            "--ecosystem",
-            "react",
-            "--risk",
-            "low",
-            "--json",
-        ],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    run(
-        [
-            python,
-            "scripts/search_toolkits.py",
-            "--capability",
-            "high-performance-two-dimensional",
-            "--surface",
-            "canvas",
-            "--risk",
-            "high",
-            "--json",
-        ],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    run(
-        [python, "scripts/search_toolkits.py", "--list-values", "capability"],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    run(
-        [python, "scripts/search_toolkits.py", "--list-values", "adoption"],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    run(
-        [
-            python,
-            "scripts/search_toolkits.py",
-            "--capability",
-            "carousel",
-            "--surface",
-            "carousel",
-            "--ecosystem",
-            "react",
-            "--max-risk",
-            "medium",
-            "--recommend",
-            "--top",
-            "3",
-            "--json",
-        ],
-        uiux_dir,
-        failures,
-        echo=False,
-    )
-    for role, ecosystem in (
-        ("creative-ui", "svelte"),
-        ("motion", "angular"),
-        ("data-visualization", "angular"),
-    ):
-        run(
-            [
-                python,
-                "scripts/search_toolkits.py",
-                "--role",
-                role,
-                "--ecosystem",
-                ecosystem,
-                "--json",
-            ],
-            uiux_dir,
-            failures,
-            echo=False,
-        )
     run([python, str(ROUTING_EVALUATOR_PATH), "validate"], ROOT, failures)
     routing = routing_observations.get("routing")
     if routing and isinstance(routing.get("results_path"), Path):
@@ -990,8 +967,6 @@ def main() -> int:
             ROOT,
             failures,
         )
-    run([python, str(UIUX_SEARCH_EVALUATOR_PATH)], ROOT, failures)
-    run([python, str(TOOLKIT_SEARCH_EVALUATOR_PATH)], ROOT, failures)
     run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
     run([python, str(LIVE_EVAL_PATH), "validate"], ROOT, failures)
 

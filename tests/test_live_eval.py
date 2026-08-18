@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import live_eval  # noqa: E402
+from live_eval_lib.plugins import discover_marketplace, installation_commands  # noqa: E402
 
 
 class LiveEvalConfigurationTests(unittest.TestCase):
@@ -56,6 +57,37 @@ class LiveEvalConfigurationTests(unittest.TestCase):
         self.assertEqual(live_eval.validate_run_manifest(manifest), [])
         manifest["model"] = ""
         self.assertTrue(any("model" in failure for failure in live_eval.validate_run_manifest(manifest)))
+
+    def test_marketplace_plugins_drive_live_eval_installation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            root = Path(temp_value)
+            plugins = []
+            for name, version in (("first", "1.0.0"), ("second", "2.0.0"), ("third", "3.0.0")):
+                plugin_dir = root / "plugins" / name
+                (plugin_dir / ".codex-plugin").mkdir(parents=True)
+                (plugin_dir / "skills" / f"{name}-skill").mkdir(parents=True)
+                (plugin_dir / "skills" / f"{name}-skill" / "SKILL.md").write_text(
+                    "---\nname: sample\n---\n", encoding="utf-8"
+                )
+                (plugin_dir / ".codex-plugin" / "plugin.json").write_text(
+                    json.dumps({"name": name, "version": version}), encoding="utf-8"
+                )
+                plugins.append(
+                    {"name": name, "source": {"source": "local", "path": f"./plugins/{name}"}}
+                )
+            marketplace_path = root / "marketplace.json"
+            marketplace_path.write_text(
+                json.dumps({"name": "example", "plugins": plugins}), encoding="utf-8"
+            )
+
+            spec = discover_marketplace(root, marketplace_path)
+            commands = installation_commands("codex", root, spec)
+
+            self.assertEqual([plugin.name for plugin in spec.plugins], ["first", "second", "third"])
+            self.assertEqual(
+                [command[3] for command in commands[1:]],
+                ["first@example", "second@example", "third@example"],
+            )
 
 
 class EventParsingTests(unittest.TestCase):

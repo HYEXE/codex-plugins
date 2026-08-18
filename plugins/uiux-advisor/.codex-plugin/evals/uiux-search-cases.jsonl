@@ -1,4 +1,4 @@
-{"id":"form-validation","query":"폼 검증 오류 메시지 인라인 접근성","top":5,"top_one_of":["uiux-playbook-018","uiux-playbook-020"],"must_include":["uiux-playbook-018"]}
+{"id":"form-validation","query":"폼 검증 오류 메시지 인라인 접근성","top":5,"top_one_of":["uiux-playbook-018","uiux-playbook-020"],"must_include":["uiux-playbook-018"],"forbidden_ids":[]}
 {"id":"loading-progress","query":"로딩 진행","top":5,"top_one_of":["uiux-playbook-019"],"must_include":["uiux-playbook-019"]}
 {"id":"empty-onboarding","query":"빈 상태 온보딩 첫 행동 안내","top":5,"top_one_of":["uiux-playbook-021"],"must_include":["uiux-playbook-021"]}
 {"id":"consent-privacy","query":"동의 개인정보 선택권 철회 프라이버시","top":5,"top_one_of":["uiux-playbook-022"],"must_include":["uiux-playbook-022"]}

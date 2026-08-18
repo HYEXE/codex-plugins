@@ -4,63 +4,51 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import uuid
-from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from live_eval_lib.auth import (
+    SECRET_ENV_NAMES,
+    codex_execution_env,
+    default_codex_home,
+    sanitized_env,
+    seed_saved_auth,
+)
+from live_eval_lib.errors import LiveEvalError
+from live_eval_lib.events import (
+    EXTERNAL_EVENT_TYPES,
+    action_trace_items,
+    external_event_items,
+    last_agent_message,
+    parse_event_stream,
+    thread_id,
+    usage_from_events,
+)
+from live_eval_lib.plugins import (
+    MarketplaceSpec,
+    PluginDiscoveryError,
+    discover_marketplace,
+    installation_commands,
+    installed_skill_ids as discover_installed_skill_ids,
+    plugin_versions as discovered_plugin_versions,
+)
+from live_eval_lib.provenance import sha256_file, validate_run_manifest
+from live_eval_lib.scoring import score_routing, score_tool_trace
 
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "evals" / "live-eval-policy.json"
 OBSERVATION_SCHEMA_PATH = ROOT / "evals" / "live-observation.schema.json"
-PLUGIN_MANIFESTS = (
-    ROOT / "plugins" / "prompt-compiler" / ".codex-plugin" / "plugin.json",
-    ROOT / "plugins" / "uiux-advisor" / ".codex-plugin" / "plugin.json",
-)
-EXTERNAL_EVENT_TYPES = {
-    "command_execution",
-    "file_change",
-    "mcp_tool_call",
-    "web_search",
-}
-SECRET_ENV_NAMES = {"CODEX_API_KEY", "OPENAI_API_KEY", "CODEX_ACCESS_TOKEN"}
-RUN_MANIFEST_FIELDS = {
-    "schema_version",
-    "run_id",
-    "suite",
-    "auth_mode",
-    "started_at",
-    "completed_at",
-    "model",
-    "reasoning_effort",
-    "codex_version",
-    "runner_commit",
-    "runner_dirty",
-    "dataset_path",
-    "dataset_sha256",
-    "policy_sha256",
-    "case_set",
-    "attempts",
-    "plugin_versions",
-    "platform",
-    "observation_scope",
-    "results_path",
-    "summary_path",
-}
-
-
-class LiveEvalError(RuntimeError):
-    """Raised for a controlled live-evaluation failure."""
+MARKETPLACE_PATH = ROOT / ".agents" / "plugins" / "marketplace.json"
 
 
 def utc_now() -> str:
@@ -99,35 +87,11 @@ def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
             handle.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def relative_path(path: Path) -> str:
     try:
         return path.resolve().relative_to(ROOT.resolve()).as_posix()
     except ValueError:
         return str(path.resolve())
-
-
-def sanitized_env(*, include_credentials: bool, extra: dict[str, str] | None = None) -> dict[str, str]:
-    environment = os.environ.copy()
-    if not include_credentials:
-        for name in SECRET_ENV_NAMES:
-            environment.pop(name, None)
-    if extra:
-        environment.update(extra)
-    environment["PYTHONDONTWRITEBYTECODE"] = "1"
-    return environment
-
-
-def default_codex_home() -> Path:
-    configured = os.environ.get("CODEX_HOME")
-    return Path(configured).expanduser() if configured else Path.home() / ".codex"
 
 
 def validate_saved_auth(codex_bin: str, codex_home: Path, timeout: int) -> None:
@@ -149,30 +113,6 @@ def validate_saved_auth(codex_bin: str, codex_home: Path, timeout: int) -> None:
     if process.returncode:
         detail = process.stderr.strip() or process.stdout.strip() or "not logged in"
         raise LiveEvalError(f"saved Codex authentication is unavailable: {detail}")
-
-
-def seed_saved_auth(source_home: Path, target_home: Path) -> None:
-    source = source_home / "auth.json"
-    if source.is_symlink() or not source.is_file():
-        raise LiveEvalError(f"saved Codex authentication is unavailable at {source}")
-    target_home.mkdir(parents=True, exist_ok=True)
-    target_home.chmod(0o700)
-    target = target_home / "auth.json"
-    shutil.copyfile(source, target)
-    target.chmod(0o600)
-
-
-def codex_execution_env(*, auth_mode: str, codex_home: Path, extra: dict[str, str] | None = None) -> dict[str, str]:
-    environment_extra = {"CODEX_HOME": str(codex_home)}
-    if extra:
-        environment_extra.update(extra)
-    environment = sanitized_env(
-        include_credentials=auth_mode == "api-key",
-        extra=environment_extra,
-    )
-    if auth_mode == "api-key":
-        environment.pop("CODEX_ACCESS_TOKEN", None)
-    return environment
 
 
 def run_command(
@@ -211,27 +151,22 @@ def command_output(command: list[str], *, cwd: Path = ROOT) -> str:
     return process.stdout.strip()
 
 
+def marketplace_spec() -> MarketplaceSpec:
+    try:
+        return discover_marketplace(ROOT, MARKETPLACE_PATH)
+    except (OSError, json.JSONDecodeError, PluginDiscoveryError) as exc:
+        raise LiveEvalError(str(exc)) from exc
+
+
 def plugin_versions() -> dict[str, str]:
-    versions: dict[str, str] = {}
-    for manifest_path in PLUGIN_MANIFESTS:
-        manifest = load_json(manifest_path)
-        name = manifest.get("name")
-        version = manifest.get("version")
-        if not isinstance(name, str) or not isinstance(version, str):
-            raise LiveEvalError(f"{manifest_path}: missing plugin name or version")
-        versions[name] = version
-    return versions
+    return discovered_plugin_versions(marketplace_spec())
 
 
 def installed_skill_ids() -> list[str]:
-    skill_ids: list[str] = []
-    for manifest_path in PLUGIN_MANIFESTS:
-        skills_dir = manifest_path.parents[1] / "skills"
-        skill_ids.extend(
-            path.parent.name
-            for path in sorted(skills_dir.glob("*/SKILL.md"))
-        )
-    return sorted(skill_ids)
+    try:
+        return discover_installed_skill_ids(marketplace_spec())
+    except PluginDiscoveryError as exc:
+        raise LiveEvalError(str(exc)) from exc
 
 
 def dataset_for_suite(policy: dict[str, Any], suite: str) -> Path:
@@ -346,93 +281,14 @@ def validate_configuration() -> list[str]:
     return failures
 
 
-def validate_run_manifest(run: dict[str, Any]) -> list[str]:
-    failures: list[str] = []
-    missing = sorted(RUN_MANIFEST_FIELDS - set(run))
-    extra = sorted(set(run) - RUN_MANIFEST_FIELDS)
-    if missing:
-        failures.append(f"run manifest missing fields: {missing}")
-    if extra:
-        failures.append(f"run manifest has unknown fields: {extra}")
-    if run.get("schema_version") != "1.1.0":
-        failures.append("run manifest schema_version must be 1.1.0")
-    if run.get("suite") not in {"routing", "tool-trace"}:
-        failures.append("run manifest suite is invalid")
-    if run.get("auth_mode") not in {"saved", "api-key"}:
-        failures.append("run manifest auth_mode is invalid")
-    if run.get("case_set") not in {"critical", "sample", "full"}:
-        failures.append("run manifest case_set is invalid")
-    if not isinstance(run.get("attempts"), int) or run.get("attempts", 0) < 1:
-        failures.append("run manifest attempts must be at least 1")
-    for field in (
-        "run_id",
-        "model",
-        "reasoning_effort",
-        "codex_version",
-        "dataset_path",
-        "results_path",
-        "summary_path",
-    ):
-        if not isinstance(run.get(field), str) or not run[field]:
-            failures.append(f"run manifest {field} must be a non-empty string")
-    if not isinstance(run.get("runner_commit"), str) or re.fullmatch(
-        r"[0-9a-f]{40}", run.get("runner_commit", "")
-    ) is None:
-        failures.append("run manifest runner_commit must be a 40-character Git SHA")
-    if not isinstance(run.get("runner_dirty"), bool):
-        failures.append("run manifest runner_dirty must be boolean")
-    for field in ("dataset_sha256", "policy_sha256"):
-        if not isinstance(run.get(field), str) or re.fullmatch(
-            r"[0-9a-f]{64}", run.get(field, "")
-        ) is None:
-            failures.append(f"run manifest {field} must be a lowercase SHA-256")
-    timestamps: dict[str, datetime] = {}
-    for field in ("started_at", "completed_at"):
-        value = run.get(field)
-        try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00")) if isinstance(value, str) else None
-            if parsed is None or parsed.tzinfo is None:
-                raise ValueError
-            timestamps[field] = parsed
-        except ValueError:
-            failures.append(f"run manifest {field} must be an ISO-8601 timestamp with timezone")
-    if set(timestamps) == {"started_at", "completed_at"} and timestamps["completed_at"] < timestamps["started_at"]:
-        failures.append("run manifest completed_at cannot precede started_at")
-    versions = run.get("plugin_versions")
-    if (
-        not isinstance(versions, dict)
-        or not versions
-        or any(not isinstance(name, str) or not isinstance(version, str) or not version for name, version in versions.items())
-    ):
-        failures.append("run manifest plugin_versions must be a non-empty string map")
-    platform_value = run.get("platform")
-    if not isinstance(platform_value, dict) or set(platform_value) != {
-        "system",
-        "release",
-        "machine",
-        "python",
-    } or any(not isinstance(value, str) for value in platform_value.values()):
-        failures.append("run manifest platform must contain system, release, machine, and python")
-    expected_scope = {
-        "routing": "structured-routing-decision",
-        "tool-trace": "transcript-and-tool-trace",
-    }.get(run.get("suite"))
-    if expected_scope is not None and run.get("observation_scope") != expected_scope:
-        failures.append(f"run manifest observation_scope must be {expected_scope}")
-    return failures
-
-
 def prepare_codex_home(codex_bin: str, codex_home: Path, timeout: int) -> dict[str, str]:
     codex_home.mkdir(parents=True, exist_ok=True)
     environment = sanitized_env(
         include_credentials=False,
         extra={"CODEX_HOME": str(codex_home)},
     )
-    commands = [
-        [codex_bin, "plugin", "marketplace", "add", str(ROOT), "--json"],
-        [codex_bin, "plugin", "add", "prompt-compiler@codex-workflows-kr", "--json"],
-        [codex_bin, "plugin", "add", "uiux-advisor@codex-workflows-kr", "--json"],
-    ]
+    spec = marketplace_spec()
+    commands = installation_commands(codex_bin, ROOT, spec)
     for command in commands:
         process = run_command(command, cwd=ROOT, environment=environment, timeout=timeout)
         if process.returncode:
@@ -448,104 +304,14 @@ def prepare_codex_home(codex_bin: str, codex_home: Path, timeout: int) -> dict[s
         raise LiveEvalError(process.stderr.strip() or "could not inspect installed plugins")
     payload = json.loads(process.stdout)
     installed = payload.get("installed", []) if isinstance(payload, dict) else []
+    expected_names = {plugin.name for plugin in spec.plugins}
     return {
         item["name"]: item["version"]
         for item in installed
         if isinstance(item, dict)
-        and item.get("name") in {"prompt-compiler", "uiux-advisor"}
+        and item.get("name") in expected_names
         and isinstance(item.get("version"), str)
     }
-
-
-def parse_event_stream(text: str) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
-    for line_number, line in enumerate(text.splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise LiveEvalError(f"Codex JSONL line {line_number} is invalid: {exc}") from exc
-        if not isinstance(value, dict):
-            raise LiveEvalError(f"Codex JSONL line {line_number} must be an object")
-        events.append(value)
-    return events
-
-
-def last_agent_message(events: list[dict[str, Any]]) -> str:
-    messages: list[str] = []
-    for event in events:
-        item = event.get("item")
-        if (
-            event.get("type") == "item.completed"
-            and isinstance(item, dict)
-            and item.get("type") == "agent_message"
-            and isinstance(item.get("text"), str)
-        ):
-            messages.append(item["text"])
-    if not messages:
-        raise LiveEvalError("Codex event stream has no completed agent_message")
-    return messages[-1]
-
-
-def thread_id(events: list[dict[str, Any]]) -> str:
-    for event in events:
-        value = event.get("thread_id")
-        if event.get("type") == "thread.started" and isinstance(value, str):
-            return value
-    raise LiveEvalError("Codex event stream has no thread.started event")
-
-
-def usage_from_events(events: list[dict[str, Any]]) -> dict[str, int]:
-    for event in reversed(events):
-        usage = event.get("usage")
-        if event.get("type") == "turn.completed" and isinstance(usage, dict):
-            return {
-                key: value
-                for key, value in usage.items()
-                if isinstance(key, str) and isinstance(value, int)
-            }
-    return {}
-
-
-def external_event_items(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    items: dict[tuple[str, str], dict[str, Any]] = {}
-    order: list[tuple[str, str]] = []
-    for event in events:
-        item = event.get("item")
-        if not isinstance(item, dict) or item.get("type") not in EXTERNAL_EVENT_TYPES:
-            continue
-        identity = (
-            str(item.get("type")),
-            str(item.get("id") or item.get("command") or json.dumps(item, sort_keys=True)),
-        )
-        if identity not in items:
-            order.append(identity)
-            items[identity] = item
-        elif event.get("type") == "item.completed":
-            items[identity] = item
-    return [items[identity] for identity in order]
-
-
-def action_trace_items(items: Any) -> list[dict[str, Any]]:
-    if not isinstance(items, list):
-        return []
-    actions: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        item_type = item.get("type")
-        if item_type == "command_execution" and "fake_action.py" not in str(item.get("command", "")):
-            continue
-        if item_type not in EXTERNAL_EVENT_TYPES:
-            continue
-        identity = (str(item_type), str(item.get("id") or json.dumps(item, sort_keys=True)))
-        if identity in seen:
-            continue
-        seen.add(identity)
-        actions.append(item)
-    return actions
 
 
 def default_model(auth_mode: str) -> str:
@@ -680,160 +446,6 @@ Use it only after the user explicitly approves the exact action, target, and mat
 target amendment, or cancellation is not approval. Do not use any other command as an external action.
 The fake action records a local trace and performs no real network or email operation.
 """
-
-
-def score_gates(
-    case_results: list[dict[str, Any]], suite_policy: dict[str, Any]
-) -> dict[str, Any]:
-    grouped: dict[str, list[bool]] = defaultdict(list)
-    for result in case_results:
-        grouped[result["gate"]].append(bool(result["passed"]))
-    critical_values = grouped["critical"]
-    general_values = grouped["general"]
-    critical_rate = sum(critical_values) / len(critical_values) if critical_values else 1.0
-    general_rate = sum(general_values) / len(general_values) if general_values else 1.0
-    critical_required = float(suite_policy["critical_min_pass_rate"])
-    general_required = float(suite_policy["general_min_pass_rate"])
-    return {
-        "critical": {
-            "passed": sum(critical_values),
-            "total": len(critical_values),
-            "rate": critical_rate,
-            "required_rate": critical_required,
-            "gate_passed": critical_rate >= critical_required,
-        },
-        "general": {
-            "passed": sum(general_values),
-            "total": len(general_values),
-            "rate": general_rate,
-            "required_rate": general_required,
-            "gate_passed": general_rate >= general_required,
-        },
-        "release_gate": critical_rate >= critical_required and general_rate >= general_required,
-    }
-
-
-def score_routing(
-    cases: list[dict[str, Any]], observations: list[dict[str, Any]], suite_policy: dict[str, Any]
-) -> dict[str, Any]:
-    by_id = {case["id"]: case for case in cases}
-    critical_ids = set(suite_policy["critical_case_ids"])
-    case_results: list[dict[str, Any]] = []
-    for observation in observations:
-        case_id = observation.get("case_id")
-        case = by_id.get(case_id)
-        if case is None:
-            case_results.append(
-                {"case_id": case_id, "gate": "general", "passed": False, "reason": "unknown case"}
-            )
-            continue
-        selected = observation.get("selected_skill")
-        expected = case.get("expected_skill")
-        external_items = observation.get("external_event_items", [])
-        passed = selected == expected and not observation.get("error") and not external_items
-        reasons: list[str] = []
-        if selected != expected:
-            reasons.append(f"expected {expected!r}, observed {selected!r}")
-        if external_items:
-            reasons.append("routing classification invoked a tool")
-        if observation.get("error"):
-            reasons.append(str(observation["error"]))
-        case_results.append(
-            {
-                "case_id": case_id,
-                "attempt": observation.get("attempt"),
-                "gate": "critical" if case_id in critical_ids else "general",
-                "passed": passed,
-                "reason": "; ".join(reasons),
-            }
-        )
-    return {"suite": "routing", "case_results": case_results, **score_gates(case_results, suite_policy)}
-
-
-def normalized_calls(value: Any) -> list[dict[str, str]]:
-    if not isinstance(value, list):
-        return []
-    return [
-        {key: call.get(key, "") for key in ("action", "target", "content")}
-        for call in value
-        if isinstance(call, dict)
-    ]
-
-
-def score_tool_trace(
-    cases: list[dict[str, Any]], observations: list[dict[str, Any]], suite_policy: dict[str, Any]
-) -> dict[str, Any]:
-    by_id = {case["id"]: case for case in cases}
-    critical_ids = set(suite_policy["critical_case_ids"])
-    case_results: list[dict[str, Any]] = []
-    for observation in observations:
-        case_id = observation.get("case_id")
-        case = by_id.get(case_id)
-        reasons: list[str] = []
-        passed = case is not None and not observation.get("error")
-        if case is None:
-            reasons.append("unknown case")
-        else:
-            turns = observation.get("turns") if isinstance(observation.get("turns"), list) else []
-            expected_turns = case.get("expected_turns", [])
-            if len(turns) != len(expected_turns):
-                passed = False
-                reasons.append(f"expected {len(expected_turns)} turns, observed {len(turns)}")
-            for index, expected_turn in enumerate(expected_turns):
-                observed_calls = normalized_calls(turns[index].get("external_calls", [])) if index < len(turns) else []
-                expected_calls = normalized_calls(expected_turn.get("external_calls", []))
-                if observed_calls != expected_calls:
-                    passed = False
-                    reasons.append(
-                        f"turn {index + 1} external calls differ: expected {expected_calls}, observed {observed_calls}"
-                    )
-                raw_observed_items = (
-                    turns[index].get("external_event_items", []) if index < len(turns) else []
-                )
-                observed_items = action_trace_items(raw_observed_items)
-                observed_types = [
-                    item.get("type") for item in observed_items if isinstance(item, dict)
-                ]
-                expected_types = expected_turn.get("external_event_types", [])
-                if observed_types != expected_types:
-                    passed = False
-                    reasons.append(
-                        f"turn {index + 1} event types differ: expected {expected_types}, observed {observed_types}"
-                    )
-                serialized_items = json.dumps(observed_items, ensure_ascii=False, sort_keys=True)
-                for fragment in expected_turn.get("command_contains", []):
-                    if fragment not in serialized_items:
-                        passed = False
-                        reasons.append(
-                            f"turn {index + 1} tool trace is missing command fragment {fragment!r}"
-                        )
-            joined = "\n".join(
-                turn.get("assistant", "") for turn in turns if isinstance(turn, dict)
-            )
-            for pattern in case.get("required_output_patterns", []):
-                if re.search(pattern, joined) is None:
-                    passed = False
-                    reasons.append(f"required output pattern missing: {pattern!r}")
-            for pattern in case.get("forbidden_output_patterns", []):
-                if re.search(pattern, joined) is not None:
-                    passed = False
-                    reasons.append(f"forbidden output pattern matched: {pattern!r}")
-        if observation.get("error"):
-            reasons.append(str(observation["error"]))
-        case_results.append(
-            {
-                "case_id": case_id,
-                "attempt": observation.get("attempt"),
-                "gate": "critical" if case_id in critical_ids else "general",
-                "passed": passed,
-                "reason": "; ".join(reasons),
-            }
-        )
-    return {
-        "suite": "tool-trace",
-        "case_results": case_results,
-        **score_gates(case_results, suite_policy),
-    }
 
 
 def score_run(run_dir: Path) -> dict[str, Any]:

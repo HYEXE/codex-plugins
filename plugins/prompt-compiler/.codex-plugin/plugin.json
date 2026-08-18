@@ -1,6 +1,6 @@
 {
   "name": "prompt-compiler",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "요청을 점검·보완하고 후속 변경분만 안전하게 컴파일해 실제 결과까지 수행·검증하는 한국어 중심 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
