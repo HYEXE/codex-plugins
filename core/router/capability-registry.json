@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "plugins": [
+    {
+      "name": "prompt-compiler",
+      "capabilities": ["prompt", "execution", "validation"]
+    },
+    {
+      "name": "uiux-advisor",
+      "capabilities": ["ui", "ux", "frontend", "design-system"]
+    }
+  ]
+}
