@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Plugin Contract",
+  "type": "object",
+  "required": ["name", "version", "capabilities", "skills", "evaluation"],
+  "properties": {
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "capabilities": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "properties": {
+          "name": {"type": "string"},
+          "path": {"type": "string"}
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": ["cases", "validator"],
+      "properties": {
+        "cases": {"type": "string"},
+        "validator": {"type": "string"}
+      }
+    }
+  }
+}
