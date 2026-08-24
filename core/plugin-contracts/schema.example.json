@@ -1,0 +1,10 @@
+{
+  "name": "example-plugin",
+  "version": "1.0.0",
+  "capabilities": ["example"],
+  "skills": [],
+  "evaluation": {
+    "cases": "evals/cases.jsonl",
+    "validator": "scripts/validate.py"
+  }
+}
