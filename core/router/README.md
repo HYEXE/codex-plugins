@@ -2,36 +2,33 @@
 
 ## Purpose
 
-Select the most appropriate plugin and skill from a user request.
+Select the most appropriate plugin and skill from a user request using explicit capability contracts.
 
 ## Routing flow
 
 ```text
 Request
   |
-Intent extraction
+Capability extraction
   |
-Capability matching
+Registry lookup
+  |
+Deterministic matching
   |
 Candidate ranking
   |
-Skill selection
-  |
 Execution
+  |
+Evaluation
 ```
 
-## Routing signals
+## Current prototype
 
-- User intent
-- Required capability
-- Domain
-- Risk level
-- Plugin availability
-- Evaluation confidence
+- `capability-registry.json`: plugin capability declarations
+- `matcher.py`: deterministic matcher
+- `evals/routing-cases.jsonl`: regression dataset
 
 ## Future implementation
-
-Possible modules:
 
 ```text
 router/
@@ -41,4 +38,4 @@ router/
 └── conflict-resolver
 ```
 
-The router should remain independent from individual plugins.
+The router remains independent from individual plugins.
