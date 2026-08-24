@@ -1,38 +1,14 @@
 {
   "name": "prompt-compiler",
   "version": "0.7.1",
+  "contract": "../../../../core/plugin-contracts/schema.json",
   "description": "요청을 점검·보완하고 후속 변경분만 안전하게 컴파일해 실제 결과까지 수행·검증하는 한국어 중심 워크플로입니다.",
-  "author": {
-    "name": "HYEXEN"
-  },
+  "author": {"name": "HYEXEN"},
   "skills": "./skills/",
   "interface": {
     "displayName": "Prompt Compiler",
-    "shortDescription": "요청과 후속 변경분을 안전한 실행 명세로 수행·검증",
-    "longDescription": "자연어 요청의 충분성을 판단하고 결과를 바꾸는 정보가 부족할 때만 핵심 질문으로 보완합니다. 같은 작업의 확정된 제약과 권한은 유지하고 후속 변경분만 다시 컴파일하며, 정정·취소·새 목표 전환과 preview 승인 무효화를 안전하게 처리합니다.",
-    "developerName": "HYEXEN",
     "category": "Productivity",
-    "capabilities": [
-      "의도와 권한 경계 보존",
-      "요청 충분성 판단과 선택적 니즈 확인",
-      "내부 실행 명세 생성과 즉시 수행",
-      "같은 작업의 후속 요청 점검",
-      "후속 변경분만 반영하는 delta compilation",
-      "정정·대체·취소에 따른 오래된 상태 무효화",
-      "질문 답변을 합쳐 이어서 실행",
-      "preview와 실제 외부 행동 분리",
-      "중요한 가정과 부분 완료 보고",
-      "재사용 가능한 최종 프롬프트 작성",
-      "최소 작업 그래프 구성",
-      "사용 가능한 기능으로 실행 경로 선택",
-      "결과 검증과 제한적 재계획",
-      "프롬프트 품질 진단과 회귀 평가"
-    ],
-    "defaultPrompt": [
-      "이 요청을 먼저 점검·보완한 뒤, 내부 실행 명세로 컴파일해 실제 작업과 검증까지 완료해줘.",
-      "이 작업의 확정된 제약을 유지하고 이후 변경분만 점검해 실행·검증까지 이어가줘.",
-      "실행하지 말고 이 요청을 재사용 가능한 최종 프롬프트로만 정리해줘."
-    ],
+    "capabilities": ["prompt compilation", "task execution", "evaluation"],
     "composerIcon": "./skills/prompt-compiler/assets/icon.svg",
     "logo": "./skills/prompt-compiler/assets/icon.svg"
   }
