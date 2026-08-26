@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: source-liveness-${{ github.ref }}
@@ -23,6 +24,34 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: 이전 성공 실행에서 drift history 복구(선택)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/source-liveness
+          prev_run_id="$(gh run list --workflow source-liveness.yml --limit 2 --status success --json databaseId -q '.[0].databaseId')"
+          if [ -z "$prev_run_id" ] || [ "$prev_run_id" = "null" ]; then
+            echo "이전 성공 source-liveness 실행이 없습니다."
+            exit 0
+          fi
+
+          artifact_name="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$prev_run_id/artifacts" \
+            --jq '.artifacts[] | select(.name | startswith("source-liveness-")) | .name | select(. != null)' \
+            | head -n 1)"
+          if [ -z "$artifact_name" ] || [ "$artifact_name" = "null" ]; then
+            echo "이전 실행의 source-liveness artifact를 찾지 못했습니다."
+            exit 0
+          fi
+          mkdir -p /tmp/source-liveness-history
+          gh run download "$prev_run_id" --name "$artifact_name" --dir /tmp/source-liveness-history
+          if [ -f /tmp/source-liveness-history/history.json ]; then
+            cp /tmp/source-liveness-history/history.json artifacts/source-liveness/
+            echo "이전 drift history를 복구했습니다."
+          else
+            echo "이전 실행에서 history 파일을 찾을 수 없습니다."
+          fi
+
       - name: Python 설정
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -32,6 +61,7 @@ jobs:
         continue-on-error: true
         run: |
           python scripts/check_source_liveness.py \
+            --history artifacts/source-liveness/history.json \
             --output-json artifacts/source-liveness/report.json \
             --output-markdown artifacts/source-liveness/report.md
 
@@ -41,6 +71,18 @@ jobs:
         run: |
           if [ -f artifacts/source-liveness/report.md ]; then
             cat artifacts/source-liveness/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f artifacts/source-liveness/report.json ]; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("artifacts/source-liveness/report.json").read_text(encoding="utf-8"))
+          comparison = report.get("comparison", {})
+          print()
+          print(f"- drift baseline comparison enabled: `{bool(comparison.get('enabled'))}`")
+          print(f"- drift baseline source: `{comparison.get('source') or '(none)'}`")
+          PY
           fi
 
       - name: 보고서 업로드

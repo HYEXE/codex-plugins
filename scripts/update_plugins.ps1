@@ -16,7 +16,7 @@ if ([string]::IsNullOrWhiteSpace($CodexPath)) {
     $CodexPath = "codex"
 }
 
-$Plugins = @("prompt-compiler", "uiux-advisor")
+$Plugins = @("prompt-compiler", "uiux-advisor", "interactive-slides")
 
 if (-not $DryRun -and -not (Get-Command $CodexPath -ErrorAction SilentlyContinue)) {
     throw "Codex CLI를 찾을 수 없습니다: $CodexPath. -CodexPath 또는 CODEX_BIN으로 실행 경로를 지정하세요."

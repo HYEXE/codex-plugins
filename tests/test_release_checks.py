@@ -79,6 +79,14 @@ class ReleaseTagTests(unittest.TestCase):
         self.assertEqual(failures, [])
         self.assertEqual(metadata["release_kind"], "repository")
 
+    def test_interactive_slides_tag_must_match_manifest_version(self) -> None:
+        policy = validate_release_tag.load_object(ROOT / "release" / "release-policy.json")
+        failures, metadata = validate_release_tag.validate_tag(
+            "interactive-slides-v0.6.0", policy, ROOT
+        )
+        self.assertEqual(failures, [])
+        self.assertEqual(metadata["plugin"], "interactive-slides")
+
 
 class ReleaseWorkflowTests(unittest.TestCase):
     def test_release_validates_before_creating_tag(self) -> None:
@@ -98,6 +106,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertNotIn("live-eval-full:", workflow)
         self.assertIn('--target "$RELEASE_COMMIT"', workflow)
         self.assertIn("local-live-eval-attestation.json", workflow)
+        self.assertEqual(workflow.count("scripts/validate_live_eval_release_report.py"), 2)
         self.assertLess(workflow.index("로컬 live eval 확인 자료 검증"), workflow.index("gh release create"))
 
     def test_live_eval_is_manual_or_release_only(self) -> None:

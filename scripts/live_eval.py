@@ -243,8 +243,42 @@ def validate_configuration() -> list[str]:
         if suite == "routing":
             for case in cases:
                 expected = case.get("expected_skill")
+                acceptable = case.get("acceptable_skills", [])
+                forbidden = case.get("forbidden_skills", [])
                 if expected is not None and expected not in known_skills:
                     failures.append(f"routing {case.get('id')}: unknown expected_skill {expected}")
+                acceptable_valid = isinstance(acceptable, list) and all(
+                    isinstance(skill, str) and skill in known_skills for skill in acceptable
+                )
+                forbidden_valid = isinstance(forbidden, list) and all(
+                    isinstance(skill, str) and skill in known_skills for skill in forbidden
+                )
+                if not acceptable_valid:
+                    failures.append(
+                        f"routing {case.get('id')}: acceptable_skills must contain known skill names"
+                    )
+                elif len(acceptable) != len(set(acceptable)):
+                    failures.append(f"routing {case.get('id')}: duplicate acceptable_skills")
+                elif expected in acceptable:
+                    failures.append(
+                        f"routing {case.get('id')}: expected_skill cannot also be acceptable"
+                    )
+                if not forbidden_valid:
+                    failures.append(
+                        f"routing {case.get('id')}: forbidden_skills must contain known skill names"
+                    )
+                elif len(forbidden) != len(set(forbidden)):
+                    failures.append(f"routing {case.get('id')}: duplicate forbidden_skills")
+                elif expected in forbidden:
+                    failures.append(
+                        f"routing {case.get('id')}: expected_skill cannot also be forbidden"
+                    )
+                if acceptable_valid and forbidden_valid:
+                    overlap = sorted(set(acceptable) & set(forbidden))
+                    if overlap:
+                        failures.append(
+                            f"routing {case.get('id')}: skills cannot be both acceptable and forbidden: {overlap}"
+                        )
         else:
             for case in cases:
                 prompts = case.get("prompts")

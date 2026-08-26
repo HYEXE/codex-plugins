@@ -54,10 +54,75 @@ UPDATE_SCRIPT_MARKERS = {
     ),
 }
 FORBIDDEN_SKILL_DOCS = ("README.md", "CHANGELOG.md")
+README_PLUGIN_ROW = re.compile(
+    r"^\|\s*`([a-z0-9-]+)`\s*\|\s*`([^`]+)`\s*\|",
+    re.MULTILINE,
+)
 
 
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def validate_repository_inventory(
+    marketplace_plugin_names: list[str],
+    failures: list[str],
+    *,
+    root: Path = ROOT,
+) -> None:
+    plugin_root = root / "plugins"
+    directory_names = sorted(
+        path.name
+        for path in plugin_root.iterdir()
+        if path.is_dir() and (path / ".codex-plugin" / "plugin.json").is_file()
+    )
+    marketplace_names = sorted(marketplace_plugin_names)
+    check(
+        directory_names == marketplace_names,
+        f"plugin inventory mismatch: directories={directory_names}, marketplace={marketplace_names}",
+        failures,
+    )
+
+    try:
+        policy = load_json(root / "release" / "release-policy.json")
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"release policy cannot be loaded: {exc}")
+        policy = {}
+    policy_plugins = policy.get("plugins") if isinstance(policy, dict) else None
+    policy_names = sorted(policy_plugins) if isinstance(policy_plugins, dict) else []
+    check(
+        directory_names == policy_names,
+        f"plugin inventory mismatch: directories={directory_names}, release-policy={policy_names}",
+        failures,
+    )
+
+    try:
+        readme_text = (root / "README.md").read_text(encoding="utf-8")
+    except OSError as exc:
+        failures.append(f"README cannot be loaded: {exc}")
+        readme_text = ""
+    readme_versions = dict(README_PLUGIN_ROW.findall(readme_text))
+    readme_names = sorted(readme_versions)
+    check(
+        directory_names == readme_names,
+        f"plugin inventory mismatch: directories={directory_names}, README={readme_names}",
+        failures,
+    )
+
+    for plugin_name in directory_names:
+        manifest_path = plugin_root / plugin_name / ".codex-plugin" / "plugin.json"
+        try:
+            manifest = load_json(manifest_path)
+        except (OSError, json.JSONDecodeError) as exc:
+            failures.append(f"{plugin_name}: manifest cannot be loaded: {exc}")
+            continue
+        version = manifest.get("version") if isinstance(manifest, dict) else None
+        check(manifest.get("name") == plugin_name, f"{plugin_name}: manifest name mismatch", failures)
+        check(
+            readme_versions.get(plugin_name) == version,
+            f"{plugin_name}: README version {readme_versions.get(plugin_name)!r} != manifest {version!r}",
+            failures,
+        )
 
 
 def check(condition: bool, message: str, failures: list[str]) -> None:
@@ -930,6 +995,7 @@ def main() -> int:
     failures: list[str] = []
     warnings: list[str] = []
     plugin_names = validate_marketplace(failures)
+    validate_repository_inventory(plugin_names, failures)
     quality_gates: dict[str, tuple[Path, dict[str, Any]]] = {}
     discovered_skills: dict[str, tuple[str, ...]] = {}
     for plugin_name in plugin_names:

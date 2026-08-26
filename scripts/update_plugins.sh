@@ -4,7 +4,7 @@ set -euo pipefail
 marketplace="${CODEX_PLUGINS_MARKETPLACE:-codex-plugins-kr}"
 codex_bin="${CODEX_BIN:-codex}"
 dry_run=false
-plugins=("prompt-compiler" "uiux-advisor")
+plugins=("prompt-compiler" "uiux-advisor" "interactive-slides")
 
 usage() {
   cat <<'EOF'

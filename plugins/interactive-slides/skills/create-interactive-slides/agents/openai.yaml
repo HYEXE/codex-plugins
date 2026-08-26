@@ -1,0 +1,4 @@
+interface:
+  display_name: "Interactive Slides Creator"
+  short_description: "발표문을 체험형·시연형 웹 슬라이드로 제작"
+  default_prompt: "Use $create-interactive-slides to turn this presentation script into an accessible interactive web deck."

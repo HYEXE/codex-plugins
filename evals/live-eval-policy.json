@@ -25,7 +25,8 @@
       "visualization-recharts",
       "creative-generic-composition",
       "design-component-library",
-      "graphics-three-product-viewer"
+      "graphics-three-product-viewer",
+      "slides-demo-product"
     ],
     "critical_min_pass_rate": 1.0,
     "general_min_pass_rate": 0.9

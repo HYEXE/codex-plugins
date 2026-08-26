@@ -1,0 +1,66 @@
+# Content to storyboard
+
+긴 발표문, 다수 출처 또는 여러 시연 장면이 있을 때만 이 절차를 사용한다. 짧고 명확한 발표를 불필요한 문서 작업으로 늘리지 않는다.
+
+## 1. Source ledger
+
+발표문에서 다음 요소를 분리한다.
+
+- `claim`: 청중이 기억해야 할 주장
+- `evidence`: 주장을 지지하는 사실·수치·인용과 출처
+- `transition`: 앞 장면에서 다음 장면으로 넘어가는 논리
+- `uncertainty`: 확인, 추정, 해설, 교육용 재구성의 구분
+- `demo input`: 시연이 시작되는 입력 또는 상태
+- `demo result`: 시연 뒤 화면에 남아야 하는 결과
+
+제공되지 않은 사실은 빈칸을 추론으로 채우지 않는다. 필요한 시각 자산이 없으면 텍스트·도형 fallback을 계획한다.
+
+## 2. Narrative spine
+
+발표 전체를 다음 질문에 답하는 최소 흐름으로 줄인다.
+
+```text
+왜 들어야 하는가?
+무엇이 문제인가?
+어떤 근거로 알 수 있는가?
+어떻게 작동하거나 변화하는가?
+청중은 무엇을 판단하거나 기억해야 하는가?
+```
+
+한 슬라이드는 하나의 주장만 담당한다. 같은 근거를 여러 슬라이드에서 반복하지 말고 앞 슬라이드의 결과를 다음 슬라이드의 입력으로 연결한다.
+
+## 3. Time budget
+
+총 발표 시간에서 오프닝, 전환, 질의응답, 시연 실패 복구 시간을 먼저 확보한다. 남은 시간을 슬라이드별로 배분하고 storyboard의 `seconds`에 기록한다. 자동 시연 장면은 실제 재생 시간뿐 아니라 설명과 replay 가능성을 포함한다.
+
+슬라이드 수를 보편적인 분당 비율로 고정하지 않는다. 밀도 높은 근거 슬라이드와 시연 장면은 더 긴 시간을 배정하고 표지·전환 슬라이드는 짧게 둔다.
+
+## 4. Storyboard row
+
+각 슬라이드에 다음 계약을 기록한다.
+
+```text
+slide id:
+section:
+purpose:
+single claim:
+evidence and certainty:
+screen copy:
+visual form:
+interaction candidate:
+mode behavior:
+speaker notes:
+seconds:
+fallback:
+source:
+```
+
+`screen copy`는 먼 거리에서 읽을 핵심 문구이고 `speaker notes`는 전환 문장, 강조점, 시연 cue와 말로만 전달할 맥락이다. 발표문 전체를 screen copy에 복사하지 않는다.
+
+## 5. Coherence check
+
+- 모든 핵심 claim이 정확히 한 슬라이드의 주 결과인지 확인한다.
+- evidence가 없는 claim은 의견·가설로 표시하거나 제거한다.
+- section 전환마다 앞 결과와 다음 질문이 연결되는지 확인한다.
+- 인터랙션을 제거해도 발표의 핵심 논리가 남는지 확인한다.
+- 결론이 새로운 근거를 갑자기 도입하지 않는지 확인한다.
