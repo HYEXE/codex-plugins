@@ -6,7 +6,6 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#071113">
   <title>Interactive Slides</title>
-  <script>document.documentElement.classList.add("js")</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -32,8 +31,29 @@
     <div id="scrim" class="scrim"></div>
 
     <main id="viewport" class="viewport">
-      <div id="stageWrap" class="stage-wrap">
-        <section id="stage" class="stage" tabindex="-1" aria-live="polite"></section>
+      <div id="stageWrap" class="stage-wrap static-fallback-wrap">
+        <section id="stage" class="stage has-static-fallback" tabindex="-1" aria-live="polite">
+          <!-- Keep this static first-slide fallback synchronized with deck.js when authoring. -->
+          <article class="slide static-fallback">
+            <header class="slide-head">
+              <span class="slide-number">01</span>
+              <div class="slide-heading">
+                <p class="kicker">OFFLINE-FIRST PRESENTATION</p>
+                <h1>Interactive Slides</h1>
+              </div>
+              <span class="evidence verified">CORE MESSAGE</span>
+            </header>
+            <div class="slide-body">
+              <p class="summary">발표문과 요구사항을 검토 가능한 스토리보드로 정리한 뒤, 승인된 장면만 체험형 또는 시연형 웹 슬라이드로 제작합니다.</p>
+              <ul class="points">
+                <li>핵심 주장과 근거를 슬라이드별로 분리합니다.</li>
+                <li>가치가 있는 장면에만 상호작용과 자동 시연을 적용합니다.</li>
+                <li>JavaScript가 실패해도 이 핵심 메시지와 발표 구조를 유지합니다.</li>
+              </ul>
+            </div>
+            <footer class="slide-footer"><span>Static first-slide fallback</span><span>HTML · CSS · JavaScript</span></footer>
+          </article>
+        </section>
       </div>
     </main>
 
@@ -54,7 +74,7 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </div>
-  <noscript>이 발표 자료의 시연 장면에는 JavaScript가 필요합니다.</noscript>
+  <noscript>상호작용은 비활성화됐지만 위의 핵심 발표 내용은 계속 확인할 수 있습니다.</noscript>
   <script src="deck.js"></script>
   <script src="scenes.js"></script>
   <script src="presentation.js"></script>

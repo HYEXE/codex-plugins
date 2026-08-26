@@ -50,6 +50,8 @@
   function renderSlide() {
     state.scene?.destroy();
     state.scene = null;
+    elements.stageWrap.classList.remove("static-fallback-wrap");
+    elements.stage.classList.remove("has-static-fallback");
     const slide = currentSlide();
     const evidence = slide.evidence ? `<span class="evidence ${escapeHtml(slide.evidence.tone)}">${escapeHtml(slide.evidence.label)}</span>` : "";
     const body = Array.isArray(slide.body) ? `<div class="body-copy">${slide.body.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}</div>` : "";
@@ -142,6 +144,13 @@
   }
 
   function fitStage() {
+    const mobileReflow = window.matchMedia("(max-width: 720px)").matches;
+    elements.app.classList.toggle("mobile-reflow", mobileReflow);
+    if (mobileReflow) {
+      state.fitScale = 1;
+      applyScale();
+      return;
+    }
     const availableWidth = Math.max(320, elements.viewport.clientWidth - 40);
     const availableHeight = Math.max(180, elements.viewport.clientHeight - 40);
     state.fitScale = Math.min(availableWidth / 1600, availableHeight / 900);
@@ -149,6 +158,13 @@
   }
 
   function applyScale() {
+    if (elements.app.classList.contains("mobile-reflow")) {
+      elements.stage.style.removeProperty("transform");
+      elements.stageWrap.style.removeProperty("width");
+      elements.stageWrap.style.removeProperty("height");
+      elements.zoomText.textContent = "100%";
+      return;
+    }
     const scale = Math.max(0.2, Math.min(2, state.fitScale * state.zoom));
     elements.stage.style.transform = `scale(${scale})`;
     elements.stageWrap.style.width = `${1600 * scale}px`;
@@ -220,14 +236,13 @@
       }
       return;
     }
-    const onControl = event.target instanceof Element && event.target.closest("button,a,input,textarea,select,[contenteditable='true']");
-    if (onControl && !/^(Arrow|Page|Home|End)/.test(event.key)) return;
+    const onControl = event.target instanceof Element && event.target.closest("button,a,input,textarea,select,[contenteditable='true'],[role='slider'],[role='tab'],[role='menuitem'],[role='option']");
+    if (onControl) return;
     if (["ArrowRight", "PageDown", " ", "Enter"].includes(event.key)) { event.preventDefault(); advanceForward(); }
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) { event.preventDefault(); go(state.index - 1); }
     else if (event.key === "Home") { event.preventDefault(); go(0); }
     else if (event.key === "End") { event.preventDefault(); go(deck.slides.length - 1); }
     else if (event.key.toLowerCase() === "o") { event.preventDefault(); toggleOutline(); }
-    else if (event.key.toLowerCase() === "m") { event.preventDefault(); setMode(state.mode === "demo" ? "experience" : "demo"); }
     else if (event.key.toLowerCase() === "n") { event.preventDefault(); toggleNotes(); }
     else if (event.key.toLowerCase() === "r") { event.preventDefault(); replayCurrent(); }
     else if (event.key.toLowerCase() === "f") { event.preventDefault(); toggleFullscreen(); }

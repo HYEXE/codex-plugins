@@ -40,6 +40,9 @@ button:disabled { cursor: not-allowed; opacity: 0.35; }
 .viewport { position: relative; min-height: 0; overflow: auto; display: grid; place-items: center; padding: 20px; }
 .stage-wrap { position: relative; flex: none; }
 .stage { position: absolute; inset: 0 auto auto 0; width: var(--stage-width); height: var(--stage-height); overflow: hidden; transform-origin: top left; color: var(--paper); background: var(--panel); box-shadow: 0 26px 90px rgba(0, 0, 0, 0.48); }
+.stage-wrap.static-fallback-wrap { width: min(100%, var(--stage-width)); height: min(var(--stage-height), calc(100dvh - 156px)); min-height: 32rem; }
+.stage.has-static-fallback { position: relative; width: 100%; height: 100%; transform: none !important; }
+.stage.has-static-fallback .slide { min-height: 100%; }
 .slide { position: relative; width: 100%; height: 100%; padding: 72px 84px 56px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 28px; overflow: hidden; background: linear-gradient(145deg, rgba(20, 41, 44, 0.96), rgba(7, 17, 19, 0.98)); }
 .slide::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 70%); }
 .slide-head, .slide-body, .slide-footer { position: relative; z-index: 1; }
@@ -214,4 +217,24 @@ button.icon-control:focus-visible {
     min-inline-size: 2.6rem;
     block-size: 2.6rem;
   }
+
+  .viewport { place-items: start stretch; padding: 0; }
+  .stage-wrap,
+  .stage-wrap.static-fallback-wrap { width: 100% !important; height: auto !important; min-height: 0; }
+  .stage,
+  .stage.has-static-fallback { position: relative; inset: auto; width: 100%; height: auto; min-height: calc(100dvh - 9rem); overflow: visible; transform: none !important; box-shadow: none; }
+  .slide,
+  .stage.has-static-fallback .slide { height: auto; min-height: calc(100dvh - 9rem); padding: 2rem 1.25rem 1.5rem; grid-template-rows: auto auto auto; gap: 1.5rem; overflow: visible; }
+  .slide-head { display: grid; gap: 0.75rem; }
+  .slide h1 { max-width: none; font-size: clamp(2rem, 10vw, 3.25rem); line-height: 1.05; }
+  .evidence { justify-self: start; }
+  .slide-body { align-content: start; }
+  .summary,
+  .body-copy,
+  .points { max-width: none; font-size: 1rem; line-height: 1.55; }
+  .metrics { grid-template-columns: 1fr; }
+  .metric { min-height: 0; padding: 1.25rem; }
+  .metric b { font-size: 2.5rem; }
+  .slide-footer { flex-wrap: wrap; }
+  .source-list { white-space: normal; }
 }

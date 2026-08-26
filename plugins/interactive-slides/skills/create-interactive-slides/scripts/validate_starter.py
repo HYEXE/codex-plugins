@@ -27,23 +27,30 @@ def main() -> int:
     index = files["index.html"]
     runtime = files["presentation.js"]
     scenes = files["scenes.js"]
+    styles = files["styles.css"]
     checks = {
         "scripts load in dependency order": index.find('src="deck.js"') < index.find('src="scenes.js"') < index.find('src="presentation.js"'),
         "deck controls are present": all(f'id="{control}"' in index for control in ("outlineBtn", "replayBtn", "zoomOut", "zoomIn", "fitBtn", "fullBtn", "progressTrack")),
         "speaker notes are present": 'id="speakerNotes"' in index,
-        "styles honor reduced motion": "prefers-reduced-motion" in files["styles.css"],
-        "styles define 16 by 9 stage": "--stage-width: 1600px" in files["styles.css"] and "--stage-height: 900px" in files["styles.css"],
+        "styles honor reduced motion": "prefers-reduced-motion" in styles,
+        "styles define 16 by 9 stage": "--stage-width: 1600px" in styles and "--stage-height: 900px" in styles,
+        "mobile layout reflows instead of scaling": all(marker in styles for marker in ("@media (max-width: 720px)", "height: auto", "transform: none !important", "overflow: visible")),
         "deck exports data": "window.INTERACTIVE_DECK" in files["deck.js"],
         "deck includes evidence boundaries": all(marker in files["deck.js"] for marker in ("verified", "analysis", "simulation", "SYNTHETIC TELEMETRY")),
         "scene factory is exported": "window.InteractiveSlideScenes" in scenes,
         "expanded scene recipes are implemented": all(f'"{scene_type}"' in scenes for scene_type in ("timeline", "diagram", "code-walkthrough", "before-after")),
         "expanded scene recipes have starter examples": all(f'type: "{scene_type}"' in files["deck.js"] for scene_type in ("timeline", "diagram", "code-walkthrough", "before-after")),
         "sequence owns lifecycle": all(marker in scenes for marker in ('"ready"', '"running"', '"complete"', "runToken", "clearTimers")),
+        "sequence completion restores reset control": 'this.nextButton.textContent = "처음으로";' in scenes and "this.nextButton.disabled = false;" in scenes,
         "deck destroys scenes": "state.scene?.destroy()" in runtime,
         "navigation cancels scenes": "state.scene?.cancel()" in runtime,
         "demo intercepts forward navigation": 'state.mode === "demo" && state.scene?.blocksAdvance' in runtime,
         "runtime supports experience": '"experience"' in runtime,
         "runtime supports demo": '"demo"' in runtime,
+        "controls retain native keyboard behavior": "if (onControl) return;" in runtime,
+        "locked authoring mode has no runtime shortcut": 'event.key.toLowerCase() === "m"' not in runtime,
+        "starter keeps a static first-slide fallback": all(marker in index for marker in ("static-fallback-wrap", "has-static-fallback", 'class="slide static-fallback"', "CORE MESSAGE")),
+        "runtime progressively replaces static fallback": all(marker in runtime for marker in ('classList.remove("static-fallback-wrap")', 'classList.remove("has-static-fallback")')),
         "runtime avoids dynamic evaluation": not any(marker in scenes + runtime for marker in ("eval(", "new Function")),
         "starter is offline": not any("https://" in text or "http://" in text for text in files.values()),
         "starter has no placeholders": not any("[TODO:" in text for text in files.values()),

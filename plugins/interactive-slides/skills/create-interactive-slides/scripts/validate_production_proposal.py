@@ -39,7 +39,9 @@ REQUIRED_SECTIONS = (
 ALLOWED_STATUSES = {"draft", "review", "approved", "production", "qa", "delivered"}
 ALLOWED_MODES = {"demo", "experience", "hybrid"}
 ALLOWED_CONFIDENCE = {"low", "medium", "high"}
-SLIDE_ROW = re.compile(r"^\|\s*S\d{2,}\s*\|", re.MULTILINE)
+ALLOWED_SLIDE_STATUSES = {"review", "approved", "revise", "remove", "defer"}
+RESOLVED_SLIDE_STATUSES = {"approved", "remove", "defer"}
+SLIDE_ROW = re.compile(r"^\|\s*(S\d{2,})\s*\|\s*([^|]+?)\s*\|", re.MULTILINE)
 
 
 def parse_scalar(value: str) -> str:
@@ -111,10 +113,20 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
         if section not in headings
     )
 
-    slide_rows = len(SLIDE_ROW.findall(text))
+    slide_entries = [(slide_id, slide_status.strip()) for slide_id, slide_status in SLIDE_ROW.findall(text)]
+    slide_rows = len(slide_entries)
     if estimated_slides is not None and slide_rows != estimated_slides:
         errors.append(
             f"estimated_slides is {estimated_slides}, but {slide_rows} slide rows were found"
+        )
+    unsupported_slide_statuses = [
+        f"{slide_id} ({slide_status})"
+        for slide_id, slide_status in slide_entries
+        if slide_status not in ALLOWED_SLIDE_STATUSES
+    ]
+    if unsupported_slide_statuses:
+        errors.append(
+            "unsupported slide row statuses: " + ", ".join(unsupported_slide_statuses)
         )
 
     if require_approved:
@@ -126,6 +138,18 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
             errors.append("production gate requires approved_by")
         if not metadata.get("approved_at"):
             errors.append("production gate requires approved_at")
+        unresolved_slide_rows = [
+            f"{slide_id} ({slide_status})"
+            for slide_id, slide_status in slide_entries
+            if slide_status not in RESOLVED_SLIDE_STATUSES
+        ]
+        if unresolved_slide_rows:
+            errors.append(
+                "production gate requires resolved slide rows: "
+                + ", ".join(unresolved_slide_rows)
+            )
+    else:
+        unresolved_slide_rows = []
 
     return {
         "valid": not errors,
@@ -134,6 +158,7 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
         "proposal_status": status,
         "presentation_mode": mode,
         "slide_rows": slide_rows,
+        "unresolved_slide_rows": unresolved_slide_rows,
         "require_approved": require_approved,
         "errors": errors,
     }

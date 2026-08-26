@@ -23,7 +23,7 @@
   "case_set": "full",
   "attempts": 1,
   "results": "skill-routing-observed-2026-08-26.jsonl",
-  "results_sha256": "cb332c29f3e3223cdeb46e86001a99c518817efc32b6134a28d126bd452cd93f",
+  "results_sha256": "7ed34a15a39a3be4e7c685aeafcb7ac70b83a736fa5839e91defd1c183b7c51b",
   "observation_scope": "selected-skill-only",
   "notes": "Normalized from the saved-auth full routing live eval, then reclassified against an adjudicated dataset whose prompts are unchanged and whose dual-signal cases declare acceptable alternatives. execution_dataset_sha256 preserves the exact run input. Volatile thread, usage, event-path, and rationale fields remain in the immutable run artifact."
 }

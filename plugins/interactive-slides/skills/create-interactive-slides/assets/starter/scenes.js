@@ -88,6 +88,7 @@
       this.statusText.textContent = `COMPLETE · ${this.config.phases.length} / ${this.config.phases.length}`;
       this.root.querySelectorAll("[data-node]").forEach((node) => { node.classList.remove("active"); node.classList.add("complete"); });
       this.nextButton.textContent = "처음으로";
+      this.nextButton.disabled = false;
       this.context.announce?.("시연 장면이 완료됐습니다");
     }
     start() {
