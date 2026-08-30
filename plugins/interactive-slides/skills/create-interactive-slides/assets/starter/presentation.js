@@ -31,6 +31,7 @@
     toastTimer: 0,
     touchX: 0,
     touchY: 0,
+    touchStartedOnControl: false,
     outlineReturnFocus: null
   };
   if (!["experience", "demo"].includes(state.mode)) state.mode = "demo";
@@ -280,11 +281,26 @@
     const match = window.location.hash.match(/slide=(\d+)/);
     if (match) go(Number(match[1]) - 1, false);
   });
-  document.addEventListener("touchstart", (event) => { state.touchX = event.changedTouches[0].clientX; state.touchY = event.changedTouches[0].clientY; }, { passive: true });
+  document.addEventListener("touchstart", (event) => {
+    state.touchX = event.changedTouches[0].clientX;
+    state.touchY = event.changedTouches[0].clientY;
+    state.touchStartedOnControl = Boolean(
+      event.target.closest(
+        "button, a, input, textarea, select, [role='button'], [role='slider'], [role='tab'], [contenteditable='true']"
+      )
+    );
+  }, { passive: true });
   document.addEventListener("touchend", (event) => {
+    const startedOnControl = state.touchStartedOnControl;
+    state.touchStartedOnControl = false;
+    if (startedOnControl) return;
     const x = event.changedTouches[0].clientX - state.touchX;
     const y = event.changedTouches[0].clientY - state.touchY;
     if (Math.abs(x) > 60 && Math.abs(x) > Math.abs(y) * 1.2) go(state.index + (x < 0 ? 1 : -1));
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", () => {
+    state.touchStartedOnControl = false;
   }, { passive: true });
 
   buildOutline();

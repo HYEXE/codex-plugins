@@ -30,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p artifacts/source-liveness
-          prev_run_id="$(gh run list --workflow source-liveness.yml --limit 2 --status success --json databaseId -q '.[0].databaseId')"
+          prev_run_id="$(gh run list --workflow source-liveness.yml --branch "$GITHUB_REF_NAME" --limit 2 --status success --json databaseId -q '.[0].databaseId')"
           if [ -z "$prev_run_id" ] || [ "$prev_run_id" = "null" ]; then
             echo "이전 성공 source-liveness 실행이 없습니다."
             exit 0

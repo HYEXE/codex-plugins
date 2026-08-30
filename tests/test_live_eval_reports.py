@@ -17,6 +17,58 @@ import build_live_eval_release_report as release_report  # noqa: E402
 import validate_live_eval_release_report as report_validator  # noqa: E402
 
 
+def valid_release_run(label: str, run_id: str) -> dict[str, object]:
+    suite, case_set = release_report.RUN_EXPECTATIONS[label]
+    dataset_marker = "a" if suite == "routing" else "b"
+    return {
+        "label": label,
+        "run_id": run_id,
+        "suite": suite,
+        "case_set": case_set,
+        "attempts": 1,
+        "model": "gpt-5.6",
+        "reasoning_effort": "medium",
+        "codex_version": "codex-cli 0.147.0",
+        "runner_commit": "c" * 40,
+        "runner_dirty": False,
+        "dataset_path": f"evals/{suite}.json",
+        "dataset_sha256": dataset_marker * 64,
+        "policy_sha256": "d" * 64,
+        "plugin_versions": {"interactive-slides": "0.6.0"},
+        "completed_at": "2026-08-26T00:00:00Z",
+        "critical": {
+            "passed": 2,
+            "total": 2,
+            "rate": 1.0,
+            "required_rate": 1.0,
+            "gate_passed": True,
+        },
+        "general": {
+            "passed": 9,
+            "total": 10,
+            "rate": 0.9,
+            "required_rate": 0.9,
+            "gate_passed": True,
+        },
+        "release_gate": True,
+    }
+
+
+def valid_release_payload(ids: dict[str, str]) -> dict[str, object]:
+    return {
+        "schema_version": "1.1.0",
+        "generated_at": "2026-08-26T00:05:00Z",
+        "current_tag": "codex-plugins-v1.0.0",
+        "runs": [
+            valid_release_run(label, ids[label])
+            for label in release_report.RUN_LABELS
+        ],
+        "trends": [],
+        "alerts": [],
+        "previous": None,
+    }
+
+
 class CanaryMatrixTests(unittest.TestCase):
     def test_dry_run_uses_windows_safe_cell_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_value:
@@ -82,7 +134,9 @@ class ReleaseReportTests(unittest.TestCase):
             with mock.patch.object(release_report, "parse_run_ids", return_value={}):
                 with mock.patch.object(release_report, "build_runs", return_value=[]):
                     report = release_report.build_report(args)
-            self.assertEqual(report["previous"]["source"], previous_path.as_posix())
+            self.assertEqual(report["previous"]["source"], "previous.json")
+            self.assertNotIn(temp_value, json.dumps(report))
+            self.assertNotIn("current_run_root", report)
             self.assertEqual(report["previous"]["note"], "no comparable labels found")
 
     def test_release_asset_validator_checks_tag_and_run_provenance(self) -> None:
@@ -90,20 +144,7 @@ class ReleaseReportTests(unittest.TestCase):
             label: f"20260826T00000{index}Z-{index:012x}"
             for index, label in enumerate(release_report.RUN_LABELS)
         }
-        payload = {
-            "schema_version": "1.1.0",
-            "current_tag": "codex-plugins-v1.0.0",
-            "runs": [
-                {
-                    "label": label,
-                    "run_id": run_id,
-                    "suite": release_report.RUN_EXPECTATIONS[label][0],
-                    "case_set": release_report.RUN_EXPECTATIONS[label][1],
-                    "release_gate": True,
-                }
-                for label, run_id in ids.items()
-            ],
-        }
+        payload = valid_release_payload(ids)
         failures = report_validator.validate_report(
             payload,
             "codex-plugins-v1.0.0",
@@ -116,6 +157,51 @@ class ReleaseReportTests(unittest.TestCase):
             ",".join(ids[label] for label in release_report.RUN_LABELS),
         )
         self.assertIn("current_tag must be codex-plugins-v2.0.0", failures)
+
+    def test_release_asset_validator_rejects_missing_gate_metrics(self) -> None:
+        ids = {
+            label: f"20260826T00000{index}Z-{index:012x}"
+            for index, label in enumerate(release_report.RUN_LABELS)
+        }
+        payload = valid_release_payload(ids)
+        del payload["runs"][0]["critical"]
+        failures = report_validator.validate_report(
+            payload,
+            "codex-plugins-v1.0.0",
+            ",".join(ids[label] for label in release_report.RUN_LABELS),
+        )
+        self.assertIn("routing_critical.critical must be an object", failures)
+
+    def test_release_asset_validator_rejects_absolute_previous_path(self) -> None:
+        ids = {
+            label: f"20260826T00000{index}Z-{index:012x}"
+            for index, label in enumerate(release_report.RUN_LABELS)
+        }
+        payload = valid_release_payload(ids)
+        payload["previous"] = {
+            "schema_version": "1.1.0",
+            "current_tag": "codex-plugins-v0.9.0",
+            "source": "C:\\private\\previous.json",
+        }
+        failures = report_validator.validate_report(
+            payload,
+            "codex-plugins-v1.0.0",
+            ",".join(ids[label] for label in release_report.RUN_LABELS),
+        )
+        self.assertIn(
+            "previous.source must be a filename, not a local path", failures
+        )
+
+    def test_run_bundle_rejects_mixed_runner_commit(self) -> None:
+        runs = [
+            valid_release_run(
+                label, f"20260826T00000{index}Z-{index:012x}"
+            )
+            for index, label in enumerate(release_report.RUN_LABELS)
+        ]
+        runs[1]["runner_commit"] = "e" * 40
+        with self.assertRaisesRegex(ValueError, "mixed runner_commit provenance"):
+            release_report.validate_coherent_run_bundle(runs)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,32 @@ from pathlib import Path
 
 REQUIRED_FILES = ("index.html", "styles.css", "deck.js", "scenes.js", "presentation.js")
 SLIDE_ID = re.compile(r"\bid\s*:\s*[\"']([a-z0-9]+(?:-[a-z0-9]+)*)[\"']")
-REMOTE_URL = re.compile(r"https?://", re.IGNORECASE)
+REMOTE_ASSET_PATTERNS = (
+    re.compile(
+        r"<(?:script|img|source|video|audio|iframe|embed)\b[^>]*"
+        r"\b(?:src|srcset)\s*=\s*(?:[\"'][^\"']*https?://|[^\s>\"']*https?://)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"<link\b[^>]*\bhref\s*=\s*(?:[\"'][^\"']*https?://|[^\s>\"']*https?://)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"<object\b[^>]*\bdata\s*=\s*(?:[\"'][^\"']*https?://|[^\s>\"']*https?://)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(?:url\(\s*[\"']?|@import\s+[\"']?)https?://", re.IGNORECASE),
+    re.compile(r"\bfetch\s*\(\s*[\"'`]https?://", re.IGNORECASE),
+    re.compile(r"\bimport\s*(?:\(\s*)?[\"'`]https?://", re.IGNORECASE),
+)
+
+
+def count_remote_assets(texts: dict[str, str]) -> int:
+    return sum(
+        len(pattern.findall(text))
+        for text in texts.values()
+        for pattern in REMOTE_ASSET_PATTERNS
+    )
 
 
 def extract_slide_blocks(deck: str) -> list[str]:
@@ -74,9 +99,17 @@ def validate(project: Path, *, allow_remote_assets: bool) -> tuple[list[str], li
     scenes = texts["scenes.js"]
     runtime = texts["presentation.js"]
     combined = "\n".join(texts.values())
+    script_positions = [
+        index.find('src="deck.js"'),
+        index.find('src="scenes.js"'),
+        index.find('src="presentation.js"'),
+    ]
 
     checks = {
-        "scripts must load deck, scenes, presentation in order": index.find('src="deck.js"') < index.find('src="scenes.js"') < index.find('src="presentation.js"'),
+        "scripts must load deck, scenes, presentation in order": (
+            all(position >= 0 for position in script_positions)
+            and script_positions == sorted(script_positions)
+        ),
         "index must expose semantic stage": 'id="stage"' in index and 'aria-live="polite"' in index,
         "index must expose outline and progress": 'id="outline"' in index and 'id="progressTrack"' in index,
         "index must expose replay and fullscreen": 'id="replayBtn"' in index and 'id="fullBtn"' in index,
@@ -110,7 +143,7 @@ def validate(project: Path, *, allow_remote_assets: bool) -> tuple[list[str], li
     if len(slide_ids) != len(set(slide_ids)):
         failures.append("deck contains duplicate slide ids")
 
-    remote_count = sum(len(REMOTE_URL.findall(text)) for text in texts.values())
+    remote_count = count_remote_assets(texts)
     if remote_count and not allow_remote_assets:
         failures.append(f"remote URLs require --allow-remote-assets: {remote_count} found")
     elif remote_count:
@@ -127,7 +160,7 @@ def validate(project: Path, *, allow_remote_assets: bool) -> tuple[list[str], li
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project", type=Path, help="Directory containing index.html and deck runtime files")
-    parser.add_argument("--allow-remote-assets", action="store_true", help="Allow HTTP(S) references and report them as warnings")
+    parser.add_argument("--allow-remote-assets", action="store_true", help="Allow remote asset loads and report them as warnings")
     parser.add_argument("--json", action="store_true", help="Print a machine-readable result")
     args = parser.parse_args()
 

@@ -148,6 +148,15 @@ class SourceLivenessTests(unittest.TestCase):
                 )
         validate.assert_called_once_with("https://127.0.0.1/internal")
 
+    def test_history_lookup_is_scoped_to_current_branch(self) -> None:
+        workflow = (
+            ROOT / ".github" / "workflows" / "source-liveness.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'gh run list --workflow source-liveness.yml --branch "$GITHUB_REF_NAME"',
+            workflow,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

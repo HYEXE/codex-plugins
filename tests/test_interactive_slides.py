@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "plugins" / "interactive-slides" / "skills" / "create-interactive-slides"
 VALIDATOR_PATH = SKILL / "scripts" / "validate_production_proposal.py"
+DECK_VALIDATOR_PATH = SKILL / "scripts" / "validate_deck_project.py"
+STARTER_PATH = SKILL / "assets" / "starter"
 TEMPLATE_PATH = SKILL / "templates" / "production-proposal.md"
 
 
@@ -16,6 +19,15 @@ def load_validator():
     spec = importlib.util.spec_from_file_location("interactive_slides_proposal_validator", VALIDATOR_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError("could not load Interactive Slides proposal validator")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_deck_validator():
+    spec = importlib.util.spec_from_file_location("interactive_slides_deck_validator", DECK_VALIDATOR_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load Interactive Slides deck validator")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -64,6 +76,84 @@ class ProductionProposalGateTests(unittest.TestCase):
         errors = "\n".join(result["errors"])
         self.assertIn("unsupported slide row statuses", errors)
         self.assertIn("S01 (unknown)", errors)
+
+    def test_approval_gate_rejects_duplicate_slide_ids(self) -> None:
+        text = approved_proposal("approved").replace(
+            "estimated_slides: 1", "estimated_slides: 2", 1
+        )
+        slide_row = next(
+            line for line in text.splitlines() if line.startswith("| S01 |")
+        )
+        result = self.validate(text.replace(slide_row, f"{slide_row}\n{slide_row}", 1))
+        self.assertFalse(result["valid"])
+        self.assertEqual(result["duplicate_slide_ids"], ["S01"])
+        self.assertIn("duplicate slide ID: S01", result["errors"])
+
+
+class DeckProjectValidatorTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.validator = load_deck_validator()
+
+    def copy_starter(self, destination: Path) -> None:
+        for name in self.validator.REQUIRED_FILES:
+            shutil.copy2(STARTER_PATH / name, destination / name)
+
+    def test_missing_deck_script_fails_load_order(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            project = Path(temp_value)
+            self.copy_starter(project)
+            index_path = project / "index.html"
+            index_path.write_text(
+                index_path.read_text(encoding="utf-8").replace(
+                    '<script src="deck.js"></script>', "", 1
+                ),
+                encoding="utf-8",
+            )
+            failures, _, _ = self.validator.validate(
+                project, allow_remote_assets=False
+            )
+        self.assertIn(
+            "scripts must load deck, scenes, presentation in order", failures
+        )
+
+    def test_citation_url_is_not_counted_as_remote_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            project = Path(temp_value)
+            self.copy_starter(project)
+            deck_path = project / "deck.js"
+            deck_path.write_text(
+                deck_path.read_text(encoding="utf-8").replace(
+                    'sources: ["Interactive Slides starter · architecture contract"]',
+                    'sources: ["https://example.com/report"]',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            failures, _, metrics = self.validator.validate(
+                project, allow_remote_assets=False
+            )
+        self.assertEqual(failures, [])
+        self.assertEqual(metrics["remote_urls"], 0)
+
+    def test_remote_image_is_counted_as_remote_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            project = Path(temp_value)
+            self.copy_starter(project)
+            index_path = project / "index.html"
+            index_path.write_text(
+                index_path.read_text(encoding="utf-8").replace(
+                    "</body>",
+                    '<img src=https://example.com/chart.png alt="">\n</body>',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            failures, _, metrics = self.validator.validate(
+                project, allow_remote_assets=False
+            )
+        self.assertIn("remote URLs require --allow-remote-assets: 1 found", failures)
+        self.assertEqual(metrics["remote_urls"], 1)
 
 
 if __name__ == "__main__":

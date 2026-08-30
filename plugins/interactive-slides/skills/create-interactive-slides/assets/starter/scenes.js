@@ -297,8 +297,7 @@
       if (config.type === "sequence") return new SequenceScene(root, config, context);
       if (["timeline", "code-walkthrough"].includes(config.type)) return new ProgressiveScene(root, config, context);
       if (["steps", "comparison", "choice", "range", "diagram", "before-after"].includes(config.type)) return new InteractionScene(root, config, context);
-      root.textContent = `지원하지 않는 scene type: ${config.type}`;
-      return new SceneController(root, config, context);
+      throw new Error(`지원하지 않는 scene type: ${config.type}`);
     }
   };
 })();

@@ -99,7 +99,7 @@ window.INTERACTIVE_DECK = {
           { label: "발표자가 순서 제어", feedback: "demo 모드가 적합합니다." }
         ]
       },
-      notes: ["청중의 답을 받은 뒤 상단 mode 버튼으로 실제 동작을 전환합니다."],
+      notes: ["이 starter는 demo 모드로 잠겨 있으며, experience 동작은 제작 전 mode contract 검토 단계에서 선택합니다."],
       sources: ["Interactive Slides · mode contract"]
     },
     {

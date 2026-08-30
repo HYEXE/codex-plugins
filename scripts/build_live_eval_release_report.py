@@ -32,12 +32,26 @@ REQUIRED_MANIFEST_FIELDS = {
     "case_set",
     "attempts",
     "model",
+    "reasoning_effort",
     "codex_version",
     "runner_commit",
     "runner_dirty",
     "dataset_path",
+    "dataset_sha256",
+    "policy_sha256",
+    "plugin_versions",
     "completed_at",
 }
+COMMON_PROVENANCE_FIELDS = (
+    "runner_commit",
+    "runner_dirty",
+    "model",
+    "reasoning_effort",
+    "codex_version",
+    "policy_sha256",
+    "plugin_versions",
+)
+SUITE_PROVENANCE_FIELDS = ("dataset_path", "dataset_sha256")
 
 
 def utc_now() -> str:
@@ -144,10 +158,14 @@ def build_run_record(label: str, run_id: str, run_root: Path) -> dict[str, Any]:
         "case_set": str(manifest["case_set"]),
         "attempts": int(manifest["attempts"]),
         "model": str(manifest["model"]),
+        "reasoning_effort": str(manifest["reasoning_effort"]),
         "codex_version": str(manifest["codex_version"]),
         "runner_commit": str(manifest["runner_commit"]),
         "runner_dirty": bool(manifest["runner_dirty"]),
         "dataset_path": str(manifest["dataset_path"]),
+        "dataset_sha256": str(manifest["dataset_sha256"]),
+        "policy_sha256": str(manifest["policy_sha256"]),
+        "plugin_versions": dict(manifest["plugin_versions"]),
         "completed_at": str(manifest["completed_at"]),
         "critical": {
             "passed": int(critical["passed"]),
@@ -167,6 +185,37 @@ def build_run_record(label: str, run_id: str, run_root: Path) -> dict[str, Any]:
     }
 
 
+def validate_coherent_run_bundle(runs: list[dict[str, Any]]) -> None:
+    if not runs:
+        return
+    for field in COMMON_PROVENANCE_FIELDS:
+        expected = runs[0].get(field)
+        mismatched = [
+            str(run.get("label"))
+            for run in runs[1:]
+            if run.get(field) != expected
+        ]
+        if mismatched:
+            raise ValueError(
+                f"mixed {field} provenance in live-eval bundle: {mismatched}"
+            )
+
+    suites = {str(run.get("suite")) for run in runs}
+    for suite in suites:
+        suite_runs = [run for run in runs if str(run.get("suite")) == suite]
+        for field in SUITE_PROVENANCE_FIELDS:
+            expected = suite_runs[0].get(field)
+            mismatched = [
+                str(run.get("label"))
+                for run in suite_runs[1:]
+                if run.get(field) != expected
+            ]
+            if mismatched:
+                raise ValueError(
+                    f"mixed {field} provenance for suite {suite}: {mismatched}"
+                )
+
+
 def build_runs(run_ids: dict[str, str], run_root: Path) -> list[dict[str, Any]]:
     runs = [build_run_record(label, run_id, run_root) for label, run_id in run_ids.items()]
     for run in runs:
@@ -176,6 +225,7 @@ def build_runs(run_ids: dict[str, str], run_root: Path) -> list[dict[str, Any]]:
                 f"{run['label']}: expected {expected_suite}/{expected_case_set}, "
                 f"got {run['suite']}/{run['case_set']}"
             )
+    validate_coherent_run_bundle(runs)
     return runs
 
 
@@ -267,7 +317,6 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "1.1.0",
         "generated_at": utc_now(),
         "current_tag": args.current_tag,
-        "current_run_root": str((args.run_root.resolve()).as_posix()),
         "runs": runs,
         "trends": [],
         "alerts": [],
@@ -280,7 +329,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     previous_payload = load_json(args.previous_report)
     report["previous"] = {
         "schema_version": previous_payload.get("schema_version"),
-        "source": args.previous_report.as_posix(),
+        "source": args.previous_report.name,
         "current_tag": previous_payload.get("current_tag"),
     }
     previous_runs = find_previous_runs(previous_payload)

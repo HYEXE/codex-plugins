@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#071113">
-  <title>Interactive Slides</title>
+  <title>설명을 시연으로 바꾸는 발표</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
   <div id="app" class="deck-app">
     <header class="toolbar" aria-label="발표 도구">
       <button id="outlineBtn" class="icon-button" type="button" aria-label="발표 목차" aria-controls="outline" aria-expanded="false">목차</button>
-      <div class="deck-identity"><strong id="deckTitle">Interactive Slides</strong><span id="sectionName" aria-live="polite"></span></div>
+      <div class="deck-identity"><strong id="deckTitle">설명을 시연으로 바꾸는 발표</strong><span id="sectionName" aria-live="polite"></span></div>
       <span class="grow"></span>
       <button id="modeBtn" type="button" aria-pressed="false">시연형</button>
       <button id="replayBtn" class="icon-button" type="button" title="현재 장면 다시 재생 (R)">다시 보기</button>
@@ -38,20 +38,19 @@
             <header class="slide-head">
               <span class="slide-number">01</span>
               <div class="slide-heading">
-                <p class="kicker">OFFLINE-FIRST PRESENTATION</p>
-                <h1>Interactive Slides</h1>
+                <p class="kicker">DEMO-DRIVEN PRESENTATION</p>
+                <h1>시연형 슬라이드는 다음 장으로 가기 전에 현재 장면을 완성한다.</h1>
               </div>
-              <span class="evidence verified">CORE MESSAGE</span>
+              <span class="evidence analysis">설계 원칙</span>
             </header>
             <div class="slide-body">
-              <p class="summary">발표문과 요구사항을 검토 가능한 스토리보드로 정리한 뒤, 승인된 장면만 체험형 또는 시연형 웹 슬라이드로 제작합니다.</p>
+              <p class="summary">슬라이드 이동과 장면 재생을 분리하면 발표자는 같은 흐름을 안정적으로 반복할 수 있습니다.</p>
               <ul class="points">
-                <li>핵심 주장과 근거를 슬라이드별로 분리합니다.</li>
-                <li>가치가 있는 장면에만 상호작용과 자동 시연을 적용합니다.</li>
-                <li>JavaScript가 실패해도 이 핵심 메시지와 발표 구조를 유지합니다.</li>
+                <li>Deck Controller는 이동을 관리합니다.</li>
+                <li>Scene Controller는 재생 상태를 관리합니다.</li>
               </ul>
             </div>
-            <footer class="slide-footer"><span>Static first-slide fallback</span><span>HTML · CSS · JavaScript</span></footer>
+            <footer class="slide-footer"><span>Interactive Slides starter · architecture contract</span><span>DEMO</span></footer>
           </article>
         </section>
       </div>

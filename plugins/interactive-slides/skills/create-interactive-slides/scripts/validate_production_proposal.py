@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import re
 import sys
@@ -115,6 +116,11 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
 
     slide_entries = [(slide_id, slide_status.strip()) for slide_id, slide_status in SLIDE_ROW.findall(text)]
     slide_rows = len(slide_entries)
+    slide_id_counts = Counter(slide_id for slide_id, _ in slide_entries)
+    duplicate_slide_ids = sorted(
+        slide_id for slide_id, count in slide_id_counts.items() if count > 1
+    )
+    errors.extend(f"duplicate slide ID: {slide_id}" for slide_id in duplicate_slide_ids)
     if estimated_slides is not None and slide_rows != estimated_slides:
         errors.append(
             f"estimated_slides is {estimated_slides}, but {slide_rows} slide rows were found"
@@ -158,6 +164,7 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
         "proposal_status": status,
         "presentation_mode": mode,
         "slide_rows": slide_rows,
+        "duplicate_slide_ids": duplicate_slide_ids,
         "unresolved_slide_rows": unresolved_slide_rows,
         "require_approved": require_approved,
         "errors": errors,
