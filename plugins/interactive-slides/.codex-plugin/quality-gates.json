@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "plugin": "interactive-slides",
+  "skills": {
+    "create-interactive-slides": {
+      "required_files": [
+        "references/mode-contracts.md",
+        "references/deck-schema.md",
+        "references/scene-lifecycle.md",
+        "references/content-to-storyboard.md",
+        "references/interaction-selection.md",
+        "references/rehearsal-and-fallback.md",
+        "references/scene-recipes.md",
+        "assets/icon.svg",
+        "assets/templates/presentation-brief.md",
+        "assets/templates/storyboard.md",
+        "assets/starter/index.html",
+        "assets/starter/styles.css",
+        "assets/starter/deck.js",
+        "assets/starter/scenes.js",
+        "assets/starter/presentation.js",
+        "scripts/validate_starter.py",
+        "scripts/validate_deck_project.py"
+      ],
+      "required_markers": [
+        "experience",
+        "demo",
+        "Deck Controller",
+        "Scene Controller",
+        "ready → running → complete",
+        "SYNTHETIC TELEMETRY",
+        "Interaction Value Gate",
+        "timeline",
+        "diagram",
+        "code-walkthrough",
+        "before-after",
+        "Rehearsal Receipt",
+        "fallback",
+        "speaker notes",
+        "prefers-reduced-motion",
+        "eval"
+      ]
+    }
+  },
+  "validators": [
+    {
+      "name": "starter-contract",
+      "cwd": "../skills/create-interactive-slides",
+      "argv": ["{python}", "scripts/validate_starter.py"]
+    },
+    {
+      "name": "generated-project-contract",
+      "cwd": "../skills/create-interactive-slides",
+      "argv": ["{python}", "scripts/validate_deck_project.py", "assets/starter"]
+    }
+  ]
+}

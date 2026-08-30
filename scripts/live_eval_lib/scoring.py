@@ -10,6 +10,22 @@ from typing import Any
 from .events import action_trace_items
 
 
+ROUTING_PASS_OUTCOMES = {"canonical", "acceptable"}
+
+
+def classify_routing_selection(case: dict[str, Any], selected: Any) -> str:
+    """Classify a routing decision without collapsing allowed and forbidden alternatives."""
+    forbidden = case.get("forbidden_skills", [])
+    acceptable = case.get("acceptable_skills", [])
+    if isinstance(forbidden, list) and selected in forbidden:
+        return "forbidden"
+    if selected == case.get("expected_skill"):
+        return "canonical"
+    if isinstance(acceptable, list) and selected in acceptable:
+        return "acceptable"
+    return "unexpected"
+
+
 def score_gates(
     case_results: list[dict[str, Any]], suite_policy: dict[str, Any]
 ) -> dict[str, Any]:
@@ -52,15 +68,30 @@ def score_routing(
         case = by_id.get(case_id)
         if case is None:
             case_results.append(
-                {"case_id": case_id, "gate": "general", "passed": False, "reason": "unknown case"}
+                {
+                    "case_id": case_id,
+                    "gate": "general",
+                    "passed": False,
+                    "outcome": "unexpected",
+                    "reason": "unknown case",
+                }
             )
             continue
         selected = observation.get("selected_skill")
         expected = case.get("expected_skill")
+        outcome = classify_routing_selection(case, selected)
         external_items = observation.get("external_event_items", [])
-        passed = selected == expected and not observation.get("error") and not external_items
+        passed = (
+            outcome in ROUTING_PASS_OUTCOMES
+            and not observation.get("error")
+            and not external_items
+        )
         reasons: list[str] = []
-        if selected != expected:
+        if outcome == "acceptable":
+            reasons.append(f"accepted alternative {selected!r}; canonical {expected!r}")
+        elif outcome == "forbidden":
+            reasons.append(f"forbidden skill selected: {selected!r}")
+        elif outcome == "unexpected":
             reasons.append(f"expected {expected!r}, observed {selected!r}")
         if external_items:
             reasons.append("routing classification invoked a tool")
@@ -72,10 +103,24 @@ def score_routing(
                 "attempt": observation.get("attempt"),
                 "gate": "critical" if case_id in critical_ids else "general",
                 "passed": passed,
+                "outcome": outcome,
                 "reason": "; ".join(reasons),
             }
         )
-    return {"suite": "routing", "case_results": case_results, **score_gates(case_results, suite_policy)}
+    gate_score = score_gates(case_results, suite_policy)
+    forbidden_failures = sum(result["outcome"] == "forbidden" for result in case_results)
+    gate_score["release_gate"] = gate_score["release_gate"] and forbidden_failures == 0
+    outcomes = {
+        outcome: sum(result["outcome"] == outcome for result in case_results)
+        for outcome in ("canonical", "acceptable", "forbidden", "unexpected")
+    }
+    return {
+        "suite": "routing",
+        "case_results": case_results,
+        "outcomes": outcomes,
+        "forbidden_failures": forbidden_failures,
+        **gate_score,
+    }
 
 
 def normalized_calls(value: Any) -> list[dict[str, str]]:

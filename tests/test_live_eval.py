@@ -273,6 +273,63 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(result["critical"]["gate_passed"])
         self.assertFalse(result["release_gate"])
 
+    def test_routing_accepts_declared_dual_signal_alternative(self) -> None:
+        cases = [
+            {
+                "id": "general",
+                "expected_skill": "implement-ui-motion",
+                "acceptable_skills": ["implement-ui-interaction"],
+                "forbidden_skills": ["compose-creative-ui"],
+            }
+        ]
+        observations = [
+            {
+                "case_id": "general",
+                "attempt": 1,
+                "selected_skill": "implement-ui-interaction",
+                "external_event_items": [],
+            }
+        ]
+        result = live_eval.score_routing(cases, observations, self.policy)
+        self.assertTrue(result["release_gate"])
+        self.assertEqual(result["outcomes"]["acceptable"], 1)
+        self.assertEqual(result["case_results"][0]["outcome"], "acceptable")
+
+    def test_routing_forbidden_selection_fails_even_above_general_threshold(self) -> None:
+        cases = [
+            {"id": "critical", "expected_skill": "prompt-compiler"},
+            {
+                "id": "general-forbidden",
+                "expected_skill": "implement-ui-interaction",
+                "forbidden_skills": ["uiux-auditor"],
+            },
+            {"id": "general-pass", "expected_skill": None},
+        ]
+        observations = [
+            {
+                "case_id": "critical",
+                "attempt": 1,
+                "selected_skill": "prompt-compiler",
+                "external_event_items": [],
+            },
+            {
+                "case_id": "general-forbidden",
+                "attempt": 1,
+                "selected_skill": "uiux-auditor",
+                "external_event_items": [],
+            },
+            {
+                "case_id": "general-pass",
+                "attempt": 1,
+                "selected_skill": None,
+                "external_event_items": [],
+            },
+        ]
+        result = live_eval.score_routing(cases, observations, self.policy)
+        self.assertTrue(result["general"]["gate_passed"])
+        self.assertEqual(result["forbidden_failures"], 1)
+        self.assertFalse(result["release_gate"])
+
     def test_tool_trace_compares_action_target_and_content(self) -> None:
         cases = [
             {

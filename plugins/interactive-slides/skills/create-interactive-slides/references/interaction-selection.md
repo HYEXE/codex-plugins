@@ -1,0 +1,45 @@
+# Interaction selection
+
+## Interaction Value Gate
+
+각 후보에 대해 다음 설명 이득을 `0` 또는 `1`로 평가한다.
+
+- `causality`: 입력 변화가 결과 변화의 원인을 보여준다.
+- `temporal`: 순서와 중간 상태가 결론 이해에 필요하다.
+- `decision`: 사용자의 선택에 따라 다른 피드백이 의미가 있다.
+- `comparison`: 같은 기준을 직접 전환하거나 조작하며 비교해야 한다.
+- `spatial`: 위치·연결·범위를 직접 탐색해야 이해가 쉬워진다.
+
+두 개 이상의 이득이 명확할 때만 인터랙션을 우선 검토한다. 점수가 높아도 다음 비용 중 하나가 설명 이득보다 크면 정적 형식을 선택한다.
+
+- 시연 실패가 발표 핵심을 막는다.
+- 입력 방법이 keyboard·touch에서 동등하지 않다.
+- reduced motion 또는 JavaScript 실패 시 정보가 사라진다.
+- 설명보다 조작 방법을 배우는 시간이 더 길다.
+- 출처 없는 가상 데이터가 실제 근거처럼 보인다.
+- 장면 cleanup과 replay를 결정적으로 구현할 수 없다.
+
+## Candidate mapping
+
+| 설명 목표 | 우선 scene | 정적 fallback |
+| --- | --- | --- |
+| 순서와 중간 상태 | `sequence` 또는 `steps` | 번호가 있는 단계 목록 |
+| 두 관점·전후 | `comparison` | 같은 기준의 두 열 |
+| 선택과 피드백 | `choice` | 선택지와 결과 표 |
+| 변수와 영향 | `range` | 대표 값 3개의 표 또는 그래프 |
+| 사건 순서 | timeline 형태의 `sequence` | 날짜순 사건 목록 |
+| 사건·릴리스 변화 | `timeline` | 날짜순 사건 목록 |
+| 시스템 구성과 관계 | `diagram` | 역할과 연결 목록 |
+| 코드와 해설 | `code-walkthrough` | 코드 블록과 번호별 설명 |
+| 전후 상태 | `before-after` | 같은 기준의 두 열 |
+| 시스템 경로의 자동 시연 | node route를 가진 `sequence` | 화살표 기반 경로 도식 |
+| 핵심 수치 | 정적 `metrics` | 숫자와 정의 |
+
+## Selection rules
+
+- 한 슬라이드에는 하나의 주 interaction만 둔다.
+- 같은 scene type을 연속해서 사용하지 않는다.
+- 정적 근거 슬라이드 사이에 시연을 배치해 발표자가 설명을 회복할 지점을 둔다.
+- interaction 수를 전체 슬라이드의 고정 비율로 강제하지 않는다. 다만 거의 모든 슬라이드가 interactive라면 각 장면의 설명 이득을 다시 검토한다.
+- 자동 선택 결과는 storyboard에 `adopt`, `reject`, `fallback`과 한 문장 이유로 기록한다.
+- 사용자가 특정 interaction을 요청했더라도 접근성·사실성·실행 안정성 문제가 있으면 더 안전한 대안과 tradeoff를 설명한다.

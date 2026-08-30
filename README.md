@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | `prompt-compiler` | `0.7.1` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
 | `uiux-advisor` | `0.9.1` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `interactive-slides` | `0.6.0` | `create-interactive-slides` | 제작 견적·승인 gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
 
 ## 구조
 
@@ -31,18 +32,22 @@ codex-plugins/
 │   │       ├── prompt-coach/
 │   │       ├── prompt-compiler/
 │   │       └── prompt-evaluator/
-│   └── uiux-advisor/
+│   ├── uiux-advisor/
+│   │   ├── .codex-plugin/{plugin.json,quality-gates.json}
+│   │   └── skills/
+│   │       ├── build-design-system/
+│   │       ├── build-data-visualization/
+│   │       ├── build-interactive-graphics/
+│   │       ├── compose-creative-ui/
+│   │       ├── implement-async-ui-state/
+│   │       ├── implement-ui-interaction/
+│   │       ├── implement-ui-motion/
+│   │       ├── uiux-advisor/
+│   │       └── uiux-auditor/
+│   └── interactive-slides/
 │       ├── .codex-plugin/{plugin.json,quality-gates.json}
-│       └── skills/
-│           ├── build-design-system/
-│           ├── build-data-visualization/
-│           ├── build-interactive-graphics/
-│           ├── compose-creative-ui/
-│           ├── implement-async-ui-state/
-│           ├── implement-ui-interaction/
-│           ├── implement-ui-motion/
-│           ├── uiux-advisor/
-│           └── uiux-auditor/
+│       ├── CHANGELOG.md
+│       └── skills/create-interactive-slides/
 ├── tests/
 │   ├── observations.json
 │   ├── skill-routing.jsonl
@@ -135,6 +140,7 @@ GitHub Actions는 pull request와 `main` push에서 Ubuntu·Windows·macOS 통�
 codex plugin marketplace add HYEXE/codex-plugins --ref codex-plugins-vX.Y.Z
 codex plugin add prompt-compiler@codex-plugins-kr
 codex plugin add uiux-advisor@codex-plugins-kr
+codex plugin add interactive-slides@codex-plugins-kr
 ```
 
 다음 릴리스를 빠르게 확인하려면 `main` nightly 채널을 별도 환경에서 사용합니다.
@@ -165,6 +171,7 @@ Git marketplace를 사용하는 PC에서는 marketplace snapshot을 갱신한 �
 codex plugin marketplace upgrade codex-plugins-kr
 codex plugin add prompt-compiler@codex-plugins-kr
 codex plugin add uiux-advisor@codex-plugins-kr
+codex plugin add interactive-slides@codex-plugins-kr
 ```
 
 첫 번째 명령은 Git marketplace snapshot을 등록된 ref에서 다시 가져옵니다. `main` nightly marketplace라면 최신 commit으로 이동하지만 immutable stable tag라면 같은 snapshot을 다시 확인할 뿐 더 새 stable tag로 자동 이동하지 않습니다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체합니다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않습니다.
@@ -207,11 +214,12 @@ pwsh -NoProfile -File .\scripts\update_plugins.ps1 -DryRun
 codex plugin marketplace add /absolute/path/to/codex-plugins
 ```
 
-그 뒤 소스가 변경될 때마다 두 플러그인을 다시 설치합니다. 로컬 marketplace에는 원격 snapshot이 없으므로 `marketplace upgrade`를 실행하지 않습니다.
+그 뒤 소스가 변경될 때마다 세 플러그인을 다시 설치합니다. 로컬 marketplace에는 원격 snapshot이 없으므로 `marketplace upgrade`를 실행하지 않습니다.
 
 ```bash
 codex plugin add prompt-compiler@codex-plugins-kr
 codex plugin add uiux-advisor@codex-plugins-kr
+codex plugin add interactive-slides@codex-plugins-kr
 ```
 
 ### Windows 실행 정책 대응
@@ -227,6 +235,7 @@ $Codex = Get-ChildItem "$env:LOCALAPPDATA\OpenAI\Codex\bin" `
 & $Codex plugin marketplace upgrade codex-plugins-kr
 & $Codex plugin add "prompt-compiler@codex-plugins-kr"
 & $Codex plugin add "uiux-advisor@codex-plugins-kr"
+& $Codex plugin add "interactive-slides@codex-plugins-kr"
 ```
 
 ### 업데이트 확인과 적용
@@ -241,7 +250,7 @@ codex plugin list
 완료 기준은 다음과 같습니다.
 
 - `codex-plugins-kr`가 의도한 Git 또는 로컬 저장소를 가리킵니다.
-- `prompt-compiler`와 `uiux-advisor`가 모두 `installed, enabled` 상태입니다.
+- `prompt-compiler`, `uiux-advisor`, `interactive-slides`가 모두 `installed, enabled` 상태입니다.
 - 표시된 버전이 각 플러그인의 manifest 버전과 일치합니다.
 - 저장소 작업 트리에 업데이트 과정이 만든 의도하지 않은 변경이 없습니다.
 

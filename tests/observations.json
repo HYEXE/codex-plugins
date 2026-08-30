@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "suites": {
     "routing": {
-      "metadata": "skill-routing-observed-2026-08-14.metadata.json"
+      "metadata": "skill-routing-observed-2026-08-26.metadata.json"
     }
   }
 }

@@ -24,6 +24,7 @@
 
 ## Next
 
-- live eval 결과를 릴리스 간 추세로 비교하는 summary report
-- 여러 모델·Codex build를 로컬에서 비교하는 비차단 canary matrix
-- source liveness artifact를 이전 정상 baseline과 자동 비교하는 drift history
+- [x] live eval 결과를 릴리스 간 추세로 비교하는 summary report
+- [x] 여러 모델·Codex build를 로컬에서 비교하는 비차단 canary matrix
+- [ ] source liveness artifact를 이전 정상 baseline과 자동 비교하는 drift history 실제 Actions 실행 확인
+- [x] interactive-slides routing fixture의 live observation과 metadata hash 갱신

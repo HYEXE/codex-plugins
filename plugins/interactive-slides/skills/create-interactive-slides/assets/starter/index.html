@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#071113">
+  <title>설명을 시연으로 바꾸는 발표</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#stage">슬라이드로 건너뛰기</a>
+  <div id="app" class="deck-app">
+    <header class="toolbar" aria-label="발표 도구">
+      <button id="outlineBtn" class="icon-button" type="button" aria-label="발표 목차" aria-controls="outline" aria-expanded="false">목차</button>
+      <div class="deck-identity"><strong id="deckTitle">설명을 시연으로 바꾸는 발표</strong><span id="sectionName" aria-live="polite"></span></div>
+      <span class="grow"></span>
+      <button id="modeBtn" type="button" aria-pressed="false">시연형</button>
+      <button id="replayBtn" class="icon-button" type="button" title="현재 장면 다시 재생 (R)">다시 보기</button>
+      <button id="zoomOut" class="icon-button" type="button" title="축소 (-)" aria-label="축소">−</button>
+      <output id="zoomText" class="zoom-text">100%</output>
+      <button id="zoomIn" class="icon-button" type="button" title="확대 (+)" aria-label="확대">+</button>
+      <button id="fitBtn" class="icon-button" type="button" title="화면 맞춤 (0)">맞춤</button>
+      <button id="fullBtn" class="accent-button" type="button" title="전체화면 (F)">전체화면</button>
+    </header>
+
+    <aside id="outline" class="outline" role="dialog" aria-modal="true" aria-labelledby="outlineTitle" aria-hidden="true" inert>
+      <header><div><span>Presentation index</span><strong id="outlineTitle">발표 목차</strong></div><button id="outlineClose" type="button" aria-label="목차 닫기">닫기</button></header>
+      <div id="outlineList" class="outline-list"></div>
+    </aside>
+    <div id="scrim" class="scrim"></div>
+
+    <main id="viewport" class="viewport">
+      <div id="stageWrap" class="stage-wrap static-fallback-wrap">
+        <section id="stage" class="stage has-static-fallback" tabindex="-1" aria-live="polite">
+          <!-- Keep this static first-slide fallback synchronized with deck.js when authoring. -->
+          <article class="slide static-fallback">
+            <header class="slide-head">
+              <span class="slide-number">01</span>
+              <div class="slide-heading">
+                <p class="kicker">DEMO-DRIVEN PRESENTATION</p>
+                <h1>시연형 슬라이드는 다음 장으로 가기 전에 현재 장면을 완성한다.</h1>
+              </div>
+              <span class="evidence analysis">설계 원칙</span>
+            </header>
+            <div class="slide-body">
+              <p class="summary">슬라이드 이동과 장면 재생을 분리하면 발표자는 같은 흐름을 안정적으로 반복할 수 있습니다.</p>
+              <ul class="points">
+                <li>Deck Controller는 이동을 관리합니다.</li>
+                <li>Scene Controller는 재생 상태를 관리합니다.</li>
+              </ul>
+            </div>
+            <footer class="slide-footer"><span>Interactive Slides starter · architecture contract</span><span>DEMO</span></footer>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <aside id="speakerNotes" class="speaker-notes" hidden>
+      <header><strong>Speaker notes</strong><button id="notesClose" type="button">닫기</button></header>
+      <div id="notesContent"></div>
+    </aside>
+
+    <footer class="navigator" aria-label="슬라이드 이동">
+      <button id="previousBtn" type="button">이전</button>
+      <span id="currentNumber">01</span>
+      <div id="progressTrack" class="progress-track" role="slider" tabindex="0" aria-label="슬라이드 위치" aria-valuemin="1" aria-valuenow="1"><i id="progressFill"></i></div>
+      <span id="totalNumber">01</span>
+      <strong id="currentTitle"></strong>
+      <button id="notesBtn" type="button" aria-expanded="false" aria-controls="speakerNotes">노트</button>
+      <button id="nextBtn" class="accent-button" type="button">다음</button>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+  <noscript>상호작용은 비활성화됐지만 위의 핵심 발표 내용은 계속 확인할 수 있습니다.</noscript>
+  <script src="deck.js"></script>
+  <script src="scenes.js"></script>
+  <script src="presentation.js"></script>
+</body>
+</html>

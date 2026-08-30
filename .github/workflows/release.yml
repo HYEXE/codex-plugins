@@ -30,6 +30,11 @@ on:
         description: routing critical/full, tool-trace critical/full 순서의 쉼표 구분 run ID
         required: true
         type: string
+      local_live_eval_trend_report:
+        description: 릴리스 간 live eval 비교 리포트 JSON 문자열(선택)
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: release-${{ inputs.tag }}
@@ -113,6 +118,24 @@ jobs:
             --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --output local-live-eval-attestation.json
 
+      - name: 릴리스 비교 리포트 입력 반영(선택)
+        shell: bash
+        env:
+          LOCAL_LIVE_EVAL_TREND_REPORT: ${{ inputs.local_live_eval_trend_report }}
+          LOCAL_LIVE_EVAL_RUN_IDS: ${{ inputs.local_live_eval_run_ids }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$LOCAL_LIVE_EVAL_TREND_REPORT" ]; then
+            echo "릴리스 비교 리포트가 제공되지 않아 생략합니다."
+            exit 0
+          fi
+          # validate와 publish job은 파일시스템을 공유하지 않으므로 여기서는 조기 실패만 확인합니다.
+          printf '%s' "$LOCAL_LIVE_EVAL_TREND_REPORT" > live-eval-release-comparison.json
+          python scripts/validate_live_eval_release_report.py \
+            --report live-eval-release-comparison.json \
+            --tag "$RELEASE_TAG" \
+            --run-ids "$LOCAL_LIVE_EVAL_RUN_IDS"
+
   publish:
     name: GitHub Release 생성
     needs: validate
@@ -167,6 +190,23 @@ jobs:
             --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --output local-live-eval-attestation.json
 
+      - name: 릴리스 비교 리포트 입력 반영(선택)
+        shell: bash
+        env:
+          LOCAL_LIVE_EVAL_TREND_REPORT: ${{ inputs.local_live_eval_trend_report }}
+          LOCAL_LIVE_EVAL_RUN_IDS: ${{ inputs.local_live_eval_run_ids }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$LOCAL_LIVE_EVAL_TREND_REPORT" ]; then
+            echo "릴리스 비교 리포트가 제공되지 않아 생략합니다."
+            exit 0
+          fi
+          printf '%s' "$LOCAL_LIVE_EVAL_TREND_REPORT" > live-eval-release-comparison.json
+          python scripts/validate_live_eval_release_report.py \
+            --report live-eval-release-comparison.json \
+            --tag "$RELEASE_TAG" \
+            --run-ids "$LOCAL_LIVE_EVAL_RUN_IDS"
+
       - name: GitHub Release 생성
         env:
           GH_TOKEN: ${{ github.token }}
@@ -182,9 +222,15 @@ jobs:
             echo "이미 존재하는 immutable tag입니다: $RELEASE_TAG" >&2
             exit 1
           fi
+          release_assets=(
+            release-metadata.json
+            local-live-eval-attestation.json
+          )
+          if [ -f live-eval-release-comparison.json ]; then
+            release_assets+=(live-eval-release-comparison.json)
+          fi
           gh release create "$RELEASE_TAG" \
             --target "$RELEASE_COMMIT" \
             --generate-notes \
             --title "$RELEASE_TAG" \
-            release-metadata.json \
-            local-live-eval-attestation.json
+            "${release_assets[@]}"

@@ -13,6 +13,10 @@
     "uiux-advisor": {
       "tag_prefix": "uiux-advisor-v",
       "manifest": "plugins/uiux-advisor/.codex-plugin/plugin.json"
+    },
+    "interactive-slides": {
+      "tag_prefix": "interactive-slides-v",
+      "manifest": "plugins/interactive-slides/.codex-plugin/plugin.json"
     }
   },
   "required_public_release_files": [

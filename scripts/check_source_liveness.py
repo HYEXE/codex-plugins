@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 import argparse
 import hashlib
 import ipaddress
@@ -220,17 +222,156 @@ def load_baseline(path: Path | None) -> dict[tuple[str, str], dict[str, Any]]:
     if path is None or not path.is_file():
         return {}
     payload = load_object(path)
-    results = payload.get("results") if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        raise ValueError("baseline report must be an object")
+    results = payload.get("results")
     if not isinstance(results, list):
         raise ValueError("baseline results must be an array")
+    return _index_results(results)
+
+
+def _index_results(results: list[Any]) -> dict[tuple[str, str], dict[str, Any]]:
     return {
         (str(item.get("source_kind")), str(item.get("source_id"))): item
         for item in results
-        if isinstance(item, dict)
+        if isinstance(item, dict) and item.get("source_kind") is not None and item.get("source_id") is not None
     }
 
 
-def build_report(results: list[SourceResult], baseline: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
+def load_history(path: Path | None) -> list[dict[str, Any]]:
+    if path is None or not path.is_file():
+        return []
+    payload = load_object(path)
+    if not isinstance(payload, list):
+        raise ValueError("drift history must be an array")
+    return [item for item in payload if isinstance(item, dict)]
+
+
+def is_healthy_summary(summary: dict[str, Any]) -> bool:
+    return (
+        summary.get("total", 0) == summary.get("reachable", 0)
+        and summary.get("unreachable", 0) == 0
+        and summary.get("canonical_changed", 0) == 0
+        and summary.get("title_changed", 0) == 0
+    )
+
+
+def is_stable_summary(summary: dict[str, Any]) -> bool:
+    return is_healthy_summary(summary) and summary.get("hash_changed", 0) == 0
+
+
+def is_stable_history_entry(entry: dict[str, Any]) -> bool:
+    summary = entry.get("summary")
+    if not isinstance(summary, dict):
+        return False
+    return is_stable_summary(summary)
+
+
+def history_observation_signature(entry: dict[str, Any]) -> str | None:
+    summary = entry.get("summary")
+    raw_results = entry.get("results")
+    if (
+        not isinstance(summary, dict)
+        or not is_healthy_summary(summary)
+        or not isinstance(raw_results, list)
+        or not raw_results
+        or len(raw_results) != summary.get("total")
+    ):
+        return None
+    fields = (
+        "source_id",
+        "source_kind",
+        "requested_url",
+        "canonical_url",
+        "observed_title",
+        "content_sha256",
+    )
+    normalized: list[dict[str, Any]] = []
+    for item in raw_results:
+        if (
+            not isinstance(item, dict)
+            or not item.get("source_id")
+            or not item.get("source_kind")
+        ):
+            return None
+        normalized.append({field: item.get(field) for field in fields})
+    normalized.sort(
+        key=lambda item: (str(item["source_kind"]), str(item["source_id"]))
+    )
+    return json.dumps(
+        normalized,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def pick_stable_history_entry(history: Iterable[dict[str, Any]]) -> dict[str, Any] | None:
+    items = list(history)
+    for index in range(len(items) - 1, -1, -1):
+        item = items[index]
+        if is_stable_history_entry(item):
+            return item
+        if index == 0:
+            continue
+        signature = history_observation_signature(item)
+        previous_signature = history_observation_signature(items[index - 1])
+        if signature is not None and signature == previous_signature:
+            return item
+    return None
+
+
+def load_baseline_from_history_item(item: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+    raw_results = item.get("results")
+    if not isinstance(raw_results, list):
+        return {}
+    return _index_results(raw_results)
+
+
+def build_history_entry(
+    report: dict[str, Any],
+    *,
+    compared_from: str | None,
+    is_stable: bool,
+) -> dict[str, Any]:
+    return {
+        "schema_version": report["schema_version"],
+        "checked_at": report["checked_at"],
+        "non_blocking": report.get("non_blocking", True),
+        "is_stable": is_stable,
+        "compared_from": compared_from,
+        "comparison": report.get("comparison"),
+        "summary": report["summary"],
+        "results": [
+            {
+                key: item.get(key)
+                for key in (
+                    "source_id",
+                    "source_kind",
+                    "requested_url",
+                    "canonical_url",
+                    "observed_title",
+                    "content_sha256",
+                )
+            }
+            for item in report["results"]
+            if isinstance(item, dict)
+        ],
+    }
+
+
+def write_history(path: Path, history: list[dict[str, Any]], max_entries: int) -> None:
+    output = history[-max_entries:] if max_entries > 0 else history
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def build_report(
+    results: list[SourceResult],
+    baseline: dict[tuple[str, str], dict[str, Any]],
+    *,
+    comparison_source: str | None = None,
+) -> dict[str, Any]:
     serialized: list[dict[str, Any]] = []
     for result in sorted(results, key=lambda item: (item.source_kind, item.source_id)):
         item = asdict(result)
@@ -251,6 +392,11 @@ def build_report(results: list[SourceResult], baseline: dict[tuple[str, str], di
         "schema_version": "1.0.0",
         "checked_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "non_blocking": True,
+        "comparison": {
+            "enabled": bool(baseline),
+            "source": comparison_source,
+            "checked_count": len(serialized),
+        },
         "summary": {
             "total": len(serialized),
             "reachable": sum(item["status"] == "ok" for item in serialized),
@@ -274,6 +420,8 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- canonical drift: {summary['canonical_changed']}",
         f"- title drift: {summary['title_changed']}",
         f"- hash drift versus baseline: {summary['hash_changed']}",
+        f"- baseline comparison enabled: {report['comparison']['enabled'] if isinstance(report.get('comparison'), dict) else False}",
+        f"- compared baseline source: {report['comparison'].get('source') if isinstance(report.get('comparison'), dict) else '(none)'}",
         "",
         "This report is advisory and does not block pull requests or releases.",
     ]
@@ -297,6 +445,13 @@ def markdown_report(report: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path)
+    parser.add_argument("--history", type=Path, help="Optional drift history file to auto-select stable baseline and append")
+    parser.add_argument(
+        "--history-max-entries",
+        type=int,
+        default=30,
+        help="Maximum number of history snapshots to retain",
+    )
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-markdown", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=20)
@@ -305,23 +460,45 @@ def main() -> int:
     if args.timeout_seconds < 1 or args.workers < 1 or args.workers > 16:
         print("ERROR: invalid timeout or worker count")
         return 2
+    if args.history_max_entries < 1:
+        print("ERROR: --history-max-entries must be >= 1")
+        return 2
     try:
         records = load_sources()
         baseline = load_baseline(args.baseline)
+        history = load_history(args.history)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}")
         return 2
+
+    comparison_source = None
+    if args.baseline is not None:
+        comparison_source = f"manual:{args.baseline}"
+    elif args.history:
+        stable = pick_stable_history_entry(history)
+        if stable is not None:
+            baseline = load_baseline_from_history_item(stable)
+            comparison_source = f"history:{stable.get('checked_at', 'previous-stable')}"
 
     results: list[SourceResult] = []
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {executor.submit(check_source, record, args.timeout_seconds): record for record in records}
         for future in as_completed(futures):
             results.append(future.result())
-    report = build_report(results, baseline)
+    report = build_report(results, baseline, comparison_source=comparison_source)
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_markdown.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.output_markdown.write_text(markdown_report(report), encoding="utf-8")
+    if args.history is not None:
+        history.append(
+            build_history_entry(
+                report,
+                compared_from=comparison_source,
+                is_stable=is_stable_summary(report["summary"]),
+            )
+        )
+        write_history(args.history, history, args.history_max_entries)
     summary = report["summary"]
     print(
         "SOURCE LIVENESS REPORT: "

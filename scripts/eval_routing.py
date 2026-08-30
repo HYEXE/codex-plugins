@@ -9,6 +9,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from live_eval_lib.scoring import ROUTING_PASS_OUTCOMES, classify_routing_selection
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES = ROOT / "tests" / "skill-routing.jsonl"
@@ -63,6 +65,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
         case_id = case.get("id")
         prompt = case.get("prompt")
         expected = case.get("expected_skill")
+        acceptable = case.get("acceptable_skills", [])
         forbidden = case.get("forbidden_skills", [])
         boundary = case.get("boundary")
         label = case_id if isinstance(case_id, str) and case_id else f"line-{index}"
@@ -86,12 +89,29 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
         else:
             counts[expected] += 1
 
-        if not isinstance(forbidden, list) or any(skill not in KNOWN_SKILLS for skill in forbidden):
+        acceptable_valid = isinstance(acceptable, list) and all(
+            isinstance(skill, str) and skill in KNOWN_SKILLS for skill in acceptable
+        )
+        forbidden_valid = isinstance(forbidden, list) and all(
+            isinstance(skill, str) and skill in KNOWN_SKILLS for skill in forbidden
+        )
+        if not acceptable_valid:
+            failures.append(f"{label}: acceptable_skills must contain known skill names")
+        elif len(acceptable) != len(set(acceptable)):
+            failures.append(f"{label}: duplicate acceptable_skills")
+        elif expected in acceptable:
+            failures.append(f"{label}: expected_skill cannot also be acceptable")
+
+        if not forbidden_valid:
             failures.append(f"{label}: forbidden_skills must contain known skill names")
         elif len(forbidden) != len(set(forbidden)):
             failures.append(f"{label}: duplicate forbidden_skills")
         elif expected in forbidden:
             failures.append(f"{label}: expected_skill cannot also be forbidden")
+        if acceptable_valid and forbidden_valid:
+            overlap = sorted(set(acceptable) & set(forbidden))
+            if overlap:
+                failures.append(f"{label}: skills cannot be both acceptable and forbidden: {overlap}")
 
         if not isinstance(boundary, str) or not boundary:
             failures.append(f"{label}: missing boundary")
@@ -141,26 +161,47 @@ def score(cases: list[dict[str, Any]], observed: list[dict[str, Any]]) -> int:
 
     observed_by_id = {record["id"]: record for record in observed}
     mismatches: list[str] = []
+    acceptable_alternatives: list[str] = []
+    forbidden_selections: list[str] = []
     boundary_counts: Counter[str] = Counter()
     boundary_passes: Counter[str] = Counter()
+    canonical_passes = 0
     for case in cases:
         case_id = case["id"]
         expected = case.get("expected_skill")
         selected = observed_by_id[case_id].get("selected_skill")
         boundary = case["boundary"]
         boundary_counts[boundary] += 1
-        if selected == expected:
+        outcome = classify_routing_selection(case, selected)
+        if outcome in ROUTING_PASS_OUTCOMES:
             boundary_passes[boundary] += 1
+            if outcome == "canonical":
+                canonical_passes += 1
+            else:
+                acceptable_alternatives.append(
+                    f"{case_id}: canonical {expected!r}, accepted {selected!r}"
+                )
+        elif outcome == "forbidden":
+            forbidden_selections.append(f"{case_id}: forbidden selection {selected!r}")
         else:
             mismatches.append(f"{case_id}: expected {expected!r}, observed {selected!r}")
 
-    passed = len(cases) - len(mismatches)
+    passed = len(cases) - len(mismatches) - len(forbidden_selections)
     print(f"ROUTING SCORE: {passed}/{len(cases)} ({passed / max(len(cases), 1) * 100:.1f}%)")
+    print(
+        "ROUTING OUTCOMES: "
+        f"canonical={canonical_passes}, acceptable={len(acceptable_alternatives)}, "
+        f"forbidden={len(forbidden_selections)}, unexpected={len(mismatches)}"
+    )
     for boundary in sorted(boundary_counts):
         print(f"- {boundary}: {boundary_passes[boundary]}/{boundary_counts[boundary]}")
+    for alternative in acceptable_alternatives:
+        print(f"ACCEPTABLE: {alternative}")
+    for forbidden in forbidden_selections:
+        print(f"FORBIDDEN: {forbidden}")
     for mismatch in mismatches:
         print(f"MISMATCH: {mismatch}")
-    return 1 if mismatches else 0
+    return 1 if mismatches or forbidden_selections else 0
 
 
 def main() -> int:
