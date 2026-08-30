@@ -89,6 +89,24 @@ class ProductionProposalGateTests(unittest.TestCase):
         self.assertEqual(result["duplicate_slide_ids"], ["S01"])
         self.assertIn("duplicate slide ID: S01", result["errors"])
 
+    def test_approval_gate_rejects_empty_title(self) -> None:
+        result = self.validate(
+            approved_proposal("approved").replace(
+                'title: "검증용 발표"', 'title: ""', 1
+            )
+        )
+        self.assertFalse(result["valid"])
+        self.assertIn("title must not be empty", result["errors"])
+
+    def test_approval_gate_rejects_invalid_proposal_version(self) -> None:
+        result = self.validate(
+            approved_proposal("approved").replace(
+                "proposal_version: 1", "proposal_version: draft", 1
+            )
+        )
+        self.assertFalse(result["valid"])
+        self.assertIn("proposal_version must be an integer", result["errors"])
+
 
 class DeckProjectValidatorTests(unittest.TestCase):
     @classmethod
@@ -154,6 +172,14 @@ class DeckProjectValidatorTests(unittest.TestCase):
             )
         self.assertIn("remote URLs require --allow-remote-assets: 1 found", failures)
         self.assertEqual(metrics["remote_urls"], 1)
+
+    def test_progressive_scene_restores_next_action_label(self) -> None:
+        scenes = (STARTER_PATH / "scenes.js").read_text(encoding="utf-8")
+        self.assertIn("if (this.index < this.items.length)", scenes)
+        self.assertIn(
+            'this.nextButton.textContent = this.config.type === "timeline" ? "다음 사건" : "다음 줄";',
+            scenes,
+        )
 
 
 if __name__ == "__main__":

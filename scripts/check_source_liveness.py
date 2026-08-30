@@ -247,14 +247,17 @@ def load_history(path: Path | None) -> list[dict[str, Any]]:
     return [item for item in payload if isinstance(item, dict)]
 
 
-def is_stable_summary(summary: dict[str, Any]) -> bool:
+def is_healthy_summary(summary: dict[str, Any]) -> bool:
     return (
         summary.get("total", 0) == summary.get("reachable", 0)
         and summary.get("unreachable", 0) == 0
         and summary.get("canonical_changed", 0) == 0
         and summary.get("title_changed", 0) == 0
-        and summary.get("hash_changed", 0) == 0
     )
+
+
+def is_stable_summary(summary: dict[str, Any]) -> bool:
+    return is_healthy_summary(summary) and summary.get("hash_changed", 0) == 0
 
 
 def is_stable_history_entry(entry: dict[str, Any]) -> bool:
@@ -264,9 +267,56 @@ def is_stable_history_entry(entry: dict[str, Any]) -> bool:
     return is_stable_summary(summary)
 
 
+def history_observation_signature(entry: dict[str, Any]) -> str | None:
+    summary = entry.get("summary")
+    raw_results = entry.get("results")
+    if (
+        not isinstance(summary, dict)
+        or not is_healthy_summary(summary)
+        or not isinstance(raw_results, list)
+        or not raw_results
+        or len(raw_results) != summary.get("total")
+    ):
+        return None
+    fields = (
+        "source_id",
+        "source_kind",
+        "requested_url",
+        "canonical_url",
+        "observed_title",
+        "content_sha256",
+    )
+    normalized: list[dict[str, Any]] = []
+    for item in raw_results:
+        if (
+            not isinstance(item, dict)
+            or not item.get("source_id")
+            or not item.get("source_kind")
+        ):
+            return None
+        normalized.append({field: item.get(field) for field in fields})
+    normalized.sort(
+        key=lambda item: (str(item["source_kind"]), str(item["source_id"]))
+    )
+    return json.dumps(
+        normalized,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
 def pick_stable_history_entry(history: Iterable[dict[str, Any]]) -> dict[str, Any] | None:
-    for item in reversed(list(history)):
+    items = list(history)
+    for index in range(len(items) - 1, -1, -1):
+        item = items[index]
         if is_stable_history_entry(item):
+            return item
+        if index == 0:
+            continue
+        signature = history_observation_signature(item)
+        previous_signature = history_observation_signature(items[index - 1])
+        if signature is not None and signature == previous_signature:
             return item
     return None
 

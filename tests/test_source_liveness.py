@@ -100,6 +100,43 @@ class SourceLivenessTests(unittest.TestCase):
         self.assertEqual(report["comparison"]["source"], "history:20260818T000000Z")
         self.assertTrue(report["comparison"]["enabled"])
 
+    def test_repeated_healthy_hash_drift_promotes_new_baseline(self) -> None:
+        def entry(content_sha256: str, hash_changed: int) -> dict[str, object]:
+            return {
+                "summary": {
+                    "total": 1,
+                    "reachable": 1,
+                    "unreachable": 0,
+                    "canonical_changed": 0,
+                    "title_changed": 0,
+                    "hash_changed": hash_changed,
+                },
+                "results": [
+                    {
+                        "source_id": "example",
+                        "source_kind": "toolkit",
+                        "requested_url": "https://example.com",
+                        "canonical_url": "https://example.com/",
+                        "observed_title": "Example",
+                        "content_sha256": content_sha256,
+                    }
+                ],
+            }
+
+        old_baseline = entry("a" * 64, 0)
+        first_drift = entry("b" * 64, 1)
+        repeated_drift = entry("b" * 64, 1)
+        self.assertIs(
+            liveness.pick_stable_history_entry([old_baseline, first_drift]),
+            old_baseline,
+        )
+        self.assertIs(
+            liveness.pick_stable_history_entry(
+                [old_baseline, first_drift, repeated_drift]
+            ),
+            repeated_drift,
+        )
+
     def test_history_entry_keeps_only_baseline_fields(self) -> None:
         report = {
             "schema_version": "1.0.0",

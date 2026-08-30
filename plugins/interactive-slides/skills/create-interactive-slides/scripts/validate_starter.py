@@ -61,6 +61,7 @@ def main() -> int:
         "expanded scene recipes have starter examples": all(f'type: "{scene_type}"' in deck for scene_type in ("timeline", "diagram", "code-walkthrough", "before-after")),
         "sequence owns lifecycle": all(marker in scenes for marker in ('"ready"', '"running"', '"complete"', "runToken", "clearTimers")),
         "sequence completion restores reset control": 'this.nextButton.textContent = "처음으로";' in scenes and "this.nextButton.disabled = false;" in scenes,
+        "progressive revisit restores action label": 'this.index < this.items.length' in scenes and '"다음 사건" : "다음 줄"' in scenes,
         "deck destroys scenes": "state.scene?.destroy()" in runtime,
         "navigation cancels scenes": "state.scene?.cancel()" in runtime,
         "demo intercepts forward navigation": 'state.mode === "demo" && state.scene?.blocksAdvance' in runtime,

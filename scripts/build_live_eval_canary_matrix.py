@@ -13,6 +13,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +40,10 @@ def write_text(path: Path, value: str | dict[str, Any], *, as_json: bool = False
     else:
         content = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, indent=2)
     path.write_text(content, encoding="utf-8")
+
+
+def encode_cell_id(build_label: str, model: str) -> str:
+    return f"{quote(build_label, safe='')}:{quote(model, safe='')}"
 
 
 def parse_models(values: list[str]) -> list[str]:
@@ -271,14 +276,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     trends: list[dict[str, Any]] = []
     alerts: list[str] = []
     failures: list[str] = []
-    cell_runs: dict[str, dict[str, dict[str, Any]]] = {}
+    cell_runs: dict[tuple[str, str], dict[str, dict[str, Any]]] = {}
 
     for build_label, codex_bin in args.codex_builds:
         for model in args.models:
-            cell_id = f"{build_label}:{model}"
+            cell_key = (build_label, model)
+            cell_id = encode_cell_id(build_label, model)
             cell_path = f"{safe_path_component(build_label)}__{safe_path_component(model)}"
             entries: list[dict[str, Any]] = []
-            cell_runs[cell_id] = {}
+            cell_runs[cell_key] = {}
 
             for suite in args.suites:
                 suite_dir = run_root / cell_path / suite
@@ -346,7 +352,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     )
                     continue
                 entries.append(record)
-                cell_runs[cell_id][suite] = record
+                cell_runs[cell_key][suite] = record
 
             matrix.append(
                 {
@@ -359,12 +365,26 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 }
             )
 
-    baseline_key = args.baseline
-    if baseline_key is None:
+    baseline_key: tuple[str, str] | None = None
+    if args.baseline is None:
         baseline_key = next(iter(cell_runs), None)
-    elif baseline_key not in cell_runs:
-        failures.append(f"baseline cell '{baseline_key}' not found; fallback to first cell")
-        baseline_key = next(iter(cell_runs), None)
+    else:
+        encoded_matches = [
+            key for key in cell_runs if encode_cell_id(*key) == args.baseline
+        ]
+        legacy_matches = [
+            key for key in cell_runs if f"{key[0]}:{key[1]}" == args.baseline
+        ]
+        if len(encoded_matches) == 1:
+            baseline_key = encoded_matches[0]
+        elif len(legacy_matches) == 1:
+            baseline_key = legacy_matches[0]
+        else:
+            reason = "ambiguous" if len(legacy_matches) > 1 else "not found"
+            failures.append(
+                f"baseline cell '{args.baseline}' {reason}; fallback to first cell"
+            )
+            baseline_key = next(iter(cell_runs), None)
 
     if baseline_key is not None:
         baseline = cell_runs.get(baseline_key, {})
@@ -414,7 +434,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "auth_mode": args.auth_mode,
         "timeout_seconds": args.timeout_seconds,
         "matrix": matrix,
-        "baseline": baseline_key,
+        "baseline": (
+            encode_cell_id(*baseline_key) if baseline_key is not None else None
+        ),
         "trends": trends,
         "alerts": alerts,
         "failures": failures,
@@ -456,7 +478,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--baseline",
-        help="Optional baseline cell in form <build-label>:<model>. Defaults to the first cell.",
+        help=(
+            "Optional percent-encoded cell_id from the report. "
+            "A unique legacy <build-label>:<model> value is also accepted."
+        ),
     )
     parser.add_argument(
         "--regression-threshold",

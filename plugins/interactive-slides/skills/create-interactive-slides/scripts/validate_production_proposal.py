@@ -92,6 +92,9 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
     missing_fields = sorted(REQUIRED_FIELDS - metadata.keys())
     errors.extend(f"missing front matter field: {field}" for field in missing_fields)
 
+    if not metadata.get("title", "").strip():
+        errors.append("title must not be empty")
+
     status = metadata.get("proposal_status", "")
     mode = metadata.get("presentation_mode", "")
     confidence = metadata.get("confidence", "")
@@ -102,6 +105,7 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
     if confidence and confidence not in ALLOWED_CONFIDENCE:
         errors.append(f"unsupported confidence: {confidence}")
 
+    positive_int(metadata, "proposal_version", errors)
     estimated_slides = positive_int(metadata, "estimated_slides", errors)
     positive_int(metadata, "estimated_duration_minutes", errors)
     positive_int(metadata, "total_effort_points", errors)

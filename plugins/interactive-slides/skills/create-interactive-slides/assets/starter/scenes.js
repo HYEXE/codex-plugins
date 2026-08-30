@@ -249,6 +249,9 @@
       this.detail.querySelector("small").textContent = `RUNNING · ${this.index} / ${this.items.length}`;
       this.detail.querySelector("h2").textContent = this.config.type === "timeline" ? item.title : `LINE ${String(this.index).padStart(2, "0")}`;
       this.detail.querySelector("p").textContent = this.config.type === "timeline" ? item.detail : item.explanation;
+      if (this.index < this.items.length) {
+        this.nextButton.textContent = this.config.type === "timeline" ? "다음 사건" : "다음 줄";
+      }
       if (this.index >= this.items.length) this.complete();
     }
     complete() {

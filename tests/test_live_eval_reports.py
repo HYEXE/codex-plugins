@@ -93,7 +93,36 @@ class CanaryMatrixTests(unittest.TestCase):
             report = canary.build_report(args)
             artifact_path = report["matrix"][0]["artifact_path"]
             self.assertFalse(any(character in artifact_path for character in '<>:"/\\|?*'))
-            self.assertIn("baseline:gpt-5.6:preview", report["baseline"])
+            self.assertEqual(
+                report["baseline"],
+                canary.encode_cell_id("baseline", "gpt-5.6:preview"),
+            )
+
+    def test_matrix_cell_ids_remain_unique_when_components_contain_colons(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            args = argparse.Namespace(
+                output_root=Path(temp_value),
+                invocation_id="collision-test",
+                codex_builds=[("a", "codex-a"), ("a:b", "codex-ab")],
+                models=["b:c", "c"],
+                suites=["routing"],
+                dry_run=True,
+                attempts=1,
+                case_set="critical",
+                reasoning_effort="medium",
+                auth_mode="saved",
+                timeout_seconds=30,
+                baseline=None,
+                regression_threshold=0.05,
+                output_json=None,
+                output_markdown=None,
+            )
+            report = canary.build_report(args)
+        cell_ids = [cell["cell_id"] for cell in report["matrix"]]
+        self.assertEqual(len(cell_ids), 4)
+        self.assertEqual(len(set(cell_ids)), 4)
+        self.assertIn(canary.encode_cell_id("a", "b:c"), cell_ids)
+        self.assertIn(canary.encode_cell_id("a:b", "c"), cell_ids)
 
     def test_build_specs_reject_duplicate_labels(self) -> None:
         with self.assertRaisesRegex(ValueError, "duplicate"):
