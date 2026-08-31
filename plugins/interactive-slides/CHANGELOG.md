@@ -2,6 +2,11 @@
 
 All notable changes to Interactive Slides are documented in this file.
 
+## 0.7.1
+
+- Restored the `M` mode shortcut for unlocked decks while preserving `modeLocked` authoring decisions.
+- Added repeatable Chromium contracts for mode locking, scene lifecycle, native input keys, reduced motion, responsive reflow and accessible icon controls.
+
 ## 0.7.0
 
 - Added assembled demo and experience forward fixtures with malformed-manifest regression coverage.

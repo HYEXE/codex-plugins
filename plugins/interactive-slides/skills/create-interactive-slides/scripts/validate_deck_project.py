@@ -131,6 +131,7 @@ def validate(project: Path, *, allow_remote_assets: bool) -> tuple[list[str], li
                 "!modeLocked &&",
                 "if (modeLocked) return",
                 "elements.mode.hidden = true",
+                'event.key.toLowerCase() === "m" && !modeLocked',
             )
         ),
         "deck runtime must render scene fallback": "slide.fallback || slide.summary" in runtime and "scene-fallback" in runtime,

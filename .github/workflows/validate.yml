@@ -78,3 +78,40 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/update_plugins.ps1 -DryRun
+
+  browser-e2e:
+    name: Chromium E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node.js 설정
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: 브라우저 테스트 의존성 설치
+        run: npm ci
+
+      - name: Chromium 설치
+        run: npx playwright install --with-deps chromium
+
+      - name: Interactive Slides 브라우저 계약 검증
+        run: npm run test:browser
+
+      - name: 실패 진단 자료 업로드
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: interactive-slides-browser-e2e
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
