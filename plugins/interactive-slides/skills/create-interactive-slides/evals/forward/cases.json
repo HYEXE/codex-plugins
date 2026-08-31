@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "evaluation_kind": "assembled-static-forward",
+  "description": "Realistic approved-scope deck fixtures assembled with the canonical starter runtime.",
+  "cases": [
+    {
+      "id": "demo-release-control-room",
+      "prompt": "4장의 시연형 발표를 만들어 주세요. 릴리스 입력이 검증 게이트를 지나 배포 판단으로 이어지는 과정을 발표자가 자동 재생으로 보여주고, 마지막에는 수동 운영과 재현 가능한 운영의 차이를 정리해야 합니다.",
+      "mode": "demo",
+      "fixture": "fixtures/demo-release-control-room/deck.js",
+      "expected": {
+        "slide_count": 4,
+        "approved_slide_ids": [
+          "release-thesis",
+          "gate-sequence",
+          "decision-timeline",
+          "operating-shift"
+        ],
+        "scene_types": [
+          "sequence",
+          "timeline",
+          "before-after"
+        ],
+        "mode_lifecycle": "ready-running-complete"
+      }
+    },
+    {
+      "id": "experience-scenario-lab",
+      "prompt": "4장의 체험형 워크숍 발표를 만들어 주세요. 참가자가 운영 전략을 선택하고 범위를 조절한 뒤 시스템 관계를 탐색하며, 마지막에는 자신의 선택이 운영 방식에 미치는 영향을 직접 비교할 수 있어야 합니다.",
+      "mode": "experience",
+      "fixture": "fixtures/experience-scenario-lab/deck.js",
+      "expected": {
+        "slide_count": 4,
+        "approved_slide_ids": [
+          "choose-strategy",
+          "tune-scope",
+          "inspect-system",
+          "compare-outcome"
+        ],
+        "scene_types": [
+          "choice",
+          "range",
+          "diagram",
+          "before-after"
+        ],
+        "mode_lifecycle": "direct-manipulation-reset"
+      }
+    }
+  ]
+}
