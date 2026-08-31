@@ -1,6 +1,6 @@
 {
   "name": "interactive-slides",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "발표문을 스토리보드로 구조화하고 timeline·diagram·code walkthrough·before/after를 포함한 체험형·시연형 HTML 장면을 설계·검증하는 한국어 중심 프레젠테이션 제작 워크플로입니다.",
   "author": {
     "name": "HYEXEN"

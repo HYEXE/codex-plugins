@@ -2,7 +2,9 @@
 
 All notable changes to Interactive Slides are documented in this file.
 
-## Unreleased
+## 0.7.0
+
+- Added assembled demo and experience forward fixtures with malformed-manifest regression coverage.
 
 - Added an approved-proposal-bound `design-plan.json` production contract.
 - Added deterministic validation for visual direction, slide families, interaction value, mode lifecycle, accessible icon chrome and proposal drift.
