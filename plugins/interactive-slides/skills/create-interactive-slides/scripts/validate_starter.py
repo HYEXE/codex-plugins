@@ -69,7 +69,9 @@ def main() -> int:
         "runtime supports demo": '"demo"' in runtime,
         "controls retain native keyboard behavior": "if (onControl) return;" in runtime,
         "touch gestures ignore interactive controls": all(marker in runtime for marker in ("touchStartedOnControl", "startedOnControl")),
-        "locked authoring mode has no runtime shortcut": 'event.key.toLowerCase() === "m"' not in runtime,
+        "runtime mode shortcut respects authoring lock": (
+            'event.key.toLowerCase() === "m" && !modeLocked' in runtime
+        ),
         "starter keeps a static first-slide fallback": all(marker in index for marker in ("static-fallback-wrap", "has-static-fallback", 'class="slide static-fallback"')),
         "static fallback matches the opening slide": all(marker in index and marker in deck for marker in opening_markers),
         "runtime progressively replaces static fallback": all(marker in runtime for marker in ('classList.remove("static-fallback-wrap")', 'classList.remove("has-static-fallback")')),

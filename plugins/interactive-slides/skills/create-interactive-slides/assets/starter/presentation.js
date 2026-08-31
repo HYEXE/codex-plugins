@@ -253,6 +253,10 @@
     else if (event.key === "Home") { event.preventDefault(); go(0); }
     else if (event.key === "End") { event.preventDefault(); go(deck.slides.length - 1); }
     else if (event.key.toLowerCase() === "o") { event.preventDefault(); toggleOutline(); }
+    else if (event.key.toLowerCase() === "m" && !modeLocked) {
+      event.preventDefault();
+      setMode(state.mode === "demo" ? "experience" : "demo");
+    }
     else if (event.key.toLowerCase() === "n") { event.preventDefault(); toggleNotes(); }
     else if (event.key.toLowerCase() === "r") { event.preventDefault(); replayCurrent(); }
     else if (event.key.toLowerCase() === "f") { event.preventDefault(); toggleFullscreen(); }
