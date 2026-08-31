@@ -82,7 +82,7 @@ class ReleaseTagTests(unittest.TestCase):
     def test_interactive_slides_tag_must_match_manifest_version(self) -> None:
         policy = validate_release_tag.load_object(ROOT / "release" / "release-policy.json")
         failures, metadata = validate_release_tag.validate_tag(
-            "interactive-slides-v0.6.0", policy, ROOT
+            "interactive-slides-v0.7.0", policy, ROOT
         )
         self.assertEqual(failures, [])
         self.assertEqual(metadata["plugin"], "interactive-slides")

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import shutil
 import tempfile
 import unittest
@@ -10,9 +12,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "plugins" / "interactive-slides" / "skills" / "create-interactive-slides"
 VALIDATOR_PATH = SKILL / "scripts" / "validate_production_proposal.py"
+DESIGN_VALIDATOR_PATH = SKILL / "scripts" / "validate_design_plan.py"
 DECK_VALIDATOR_PATH = SKILL / "scripts" / "validate_deck_project.py"
 STARTER_PATH = SKILL / "assets" / "starter"
 TEMPLATE_PATH = SKILL / "templates" / "production-proposal.md"
+DESIGN_TEMPLATE_PATH = SKILL / "templates" / "design-plan.json"
 
 
 def load_validator():
@@ -33,6 +37,17 @@ def load_deck_validator():
     return module
 
 
+def load_design_validator():
+    spec = importlib.util.spec_from_file_location(
+        "interactive_slides_design_plan_validator", DESIGN_VALIDATOR_PATH
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load Interactive Slides design-plan validator")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def approved_proposal(slide_status: str) -> str:
     text = TEMPLATE_PATH.read_text(encoding="utf-8")
     replacements = {
@@ -43,11 +58,83 @@ def approved_proposal(slide_status: str) -> str:
         "total_effort_points: 0": "total_effort_points: 1",
         'approved_by: ""': 'approved_by: "reviewer"',
         'approved_at: ""': 'approved_at: "2026-08-27T00:00:00+09:00"',
-        "| S01 | review |": f"| S01 | {slide_status} |",
+        "| S01 | review |  |  |  |  |  | 0초 | 0 |": (
+            f"| S01 | {slide_status} | 발표 핵심 약속 제시 | "
+            "설명을 시연으로 바꾼다 | 좌측 제목과 우측 단일 경로 | "
+            "reject:static | assets=-; sources=- | 45초 | 1 |"
+        ),
     }
     for source, destination in replacements.items():
         text = text.replace(source, destination, 1)
     return text
+
+
+def ready_design_plan(proposal_path: Path) -> dict[str, object]:
+    plan = json.loads(DESIGN_TEMPLATE_PATH.read_text(encoding="utf-8"))
+    plan["plan_status"] = "ready"
+    plan["proposal"] = {
+        "version": 1,
+        "title": "검증용 발표",
+        "mode": "demo",
+        "sha256": hashlib.sha256(proposal_path.read_bytes()).hexdigest(),
+    }
+    plan["art_direction"] = {
+        "editorial_premise": "정확한 구조를 차분하게 시연하는 기술 발표",
+        "typography": {
+            "display": "Display Sans",
+            "body": "Reading Sans",
+            "numerals": "Tabular Sans",
+        },
+        "palette": {
+            "background": "#f6f2e8",
+            "foreground": "#18201c",
+            "accent": "#d95f35",
+        },
+        "image_treatment": "고대비 크롭과 짧은 출처 캡션",
+        "geometry": "12열 그리드와 직선형 구분선",
+        "motion_language": "짧은 방향 전환과 단일 강조",
+        "icon_family": "2px outline SVG",
+    }
+    plan["slide_families"] = [
+        {
+            "id": "cover",
+            "purpose": "핵심 주장 제시",
+            "composition": "비대칭 제목과 단일 시각 앵커",
+            "visual_anchor": "큰 제목",
+            "density": "low",
+        }
+    ]
+    plan["slides"] = [
+        {
+            "id": "S01",
+            "delivery_mode": "demo",
+            "family": "cover",
+            "purpose": "발표 핵심 약속 제시",
+            "working_headline": "설명을 시연으로 바꾼다",
+            "dominant_visual": "제목과 진행 경로",
+            "composition": "좌측 제목과 우측 단일 경로",
+            "speaker_seconds": 45,
+            "content_budget": {"headline_max_chars": 32, "body_max_lines": 3},
+            "interaction": {
+                "decision": "reject",
+                "scene_type": "static",
+                "benefits": [],
+                "reason": "첫 약속은 조작보다 정적 문장이 선명함",
+                "lifecycle": "none",
+                "fallback": "제목과 한 문장 요약",
+            },
+            "evidence_boundary": "not-applicable",
+            "asset_ids": [],
+            "source_ids": [],
+            "accessibility": {
+                "keyboard": "일반 deck navigation만 사용",
+                "reduced_motion": "강조 이동을 즉시 표시",
+                "static_fallback": "제목과 핵심 문장 유지",
+            },
+        }
+    ]
+    plan["slide_count"] = 1
+    return plan
 
 
 class ProductionProposalGateTests(unittest.TestCase):
@@ -106,6 +193,227 @@ class ProductionProposalGateTests(unittest.TestCase):
         )
         self.assertFalse(result["valid"])
         self.assertIn("proposal_version must be an integer", result["errors"])
+
+    def test_approval_gate_normalizes_numeric_proposal_version(self) -> None:
+        result = self.validate(
+            approved_proposal("approved").replace(
+                "proposal_version: 1", "proposal_version: 01", 1
+            )
+        )
+        self.assertTrue(result["valid"], result["errors"])
+        self.assertEqual(result["proposal_version"], 1)
+
+    def test_approval_gate_rejects_resource_missing_from_inventory(self) -> None:
+        result = self.validate(
+            approved_proposal("approved").replace(
+                "assets=-; sources=-", "assets=A99; sources=-", 1
+            )
+        )
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "S01 references resource missing from inventory: A99",
+            result["errors"],
+        )
+
+    def test_approval_gate_exposes_slide_entries_for_design_plan(self) -> None:
+        result = self.validate(approved_proposal("approved"))
+        self.assertEqual(result["title"], "검증용 발표")
+        self.assertEqual(result["estimated_slides"], 1)
+        self.assertEqual(
+            result["slide_entries"], [{"id": "S01", "status": "approved"}]
+        )
+
+
+class DesignPlanGateTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.validator = load_design_validator()
+
+    def validate(self, mutate=None) -> dict[str, object]:
+        with tempfile.TemporaryDirectory() as temp_value:
+            directory = Path(temp_value)
+            proposal_path = directory / "production-proposal.md"
+            proposal_path.write_text(approved_proposal("approved"), encoding="utf-8")
+            plan = ready_design_plan(proposal_path)
+            if mutate is not None:
+                mutate(plan, proposal_path)
+            plan_path = directory / "design-plan.json"
+            plan_path.write_text(
+                json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            return self.validator.validate(
+                plan_path, proposal_path, require_ready=True
+            )
+
+    def test_ready_design_plan_accepts_bound_approved_proposal(self) -> None:
+        result = self.validate()
+        self.assertTrue(result["valid"], result["errors"])
+        self.assertEqual(result["approved_slide_ids"], ["S01"])
+
+    def test_design_plan_rejects_stale_proposal_hash(self) -> None:
+        def mutate(plan, proposal_path):
+            proposal_path.write_text(
+                proposal_path.read_text(encoding="utf-8") + "\n",
+                encoding="utf-8",
+            )
+
+        result = self.validate(mutate)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "proposal.sha256 does not match approved proposal content",
+            result["errors"],
+        )
+
+    def test_design_plan_rejects_unapproved_slide_ids(self) -> None:
+        def mutate(plan, _proposal_path):
+            plan["slides"][0]["id"] = "S02"
+
+        result = self.validate(mutate)
+        errors = "\n".join(result["errors"])
+        self.assertIn("approved proposal slide missing from design plan: S01", errors)
+        self.assertIn("design-plan slide is not approved in proposal: S02", errors)
+
+    def test_design_plan_requires_two_benefits_for_adopted_scene(self) -> None:
+        def mutate(plan, _proposal_path):
+            plan["slides"][0]["interaction"] = {
+                "decision": "adopt",
+                "scene_type": "sequence",
+                "benefits": ["temporal"],
+                "reason": "중간 상태를 순서대로 보여줌",
+                "lifecycle": "ready-running-complete",
+                "fallback": "번호가 있는 단계 목록",
+            }
+
+        result = self.validate(mutate)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "slides[0].interaction adoption requires at least two benefits",
+            result["errors"],
+        )
+
+    def test_design_plan_rejects_headline_over_budget(self) -> None:
+        def mutate(plan, _proposal_path):
+            plan["slides"][0]["content_budget"]["headline_max_chars"] = 5
+
+        result = self.validate(mutate)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "slides[0].working_headline exceeds headline_max_chars",
+            "\n".join(result["errors"]),
+        )
+
+    def test_design_plan_requires_accessible_icon_chrome(self) -> None:
+        def mutate(plan, _proposal_path):
+            plan["presentation_chrome"]["accessible_names"] = False
+
+        result = self.validate(mutate)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "presentation_chrome.accessible_names must be true", result["errors"]
+        )
+
+    def test_design_plan_accepts_normalized_proposal_version(self) -> None:
+        def mutate(plan, proposal_path):
+            proposal_path.write_text(
+                proposal_path.read_text(encoding="utf-8").replace(
+                    "proposal_version: 1", "proposal_version: 01", 1
+                ),
+                encoding="utf-8",
+            )
+            plan["proposal"]["sha256"] = hashlib.sha256(
+                proposal_path.read_bytes()
+            ).hexdigest()
+
+        result = self.validate(mutate)
+        self.assertTrue(result["valid"], result["errors"])
+
+    def test_design_plan_rejects_approved_scope_drift(self) -> None:
+        mutations = (
+            ("purpose", lambda slide: slide.__setitem__("purpose", "변경된 목적")),
+            (
+                "speaker_seconds",
+                lambda slide: slide.__setitem__("speaker_seconds", 46),
+            ),
+            ("asset_ids", lambda slide: slide.__setitem__("asset_ids", ["A01"])),
+        )
+        for field, mutation in mutations:
+            with self.subTest(field=field):
+                result = self.validate(
+                    lambda plan, _proposal_path, mutation=mutation: mutation(
+                        plan["slides"][0]
+                    )
+                )
+                self.assertFalse(result["valid"])
+                self.assertIn(f"S01 scope drift: {field}", result["errors"])
+
+    def test_design_plan_rejects_non_string_enums_without_crashing(self) -> None:
+        mutations = (
+            lambda plan: plan.__setitem__("plan_status", {}),
+            lambda plan: plan["proposal"].__setitem__("mode", []),
+            lambda plan: plan["slide_families"][0].__setitem__("density", {}),
+            lambda plan: plan["slides"][0].__setitem__("evidence_boundary", []),
+            lambda plan: plan["slides"][0]["interaction"].__setitem__("decision", {}),
+            lambda plan: plan["slides"][0]["interaction"].__setitem__("scene_type", []),
+            lambda plan: plan["slides"][0]["interaction"].__setitem__("lifecycle", {}),
+        )
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index):
+                result = self.validate(
+                    lambda plan, _proposal_path, mutation=mutation: mutation(plan)
+                )
+                self.assertFalse(result["valid"])
+                self.assertTrue(result["errors"])
+
+    def test_hybrid_slide_rejects_scene_unsupported_by_delivery_mode(self) -> None:
+        def mutate(plan, proposal_path):
+            proposal = proposal_path.read_text(encoding="utf-8")
+            proposal = proposal.replace(
+                "presentation_mode: demo", "presentation_mode: hybrid", 1
+            ).replace("reject:static", "adopt:sequence", 1)
+            proposal_path.write_text(proposal, encoding="utf-8")
+            plan["proposal"]["mode"] = "hybrid"
+            plan["proposal"]["sha256"] = hashlib.sha256(
+                proposal_path.read_bytes()
+            ).hexdigest()
+            plan["slides"][0]["delivery_mode"] = "experience"
+            plan["slides"][0]["interaction"] = {
+                "decision": "adopt",
+                "scene_type": "sequence",
+                "benefits": ["temporal", "causality"],
+                "reason": "순서와 원인을 함께 설명",
+                "lifecycle": "direct-manipulation-reset",
+                "fallback": "번호가 있는 단계 목록",
+            }
+
+        result = self.validate(mutate)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "slides[0].interaction scene type sequence is not supported in experience mode",
+            result["errors"],
+        )
+
+    def test_demo_slide_allows_non_blocking_scene_recipe(self) -> None:
+        def mutate(plan, proposal_path):
+            proposal_path.write_text(
+                proposal_path.read_text(encoding="utf-8").replace(
+                    "reject:static", "adopt:before-after", 1
+                ),
+                encoding="utf-8",
+            )
+            plan["proposal"]["sha256"] = hashlib.sha256(
+                proposal_path.read_bytes()
+            ).hexdigest()
+            plan["slides"][0]["interaction"] = {
+                "decision": "adopt",
+                "scene_type": "before-after",
+                "benefits": ["comparison", "spatial"],
+                "reason": "동일한 기준으로 전후 상태를 비교",
+                "lifecycle": "ready-running-complete",
+                "fallback": "두 상태를 나란히 표시",
+            }
+
+        result = self.validate(mutate)
+        self.assertTrue(result["valid"], result["errors"])
 
 
 class DeckProjectValidatorTests(unittest.TestCase):

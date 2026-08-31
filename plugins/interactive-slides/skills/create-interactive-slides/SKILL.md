@@ -11,7 +11,7 @@ description: 발표문·강의안·제품 시연을 스토리보드로 구조화
 
 발표문, 대상 청중, 발표 목적, 시간, 브랜드 자료와 원하는 모드를 확인한다. 결과를 크게 바꾸지 않는 정보는 안전한 기본값을 사용하고 완료 보고에 가정을 남긴다. 사실·수치·인용은 제공된 자료를 보존하며 출처 없이 만들지 않는다.
 
-명확하고 짧은 요청은 starter에 바로 구현한다. 발표가 길거나 출처가 많거나 여러 시연 장면이 있으면 `assets/templates/presentation-brief.md`와 `assets/templates/storyboard.md`를 실제 정보로 채워 구현 전에 판단 근거를 보존한다. 작은 작업에 계획 문서를 기계적으로 추가하지 않는다.
+기존 발표의 범위가 명확한 소규모 수정은 해당 파일에 바로 구현할 수 있다. 새 발표는 아래 proposal-first gate를 거치고, 발표가 길거나 출처가 많거나 여러 시연 장면이 있으면 `assets/templates/presentation-brief.md`와 `assets/templates/storyboard.md`를 실제 정보로 채워 판단 근거를 보존한다. 작은 수정에 계획 문서를 기계적으로 추가하지 않는다.
 
 기본 산출물은 다음 파일을 가진 독립 디렉터리다.
 
@@ -19,6 +19,8 @@ description: 발표문·강의안·제품 시연을 스토리보드로 구조화
 presentation/
 |-- presentation-brief.md  선택: 복잡한 발표의 목표·제약
 |-- storyboard.md          선택: 장면별 제작 계약
+|-- production-proposal.md 필수: 승인된 범위와 완료 기준
+|-- design-plan.json       필수: 승인 범위에 고정된 제작 결정
 |-- index.html
 |-- styles.css
 |-- deck.js
@@ -30,14 +32,17 @@ presentation/
 
 ## 제작 흐름
 
+새 발표는 proposal과 design plan이 승인·검증된 뒤 starter를 수정한다.
+
 1. 긴 발표문이나 근거가 많은 발표는 [references/content-to-storyboard.md](references/content-to-storyboard.md)에 따라 주장, 근거, 전환, 시간과 장면 목표를 먼저 구조화한다.
 2. 발표 시간에서 질의응답과 실제 시연 여유를 빼고 슬라이드 수와 밀도를 정한다.
-3. 사용자가 지정한 `experience` 또는 `demo` 모드를 따른다. 지정하지 않았다면 청중의 직접 탐색이 학습 목표면 `experience`, 발표자의 안정적인 순서 제어가 중요하면 `demo`를 기본값으로 선택한다. `demo`에서는 일반 Deck Controller와 장면별 Scene Controller를 분리한다.
-4. [references/interaction-selection.md](references/interaction-selection.md)의 Interaction Value Gate를 통과한 장면만 인터랙티브하게 만들고 채택·제외 이유를 storyboard에 기록한다.
-5. 발표문을 그대로 화면에 복사하지 말고 화면용 핵심 문장과 speaker notes를 분리한다.
-6. starter의 `deck.js`를 실제 콘텐츠로 교체하고 placeholder를 남기지 않는다.
-7. [references/rehearsal-and-fallback.md](references/rehearsal-and-fallback.md)에 따라 정상 진행, replay, skip, 실패와 정적 fallback을 리허설한다.
-8. `scripts/validate_deck_project.py <presentation-directory>`를 실행하고 로컬 브라우저에서 두 모드, 키보드, 작은 화면과 `prefers-reduced-motion`을 검증한다. 보지 못한 렌더링이나 실행 결과를 성공했다고 말하지 않는다.
+3. 사용자가 지정한 `experience` 또는 `demo` 모드를 따른다. 새 발표에서 모드가 없다면 임의로 추론하지 말고 두 옵션의 차이를 설명해 하나를 선택받는다. `demo`에서는 일반 Deck Controller와 장면별 Scene Controller를 분리한다.
+4. 승인 proposal을 [references/design-plan-contract.md](references/design-plan-contract.md)에 따라 `design-plan.json`으로 컴파일한다. 제안서 SHA, 승인 slide ID, mode, art direction, slide family와 scene 선택 근거를 고정한다.
+5. [references/interaction-selection.md](references/interaction-selection.md)의 Interaction Value Gate를 통과한 장면만 인터랙티브하게 만들고 채택·제외 이유를 design plan과 storyboard에 기록한다.
+6. 발표문을 그대로 화면에 복사하지 말고 화면용 핵심 문장과 speaker notes를 분리한다.
+7. starter의 `deck.js`를 실제 콘텐츠로 교체하고 placeholder를 남기지 않는다.
+8. [references/rehearsal-and-fallback.md](references/rehearsal-and-fallback.md)에 따라 정상 진행, replay, skip, 실패와 정적 fallback을 리허설한다.
+9. `scripts/validate_deck_project.py <presentation-directory>`를 실행하고 로컬 브라우저에서 선택된 모드, 키보드, 작은 화면과 `prefers-reduced-motion`을 검증한다. 보지 못한 렌더링이나 실행 결과를 성공했다고 말하지 않는다.
 
 ## Interaction Value Gate
 
@@ -112,13 +117,16 @@ Use a proposal and approval gate for every new presentation. Scale the detail to
 4. Create [templates/production-proposal.md](templates/production-proposal.md) with a slide-by-slide scope estimate.
 5. Collect natural-language feedback or use [templates/proposal-feedback.md](templates/proposal-feedback.md).
 6. Revise the proposal with a new version and explicit scope-impact summary.
-7. Begin final production only after explicit approval and a valid approved proposal.
-8. Reconcile the delivered deck against every approved slide and acceptance criterion.
+7. Record explicit approval and validate the approved proposal.
+8. Read [references/design-plan-contract.md](references/design-plan-contract.md), then create [templates/design-plan.json](templates/design-plan.json) from the approved scope.
+9. Mark the design plan ready only after its proposal SHA, slide IDs, mode, visual system, scene decisions and fallback contracts validate.
+10. Begin final production only after both gates pass, then reconcile the delivered deck against every approved slide and acceptance criterion.
 
 The estimate covers slide count, duration, composition, interactions, assets, effort and risk. Include monetary pricing only when the user supplies a rate card and pricing rules.
 
 Before production, run:
 
     python scripts/validate_production_proposal.py <proposal.md> --require-approved
+    python scripts/validate_design_plan.py <design-plan.json> --proposal <proposal.md> --require-ready
 
-If the approval gate fails, remain in proposal or review state. Do not create the final HTML, CSS, JavaScript or production assets.
+If either gate fails, remain in proposal, review or design-planning state. Do not create the final HTML, CSS, JavaScript or production assets.

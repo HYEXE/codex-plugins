@@ -22,7 +22,7 @@ Do not generate both modes speculatively. Do not expose a mode switch in the del
 
 ## Build contract
 
-Write the selected mode into the brief and storyboard. Set it declaratively on the generated document:
+Write the selected mode into the brief, production proposal, design plan and storyboard. Set it declaratively on the generated document:
 
 ```html
 <html lang="ko" data-presentation-mode="demo">
@@ -48,4 +48,4 @@ Use `experience` for an experience deck. The starter reads this value once at st
 
 ## Acceptance check
 
-Reject the generated deck when the brief, storyboard and document mode disagree, or when a runtime mode toggle remains visible without an explicit hybrid requirement.
+Reject the generated deck when the brief, proposal, design plan, storyboard and document mode disagree, or when a runtime mode toggle remains visible without an explicit hybrid requirement.

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "plan_status": "draft",
+  "proposal": {
+    "version": 1,
+    "title": "",
+    "mode": "demo",
+    "sha256": ""
+  },
+  "art_direction": {
+    "editorial_premise": "",
+    "typography": {
+      "display": "",
+      "body": "",
+      "numerals": ""
+    },
+    "palette": {
+      "background": "",
+      "foreground": "",
+      "accent": ""
+    },
+    "image_treatment": "",
+    "geometry": "",
+    "motion_language": "",
+    "icon_family": ""
+  },
+  "presentation_chrome": {
+    "icon_only": true,
+    "accessible_names": true,
+    "tooltips": true
+  },
+  "slide_families": [
+    {
+      "id": "cover",
+      "purpose": "",
+      "composition": "",
+      "visual_anchor": "",
+      "density": "low"
+    }
+  ],
+  "slide_count": 1,
+  "slides": [
+    {
+      "id": "S01",
+      "delivery_mode": "demo",
+      "family": "cover",
+      "purpose": "",
+      "working_headline": "",
+      "dominant_visual": "",
+      "composition": "",
+      "speaker_seconds": 0,
+      "content_budget": {
+        "headline_max_chars": 0,
+        "body_max_lines": 0
+      },
+      "interaction": {
+        "decision": "reject",
+        "scene_type": "static",
+        "benefits": [],
+        "reason": "",
+        "lifecycle": "none",
+        "fallback": ""
+      },
+      "evidence_boundary": "not-applicable",
+      "asset_ids": [],
+      "source_ids": [],
+      "accessibility": {
+        "keyboard": "",
+        "reduced_motion": "",
+        "static_fallback": ""
+      }
+    }
+  ]
+}

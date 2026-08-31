@@ -9,11 +9,14 @@ window.INTERACTIVE_DECK = {
     subtitle: "선택 부제",
     author: "발표자",
     defaultMode: "demo",
+    modeLocked: false,
     aspectRatio: "16:9"
   },
   slides: []
 };
 ```
+
+`modeLocked: true`이면 `defaultMode`가 제작 승인에서 확정된 모드다. 런타임은 URL mode override를 무시하고 모드 전환 control을 숨기며 키보드·API를 통한 mode 변경도 거부한다.
 
 ## Slide fields
 

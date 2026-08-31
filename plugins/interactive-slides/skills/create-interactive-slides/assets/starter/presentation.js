@@ -22,9 +22,12 @@
   const params = new URLSearchParams(window.location.search);
   const hashMatch = window.location.hash.match(/slide=(\d+)/);
   const requestedMode = params.get("mode");
+  const modeLocked = deck.meta.modeLocked === true;
   const state = {
     index: Math.max(0, Math.min(deck.slides.length - 1, hashMatch ? Number(hashMatch[1]) - 1 : 0)),
-    mode: ["experience", "demo"].includes(requestedMode) ? requestedMode : deck.meta.defaultMode,
+    mode: !modeLocked && ["experience", "demo"].includes(requestedMode)
+      ? requestedMode
+      : deck.meta.defaultMode,
     zoom: 1,
     fitScale: 1,
     scene: null,
@@ -35,6 +38,11 @@
     outlineReturnFocus: null
   };
   if (!["experience", "demo"].includes(state.mode)) state.mode = "demo";
+  if (modeLocked) {
+    elements.mode.hidden = true;
+    elements.mode.disabled = true;
+    elements.mode.setAttribute("aria-hidden", "true");
+  }
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -135,6 +143,7 @@
   }
 
   function setMode(mode) {
+    if (modeLocked) return;
     state.scene?.cancel();
     state.mode = mode;
     const url = new URL(window.location.href);
@@ -256,7 +265,11 @@
   document.title = deck.meta.title;
   elements.previous.addEventListener("click", () => go(state.index - 1));
   elements.next.addEventListener("click", advanceForward);
-  elements.mode.addEventListener("click", () => setMode(state.mode === "demo" ? "experience" : "demo"));
+  if (!modeLocked) {
+    elements.mode.addEventListener("click", () =>
+      setMode(state.mode === "demo" ? "experience" : "demo")
+    );
+  }
   elements.replay.addEventListener("click", replayCurrent);
   elements.zoomIn.addEventListener("click", () => setZoom(state.zoom + 0.1));
   elements.zoomOut.addEventListener("click", () => setZoom(state.zoom - 0.1));
@@ -331,6 +344,7 @@ const AUTHORING_ICON_CONTROLS = [
 ];
 
 function lockAuthoringMode() {
+  if (window.INTERACTIVE_DECK?.meta?.modeLocked !== true) return;
   const requested = (
     document.documentElement.dataset.presentationMode ||
     document.body?.dataset.presentationMode ||
