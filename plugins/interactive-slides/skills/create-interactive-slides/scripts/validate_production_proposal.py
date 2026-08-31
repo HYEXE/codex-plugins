@@ -166,8 +166,14 @@ def validate(path: Path, require_approved: bool) -> dict[str, object]:
         "path": str(path),
         "proposal_version": metadata.get("proposal_version"),
         "proposal_status": status,
+        "title": metadata.get("title"),
         "presentation_mode": mode,
+        "estimated_slides": estimated_slides,
         "slide_rows": slide_rows,
+        "slide_entries": [
+            {"id": slide_id, "status": slide_status}
+            for slide_id, slide_status in slide_entries
+        ],
         "duplicate_slide_ids": duplicate_slide_ids,
         "unresolved_slide_rows": unresolved_slide_rows,
         "require_approved": require_approved,

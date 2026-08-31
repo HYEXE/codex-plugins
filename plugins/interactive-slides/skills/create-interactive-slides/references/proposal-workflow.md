@@ -5,7 +5,7 @@ Do not begin final slide production from raw requirements. Convert the request i
 ## State model
 
 ```text
-intake -> analysis -> proposal -> review -> approved -> production -> qa -> delivered
+intake -> analysis -> proposal -> review -> approved -> design-plan -> production -> qa -> delivered
 ```
 
 The proposal is the canonical scope record. Update its version and revision history whenever feedback changes slide count, duration, assets, interactions, visual direction, delivery constraints or acceptance criteria.
@@ -91,7 +91,29 @@ Before production:
 
 Storyboards, wireframes and small design-direction samples are review artifacts, not final production. Label them accordingly.
 
-## 6. Production and change control
+## 6. Design-plan compilation
+
+Compile the approved proposal into `templates/design-plan.json` before editing final HTML, CSS or JavaScript. Read `references/design-plan-contract.md` and keep the proposal as the canonical scope record.
+
+The design plan must:
+
+- bind the exact approved proposal with its version, title, mode and SHA-256
+- include exactly the slide rows whose proposal status is `approved`
+- define one art direction and a small reusable slide-family system
+- assign each slide a family, dominant visual, content budget and evidence boundary
+- record adopted or rejected interaction decisions with Interaction Value Gate benefits
+- lock the mode-specific lifecycle, static fallback and accessibility behavior
+- require icon-only presentation chrome with accessible names and tooltips
+
+Set `plan_status` to `ready` only after running:
+
+```text
+python scripts/validate_design_plan.py design-plan.json --proposal production-proposal.md --require-ready
+```
+
+The design plan may refine composition but must not silently change scope. If it changes slide purpose, count, duration, sources, assets, interaction scope or art direction, revise and reapprove the proposal first.
+
+## 7. Production and change control
 
 Build against the approved slide rows and acceptance criteria. If a request during production changes scope:
 
@@ -102,6 +124,6 @@ Build against the approved slide rows and acceptance criteria. If a request duri
 
 Minor corrections that do not change scope may remain in production but still belong in the revision history.
 
-## 7. Proposal-to-delivery QA
+## 8. Proposal-to-delivery QA
 
-At delivery, reconcile every approved slide row with the generated deck. Report implemented, changed, deferred and missing items. A technically valid deck is not complete when it diverges from the approved proposal without a recorded decision.
+At delivery, reconcile every approved slide row with both the design plan and generated deck. Report implemented, changed, deferred and missing items. A technically valid deck is not complete when it diverges from the approved proposal or ready design plan without a recorded decision.
