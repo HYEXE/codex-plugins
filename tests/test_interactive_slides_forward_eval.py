@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -113,6 +114,55 @@ class InteractiveSlidesForwardEvalTests(unittest.TestCase):
         self.assertIn(
             "fixture must lock its selected delivery mode with modeLocked: true",
             result["failures"],
+        )
+
+    def test_scene_type_requires_matching_recipe_payload(self):
+        case = copy.deepcopy(self.load_cases()[1])
+        fixture = MANIFEST_PATH.parent / case["fixture"]
+        deck = fixture.read_text(encoding="utf-8").replace(
+            'type: "choice"',
+            'type: "sequence"',
+            1,
+        )
+        case["expected"]["scene_types"][0] = "sequence"
+
+        with tempfile.TemporaryDirectory() as raw_temp:
+            eval_root = Path(raw_temp)
+            fixture_path = eval_root / "deck.js"
+            fixture_path.write_text(deck, encoding="utf-8")
+            case["fixture"] = "deck.js"
+            result = EVALUATOR.evaluate_case(case, eval_root=eval_root)
+
+        self.assertEqual("failed", result["status"])
+        self.assertTrue(
+            any("scene sequence missing recipe field" in item for item in result["failures"]),
+            result,
+        )
+
+    def test_mode_lock_requires_runtime_enforcement(self):
+        case = copy.deepcopy(self.load_cases()[0])
+
+        with tempfile.TemporaryDirectory() as raw_temp:
+            starter = Path(raw_temp) / "starter"
+            shutil.copytree(EVALUATOR.DEFAULT_STARTER, starter)
+            runtime_path = starter / "presentation.js"
+            runtime_path.write_text(
+                runtime_path.read_text(encoding="utf-8").replace(
+                    "if (modeLocked) return;",
+                    "if (false) return;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = EVALUATOR.evaluate_case(case, starter=starter)
+
+        self.assertEqual("failed", result["status"])
+        self.assertTrue(
+            any(
+                "canonical runtime does not enforce modeLocked" in item
+                for item in result["failures"]
+            ),
+            result,
         )
 
     def test_manifest_rejects_unhashable_case_id_without_crashing(self):

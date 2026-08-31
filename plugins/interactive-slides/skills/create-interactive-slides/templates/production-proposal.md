@@ -36,6 +36,8 @@ approved_at: ""
 
 허용 상태: `review`, `approved`, `revise`, `remove`, `defer`.
 
+`approved` 행은 빈 셀을 허용하지 않는다. 장면·인터랙션은 `adopt:sequence` 또는 `reject:static`, 출처·에셋은 `assets=A01,A02; sources=SRC01` 형식으로 작성하고 참조가 없으면 각 목록에 `-`를 쓴다.
+
 ## 디자인 시스템과 슬라이드 패밀리
 
 - Art-direction sentence:
@@ -52,6 +54,8 @@ approved_at: ""
 | ID | 종류 | 용도 | 제공 주체 | 상태 | 라이선스·출처 | Fallback |
 |---|---|---|---|---|---|---|
 | A01 |  |  |  | needed |  |  |
+
+에셋은 `A01`, 출처는 `SRC01`처럼 고유 ID를 부여한다. 슬라이드 행에서 참조한 모든 ID가 이 표에 있어야 한다.
 
 ## 인터랙션과 기술 범위
 

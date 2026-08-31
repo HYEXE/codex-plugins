@@ -1,6 +1,6 @@
 # Mode contracts
 
-하나의 deck 콘텐츠가 `experience`와 `demo`에서 서로 다른 진행 방식을 제공한다. URL의 `?mode=experience` 또는 `?mode=demo`로 초기 모드를 지정하고 화면 제어로 전환할 수 있게 한다.
+하나의 deck 콘텐츠가 `experience`와 `demo`에서 서로 다른 진행 방식을 제공한다. `meta.modeLocked`가 `false`일 때만 URL의 `?mode=experience` 또는 `?mode=demo`로 초기 모드를 지정하고 화면 제어로 전환할 수 있게 한다. `modeLocked: true`이면 승인된 `defaultMode`를 유지하고 URL override와 모든 mode 전환 입력을 무시하며 전환 control을 숨긴다.
 
 ## Deck Controller
 
@@ -9,7 +9,7 @@ Deck Controller는 장면 내용을 알지 않는다. 슬라이드 이동, 목�
 ## experience
 
 - 청중 또는 발표자가 현재 슬라이드의 단계, 선택지와 슬라이더를 임의 순서로 탐색한다.
-- `sequence`는 장면 내부 버튼으로 한 단계씩 진행한다. 전역 다음 키는 다음 슬라이드로 이동한다.
+- `steps`, `comparison`, `choice`, `range`, `diagram`, `before-after`처럼 직접 조작하는 recipe를 사용한다. `sequence`, `timeline`, `code-walkthrough`는 demo 전용 blocking recipe다.
 - 숨겨진 정답을 맞혀야 다음으로 갈 수 있게 만들지 않는다.
 - 선택 결과에는 즉시 설명을 제공하고 replay는 현재 장면의 초기 상태만 복원한다.
 - 직접 조작 없이도 제목과 요약으로 핵심 메시지를 이해할 수 있어야 한다.

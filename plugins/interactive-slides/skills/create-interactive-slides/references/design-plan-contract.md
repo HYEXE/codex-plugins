@@ -34,6 +34,7 @@ Define a small set of slide families with purposeful differences in composition,
 
 Each approved slide must declare:
 
+- `delivery_mode`: `demo` or `experience`
 - purpose and working headline
 - slide family, composition and dominant visual
 - speaking time and content budget
@@ -42,6 +43,8 @@ Each approved slide must declare:
 - keyboard, reduced-motion and static-fallback behavior
 
 Keep the working headline within its declared character budget and write for projection rather than document reading. Use source and asset IDs from the approved proposal; do not invent evidence to fill a composition.
+
+The approved proposal row is a scope contract. Preserve its purpose, core content/headline, composition, speaking time, interaction decision and scene type, and complete asset/source ID set. Every referenced ID must exist in the proposal resource inventory.
 
 ## Interaction contract
 
@@ -52,6 +55,8 @@ For an adopted interaction:
 - use `ready-running-complete` lifecycle in `demo` mode
 - use `direct-manipulation-reset` lifecycle in `experience` mode
 - provide a meaningful static fallback
+
+In a single-mode proposal, every slide `delivery_mode` must match the proposal mode. A `hybrid` proposal must choose `demo` or `experience` per slide. Validate lifecycle and scene support against that slide-level mode; for example, `sequence` is a demo recipe rather than an experience recipe.
 
 For a rejected interaction, use `scene_type: static`, `lifecycle: none` and state why a static composition communicates better.
 

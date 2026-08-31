@@ -124,6 +124,15 @@ def validate(project: Path, *, allow_remote_assets: bool) -> tuple[list[str], li
         "deck runtime must destroy scenes": "state.scene?.destroy()" in runtime,
         "deck runtime must cancel scenes": "state.scene?.cancel()" in runtime,
         "deck runtime must support both modes": '"experience"' in runtime and '"demo"' in runtime,
+        "deck runtime must enforce locked authoring mode": all(
+            marker in runtime
+            for marker in (
+                "deck.meta.modeLocked === true",
+                "!modeLocked &&",
+                "if (modeLocked) return",
+                "elements.mode.hidden = true",
+            )
+        ),
         "deck runtime must render scene fallback": "slide.fallback || slide.summary" in runtime and "scene-fallback" in runtime,
         "dynamic code evaluation is forbidden": "eval(" not in scenes + runtime and "new Function" not in scenes + runtime,
         "unfinished placeholders are forbidden": "[TODO:" not in combined and "Lorem ipsum" not in combined,

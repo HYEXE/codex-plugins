@@ -37,6 +37,41 @@ CANONICAL_LIFECYCLES = {
 }
 DEMO_BLOCKING_SCENES = {"sequence", "timeline", "code-walkthrough"}
 EXPERIENCE_DIRECT_SCENES = {"choice", "range", "diagram", "before-after"}
+MODE_LOCK_RUNTIME_MARKERS = (
+    "deck.meta.modeLocked === true",
+    "!modeLocked &&",
+    "if (modeLocked) return",
+    "elements.mode.hidden = true",
+)
+SCENE_RECIPE_FIELDS = {
+    "steps": (("items", re.compile(r"\bitems\s*:\s*\[")),),
+    "comparison": (
+        ("left", re.compile(r"\bleft\s*:\s*\{")),
+        ("right", re.compile(r"\bright\s*:\s*\{")),
+    ),
+    "choice": (("options", re.compile(r"\boptions\s*:\s*\[")),),
+    "range": (
+        ("min", re.compile(r"\bmin\s*:\s*-?\d")),
+        ("max", re.compile(r"\bmax\s*:\s*-?\d")),
+        ("step", re.compile(r"\bstep\s*:\s*-?\d")),
+        ("value", re.compile(r"\bvalue\s*:\s*-?\d")),
+        ("result", re.compile(r"\bresult\s*:\s*\{")),
+    ),
+    "sequence": (
+        ("nodes", re.compile(r"\bnodes\s*:\s*\[")),
+        ("phases", re.compile(r"\bphases\s*:\s*\[")),
+    ),
+    "timeline": (("events", re.compile(r"\bevents\s*:\s*\[")),),
+    "diagram": (
+        ("nodes", re.compile(r"\bnodes\s*:\s*\[")),
+        ("links", re.compile(r"\blinks\s*:\s*\[")),
+    ),
+    "code-walkthrough": (("lines", re.compile(r"\blines\s*:\s*\[")),),
+    "before-after": (
+        ("before", re.compile(r"\bbefore\s*:\s*\{")),
+        ("after", re.compile(r"\bafter\s*:\s*\{")),
+    ),
+}
 
 
 def _load_deck_validator() -> Any:
@@ -52,6 +87,35 @@ def _load_deck_validator() -> Any:
 
 
 DECK_VALIDATOR = _load_deck_validator()
+
+
+def _extract_object_property(source: str, property_name: str) -> str | None:
+    match = re.search(rf"\b{re.escape(property_name)}\s*:\s*\{{", source)
+    if match is None:
+        return None
+    start = source.find("{", match.start())
+    depth = 0
+    quote = ""
+    escaped = False
+    for index in range(start, len(source)):
+        character = source[index]
+        if quote:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = ""
+            continue
+        if character in {'"', "'", "`"}:
+            quote = character
+        elif character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start : index + 1]
+    return None
 
 
 def _safe_fixture_path(eval_root: Path, value: Any) -> tuple[Path | None, str | None]:
@@ -163,17 +227,33 @@ def evaluate_case(
         warnings.extend(deck_warnings)
 
         deck = (project / "deck.js").read_text(encoding="utf-8")
+        runtime = (project / "presentation.js").read_text(encoding="utf-8")
         slide_blocks = DECK_VALIDATOR.extract_slide_blocks(deck)
         slide_ids: list[str] = []
         for block in slide_blocks:
             match = DECK_VALIDATOR.SLIDE_ID.search(block)
             if match is not None:
                 slide_ids.append(match.group(1))
-        scene_types = [
-            match.group(1)
-            for block in slide_blocks
-            for match in SCENE_TYPE.finditer(block)
-        ]
+        scene_types: list[str] = []
+        for slide_index, block in enumerate(slide_blocks, 1):
+            scene = _extract_object_property(block, "scene")
+            if scene is None:
+                continue
+            scene_match = SCENE_TYPE.search(scene)
+            if scene_match is None:
+                failures.append(f"slide {slide_index} scene missing type")
+                continue
+            scene_type = scene_match.group(1)
+            scene_types.append(scene_type)
+            recipe_fields = SCENE_RECIPE_FIELDS.get(scene_type)
+            if recipe_fields is None:
+                failures.append(f"slide {slide_index} uses unsupported scene recipe: {scene_type}")
+                continue
+            for field, pattern in recipe_fields:
+                if pattern.search(scene) is None:
+                    failures.append(
+                        f"slide {slide_index} scene {scene_type} missing recipe field: {field}"
+                    )
 
         mode_match = DEFAULT_MODE.search(deck)
         actual_mode = mode_match.group(1) if mode_match else None
@@ -181,6 +261,14 @@ def evaluate_case(
             failures.append(f"fixture defaultMode {actual_mode!r} does not match case mode {mode!r}")
         if MODE_LOCK.search(deck) is None:
             failures.append("fixture must lock its selected delivery mode with modeLocked: true")
+        missing_runtime_markers = [
+            marker for marker in MODE_LOCK_RUNTIME_MARKERS if marker not in runtime
+        ]
+        if missing_runtime_markers:
+            failures.append(
+                "canonical runtime does not enforce modeLocked: "
+                + ", ".join(missing_runtime_markers)
+            )
 
         if not 3 <= len(slide_blocks) <= 5:
             failures.append(f"fixture must contain 3 to 5 slides, got {len(slide_blocks)}")

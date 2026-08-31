@@ -26,6 +26,7 @@ REQUIRED_TOP_LEVEL = {
 }
 ALLOWED_PLAN_STATUSES = {"draft", "ready"}
 ALLOWED_MODES = {"demo", "experience", "hybrid"}
+ALLOWED_DELIVERY_MODES = {"demo", "experience"}
 ALLOWED_DENSITIES = {"low", "medium", "high"}
 ALLOWED_SCENE_TYPES = {
     "static",
@@ -41,6 +42,10 @@ ALLOWED_SCENE_TYPES = {
 }
 ALLOWED_BENEFITS = {"causality", "temporal", "decision", "comparison", "spatial"}
 ALLOWED_LIFECYCLES = {"none", "ready-running-complete", "direct-manipulation-reset"}
+SUPPORTED_SCENES_BY_MODE = {
+    "demo": ALLOWED_SCENE_TYPES - {"static"},
+    "experience": {"steps", "comparison", "choice", "range", "diagram", "before-after"},
+}
 ALLOWED_EVIDENCE_BOUNDARIES = {
     "verified",
     "inferred",
@@ -95,6 +100,19 @@ def require_positive_int(value: object, label: str, errors: list[str]) -> int | 
     return value
 
 
+def validate_enum(
+    value: object,
+    label: str,
+    allowed: set[str],
+    errors: list[str],
+) -> str:
+    if not isinstance(value, str) or value not in allowed:
+        rendered = repr(value)
+        errors.append(f"unsupported {label}: {rendered}")
+        return ""
+    return value
+
+
 def validate_string_array(value: object, label: str, errors: list[str]) -> list[str]:
     items = require_list(value, label, errors)
     strings: list[str] = []
@@ -127,9 +145,12 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
     if schema_version is not None and schema_version != 1:
         errors.append(f"unsupported schema_version: {schema_version}")
 
-    plan_status = root.get("plan_status")
-    if plan_status not in ALLOWED_PLAN_STATUSES:
-        errors.append(f"unsupported plan_status: {plan_status}")
+    plan_status = validate_enum(
+        root.get("plan_status"),
+        "plan_status",
+        ALLOWED_PLAN_STATUSES,
+        errors,
+    )
     if require_ready and plan_status != "ready":
         errors.append("production gate requires plan_status: ready")
 
@@ -140,16 +161,23 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
     binding = require_object(root.get("proposal"), "proposal", errors)
     binding_version = require_positive_int(binding.get("version"), "proposal.version", errors)
     expected_version = proposal_result.get("proposal_version")
-    if binding_version is not None and str(binding_version) != str(expected_version):
+    if (
+        binding_version is not None
+        and isinstance(expected_version, int)
+        and binding_version != expected_version
+    ):
         errors.append(
             f"proposal.version {binding_version} does not match approved proposal {expected_version}"
         )
     binding_title = require_text(binding.get("title"), "proposal.title", errors)
     if binding_title and binding_title != proposal_result.get("title"):
         errors.append("proposal.title does not match approved proposal")
-    binding_mode = binding.get("mode")
-    if binding_mode not in ALLOWED_MODES:
-        errors.append(f"unsupported proposal.mode: {binding_mode}")
+    binding_mode = validate_enum(
+        binding.get("mode"),
+        "proposal.mode",
+        ALLOWED_MODES,
+        errors,
+    )
     if binding_mode and binding_mode != proposal_result.get("presentation_mode"):
         errors.append("proposal.mode does not match approved proposal")
 
@@ -193,9 +221,12 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
         family_ids.append(family_id)
         for field in ("purpose", "composition", "visual_anchor"):
             require_text(family.get(field), f"slide_families[{index}].{field}", errors)
-        density = family.get("density")
-        if density not in ALLOWED_DENSITIES:
-            errors.append(f"unsupported slide_families[{index}].density: {density}")
+        validate_enum(
+            family.get("density"),
+            f"slide_families[{index}].density",
+            ALLOWED_DENSITIES,
+            errors,
+        )
     duplicate_families = sorted({item for item in family_ids if family_ids.count(item) > 1})
     errors.extend(f"duplicate slide family ID: {item}" for item in duplicate_families if item)
 
@@ -207,6 +238,7 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
         errors.append(f"slide_count is {slide_count}, but {len(slides)} slides were found")
 
     slide_ids: list[str] = []
+    slide_scope_by_id: dict[str, dict[str, object]] = {}
     for index, raw_slide in enumerate(slides):
         prefix = f"slides[{index}]"
         slide = require_object(raw_slide, prefix, errors)
@@ -215,16 +247,35 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
             errors.append(f"invalid slide ID: {slide_id}")
         slide_ids.append(slide_id)
 
+        delivery_mode = validate_enum(
+            slide.get("delivery_mode"),
+            f"{prefix}.delivery_mode",
+            ALLOWED_DELIVERY_MODES,
+            errors,
+        )
+        if (
+            binding_mode in ALLOWED_DELIVERY_MODES
+            and delivery_mode
+            and delivery_mode != binding_mode
+        ):
+            errors.append(
+                f"{prefix}.delivery_mode must match proposal mode {binding_mode}"
+            )
+
         family_id = require_text(slide.get("family"), f"{prefix}.family", errors)
         if family_id and family_id not in family_ids:
             errors.append(f"{prefix}.family references unknown family: {family_id}")
-        require_text(slide.get("purpose"), f"{prefix}.purpose", errors)
+        purpose = require_text(slide.get("purpose"), f"{prefix}.purpose", errors)
         working_headline = require_text(
             slide.get("working_headline"), f"{prefix}.working_headline", errors
         )
-        for field in ("dominant_visual", "composition"):
-            require_text(slide.get(field), f"{prefix}.{field}", errors)
-        require_positive_int(slide.get("speaker_seconds"), f"{prefix}.speaker_seconds", errors)
+        require_text(slide.get("dominant_visual"), f"{prefix}.dominant_visual", errors)
+        composition = require_text(
+            slide.get("composition"), f"{prefix}.composition", errors
+        )
+        speaker_seconds = require_positive_int(
+            slide.get("speaker_seconds"), f"{prefix}.speaker_seconds", errors
+        )
 
         budget = require_object(slide.get("content_budget"), f"{prefix}.content_budget", errors)
         headline_max_chars = require_positive_int(
@@ -247,23 +298,36 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
             errors,
         )
 
-        boundary = slide.get("evidence_boundary")
-        if boundary not in ALLOWED_EVIDENCE_BOUNDARIES:
-            errors.append(f"unsupported {prefix}.evidence_boundary: {boundary}")
-        validate_string_array(slide.get("asset_ids"), f"{prefix}.asset_ids", errors)
-        validate_string_array(slide.get("source_ids"), f"{prefix}.source_ids", errors)
+        validate_enum(
+            slide.get("evidence_boundary"),
+            f"{prefix}.evidence_boundary",
+            ALLOWED_EVIDENCE_BOUNDARIES,
+            errors,
+        )
+        asset_ids = validate_string_array(
+            slide.get("asset_ids"), f"{prefix}.asset_ids", errors
+        )
+        source_ids = validate_string_array(
+            slide.get("source_ids"), f"{prefix}.source_ids", errors
+        )
 
         accessibility = require_object(slide.get("accessibility"), f"{prefix}.accessibility", errors)
         for field in ("keyboard", "reduced_motion", "static_fallback"):
             require_text(accessibility.get(field), f"{prefix}.accessibility.{field}", errors)
 
         interaction = require_object(slide.get("interaction"), f"{prefix}.interaction", errors)
-        decision = interaction.get("decision")
-        if decision not in {"adopt", "reject"}:
-            errors.append(f"unsupported {prefix}.interaction.decision: {decision}")
-        scene_type = interaction.get("scene_type")
-        if scene_type not in ALLOWED_SCENE_TYPES:
-            errors.append(f"unsupported {prefix}.interaction.scene_type: {scene_type}")
+        decision = validate_enum(
+            interaction.get("decision"),
+            f"{prefix}.interaction.decision",
+            {"adopt", "reject"},
+            errors,
+        )
+        scene_type = validate_enum(
+            interaction.get("scene_type"),
+            f"{prefix}.interaction.scene_type",
+            ALLOWED_SCENE_TYPES,
+            errors,
+        )
         benefits = validate_string_array(
             interaction.get("benefits"), f"{prefix}.interaction.benefits", errors
         )
@@ -275,9 +339,12 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
         if len(benefits) != len(set(benefits)):
             errors.append(f"{prefix}.interaction.benefits must be unique")
         require_text(interaction.get("reason"), f"{prefix}.interaction.reason", errors)
-        lifecycle = interaction.get("lifecycle")
-        if lifecycle not in ALLOWED_LIFECYCLES:
-            errors.append(f"unsupported {prefix}.interaction.lifecycle: {lifecycle}")
+        lifecycle = validate_enum(
+            interaction.get("lifecycle"),
+            f"{prefix}.interaction.lifecycle",
+            ALLOWED_LIFECYCLES,
+            errors,
+        )
         require_text(interaction.get("fallback"), f"{prefix}.interaction.fallback", errors)
 
         if decision == "adopt":
@@ -288,33 +355,70 @@ def validate(plan_path: Path, proposal_path: Path, require_ready: bool) -> dict[
             expected_lifecycle = {
                 "demo": "ready-running-complete",
                 "experience": "direct-manipulation-reset",
-            }.get(binding_mode)
+            }.get(delivery_mode)
             if expected_lifecycle and lifecycle != expected_lifecycle:
                 errors.append(
-                    f"{prefix}.interaction lifecycle must be {expected_lifecycle} in {binding_mode} mode"
+                    f"{prefix}.interaction lifecycle must be {expected_lifecycle} "
+                    f"in {delivery_mode} mode"
                 )
-            if binding_mode == "hybrid" and lifecycle == "none":
-                errors.append(f"{prefix}.interaction adopted hybrid scene requires a lifecycle")
+            supported_scenes = SUPPORTED_SCENES_BY_MODE.get(delivery_mode, set())
+            if scene_type and scene_type not in supported_scenes:
+                errors.append(
+                    f"{prefix}.interaction scene type {scene_type} is not supported "
+                    f"in {delivery_mode} mode"
+                )
         if decision == "reject":
             if scene_type != "static":
                 errors.append(f"{prefix}.interaction rejected scene must use static")
             if lifecycle != "none":
                 errors.append(f"{prefix}.interaction rejected scene must use lifecycle none")
 
+        if slide_id:
+            slide_scope_by_id[slide_id] = {
+                "purpose": purpose,
+                "core_content": working_headline,
+                "composition": composition,
+                "speaker_seconds": speaker_seconds,
+                "interaction": {
+                    "decision": decision,
+                    "scene_type": scene_type,
+                },
+                "asset_ids": asset_ids,
+                "source_ids": source_ids,
+            }
+
     duplicate_slides = sorted({item for item in slide_ids if slide_ids.count(item) > 1})
     errors.extend(f"duplicate design-plan slide ID: {item}" for item in duplicate_slides if item)
 
-    approved_ids = [
-        entry["id"]
-        for entry in proposal_result.get("slide_entries", [])
+    approved_scopes = {
+        entry["id"]: entry
+        for entry in proposal_result.get("slide_scopes", [])
         if entry["status"] == "approved"
-    ]
+    }
+    approved_ids = list(approved_scopes)
     missing_slides = sorted(set(approved_ids) - set(slide_ids))
     extra_slides = sorted(set(slide_ids) - set(approved_ids))
     errors.extend(f"approved proposal slide missing from design plan: {item}" for item in missing_slides)
     errors.extend(f"design-plan slide is not approved in proposal: {item}" for item in extra_slides if item)
     if not approved_ids:
         errors.append("approved proposal must contain at least one approved slide row")
+
+    for slide_id in sorted(set(approved_ids) & set(slide_scope_by_id)):
+        proposal_scope = approved_scopes[slide_id]
+        plan_scope = slide_scope_by_id[slide_id]
+        for field in ("purpose", "core_content", "composition", "speaker_seconds"):
+            if plan_scope[field] != proposal_scope[field]:
+                errors.append(f"{slide_id} scope drift: {field}")
+
+        proposal_interaction = proposal_scope["interaction"]
+        plan_interaction = plan_scope["interaction"]
+        for field in ("decision", "scene_type"):
+            if plan_interaction[field] != proposal_interaction[field]:
+                errors.append(f"{slide_id} scope drift: interaction.{field}")
+
+        for field in ("asset_ids", "source_ids"):
+            if sorted(plan_scope[field]) != sorted(proposal_scope[field]):
+                errors.append(f"{slide_id} scope drift: {field}")
 
     return {
         "valid": not errors,

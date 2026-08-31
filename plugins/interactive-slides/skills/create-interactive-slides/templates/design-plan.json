@@ -42,6 +42,7 @@
   "slides": [
     {
       "id": "S01",
+      "delivery_mode": "demo",
       "family": "cover",
       "purpose": "",
       "working_headline": "",
