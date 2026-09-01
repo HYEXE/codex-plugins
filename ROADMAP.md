@@ -28,4 +28,4 @@
 - [x] 여러 모델·Codex build를 로컬에서 비교하는 비차단 canary matrix
 - [ ] source liveness artifact를 이전 정상 baseline과 자동 비교하는 drift history 실제 Actions 실행 확인
 - [x] interactive-slides 0.6.0 routing fixture의 live observation과 metadata hash 갱신
-- [ ] interactive-slides 0.7.x clean-tree routing full live observation과 metadata hash 갱신
+- [x] interactive-slides 0.7.x clean-tree routing full live observation과 metadata hash 갱신
