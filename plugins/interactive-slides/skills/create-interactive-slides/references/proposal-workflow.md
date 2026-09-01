@@ -1,129 +1,129 @@
-# Proposal-first production workflow
+# Proposal-first 제작 흐름
 
-Do not begin final slide production from raw requirements. Convert the request into a reviewable production proposal, revise it with the user, and enter production only after explicit approval.
+원시 요구사항에서 최종 slide 제작을 바로 시작하지 않는다. 요청을 검토 가능한 production proposal로 바꾸고 사용자와 함께 개정한 뒤 명시적인 승인을 받아 제작에 들어간다.
 
-## State model
+## 상태 모델
 
 ```text
 intake -> analysis -> proposal -> review -> approved -> design-plan -> production -> qa -> delivered
 ```
 
-The proposal is the canonical scope record. Update its version and revision history whenever feedback changes slide count, duration, assets, interactions, visual direction, delivery constraints or acceptance criteria.
+Proposal은 canonical scope record다. 피드백이 slide 수, duration, asset, interaction, visual direction, delivery constraint 또는 acceptance criterion을 바꾸면 version과 revision history를 갱신한다.
 
 ## 1. Intake
 
-Use the authoring intake contract first. Collect only missing information:
+먼저 제작 입력 계약을 사용한다. 누락된 정보만 수집한다.
 
-- required mode: `demo` or `experience`
-- purpose, audience, venue, duration and delivery target
-- requirements, exclusions and mandatory messages
-- script, outline or source material when available
-- brand assets, reference decks and visual constraints
-- evidence, privacy, offline and integration constraints
+- 필수 모드: `demo` 또는 `experience`
+- 목적, 청중, 장소, 시간과 delivery target
+- 요구사항, 제외 범위와 반드시 전달할 메시지
+- 제공 가능한 발표문, outline 또는 원본 자료
+- brand asset, reference deck과 시각 제약
+- 근거, 개인정보, offline과 integration 제약
 
-A script is optional. If absent, mark speaking-time and slide-density estimates as lower confidence and identify the outline decisions needed from the user.
+발표문은 선택 사항이다. 발표문이 없다면 speaking-time과 slide-density 추정의 confidence를 낮게 표시하고 사용자에게 필요한 outline 결정을 구분한다.
 
-## 2. Analysis
+## 2. 분석
 
-Analyze before proposing slides:
+Slide를 제안하기 전에 다음을 분석한다.
 
-- segment the script or source into opening, claims, evidence, transitions, demonstration moments and closing
-- identify duplicated, missing or unsupported claims
-- estimate speaking time and state the pacing assumption used
-- identify content that needs an image, chart, diagram, code view, simulation or live integration
-- distinguish supplied facts from interpretation and reconstruction
-- identify questions that block a credible proposal
-- select interaction only where it improves explanation or audience action
+- 발표문이나 원본을 opening, claim, evidence, transition, demonstration moment와 closing으로 나눈다.
+- 중복되거나 누락됐거나 근거가 부족한 claim을 식별한다.
+- speaking time을 추정하고 사용한 pacing 가정을 밝힌다.
+- image, chart, diagram, code view, simulation 또는 live integration이 필요한 콘텐츠를 찾는다.
+- 제공된 사실과 해석·재구성을 구분한다.
+- 신뢰할 수 있는 proposal 작성을 막는 질문을 식별한다.
+- 설명이나 청중 행동을 개선하는 경우에만 interaction을 선택한다.
 
-Do not invent facts, metrics, sources, assets or product behavior to make the proposal appear complete.
+Proposal을 완성된 것처럼 보이게 하려고 사실, metric, source, asset 또는 product behavior를 만들지 않는다.
 
-## 3. Production scope estimate
+## 3. 제작 범위 추정
 
-Create a versioned proposal from `templates/production-proposal.md`. It must contain:
+`templates/production-proposal.md`에서 version이 있는 proposal을 만든다. 다음을 포함해야 한다.
 
-- one-sentence outcome and narrative structure
-- estimated slide count and presentation duration
-- slide-by-slide purpose, content, composition, interaction, source, asset and speaking-time plan
-- visual direction and slide-family plan
-- interaction count and lifecycle complexity
-- asset, source and integration inventory
-- delivery, accessibility and fallback requirements
-- risks, assumptions, blocking questions and confidence
-- explicit acceptance criteria
+- 한 문장 결과와 narrative structure
+- 예상 slide 수와 발표 시간
+- slide별 purpose, content, composition, interaction, source, asset과 speaking-time 계획
+- visual direction과 slide-family 계획
+- interaction 수와 lifecycle complexity
+- asset, source와 integration inventory
+- delivery, accessibility와 fallback 요구사항
+- risk, assumption, blocking question과 confidence
+- 명시적인 acceptance criterion
 
-Use an integer slide count in the canonical proposal. Discuss alternatives as scenarios rather than encoding an ambiguous range.
+Canonical proposal에는 정수 slide 수를 사용한다. 모호한 범위를 값으로 넣지 말고 대안은 scenario로 설명한다.
 
-### Relative effort model
+### 상대 effort 모델
 
-Use effort points only to compare scope, never as guaranteed hours:
+Effort point는 범위 비교에만 사용하고 보장된 시간으로 취급하지 않는다.
 
-- static statement, quote or section slide: 1
-- evidence, chart, comparison or image-led composition: 2
-- diagram, timeline or direct-manipulation scene: 3
-- blocking demo scene with replay, skip and fallback: 5
-- live external integration or custom data transformation: 8 plus explicit risk
+- static statement, quote 또는 section slide: 1
+- evidence, chart, comparison 또는 image-led composition: 2
+- diagram, timeline 또는 direct-manipulation scene: 3
+- replay, skip과 fallback이 있는 blocking demo scene: 5
+- live external integration 또는 custom data transformation: 8과 명시적인 risk
 
-Estimate monetary cost only when the user supplies a rate card, currency and pricing rules. Otherwise report production scope, effort points and uncertainty without inventing a price.
+사용자가 rate card, currency와 pricing rule을 제공한 경우에만 금액을 추정한다. 그 외에는 가격을 만들지 말고 제작 범위, effort point와 uncertainty를 보고한다.
 
-## 4. Review and revision
+## 4. 검토와 개정
 
-Accept feedback in natural language or with `templates/proposal-feedback.md`. Classify each response as:
+자연어 또는 `templates/proposal-feedback.md`로 피드백을 받는다. 각 응답을 다음 상태로 분류한다.
 
-- approve
-- revise
-- remove
-- merge
-- split
-- defer
+- `approve`
+- `revise`
+- `remove`
+- `merge`
+- `split`
+- `defer`
 
-Return a new proposal version with a concise change summary and updated impact on slide count, duration, assets, effort and risk. Preserve the prior version; do not silently overwrite decisions in the revision history.
+간결한 change summary와 slide 수, duration, asset, effort와 risk 영향을 포함한 새 proposal version을 반환한다. 이전 version을 보존하고 revision history의 결정을 조용히 덮어쓰지 않는다.
 
-The user may approve individual slides while others remain under review. The overall proposal remains `review` until every blocking decision is resolved.
+일부 slide만 승인하고 나머지는 review 상태로 둘 수 있다. 모든 blocking decision이 해결되기 전까지 전체 proposal은 `review` 상태다.
 
-## 5. Approval gate
+## 5. 승인 게이트
 
-Before production:
+제작 전에 다음을 확인한다.
 
-1. Set `proposal_status: approved` only after an explicit user approval.
-2. Record `approved_by`, `approved_at` and `blocking_questions: 0`.
-3. Run `validate_production_proposal.py --require-approved` when execution is available.
-4. Do not create the final HTML, CSS, JavaScript or production assets if the gate fails.
+1. 사용자의 명시적 승인이 있을 때만 `proposal_status: approved`를 설정한다.
+2. `approved_by`, `approved_at`과 `blocking_questions: 0`을 기록한다.
+3. 실행할 수 있다면 `validate_production_proposal.py --require-approved`를 실행한다.
+4. 게이트가 실패하면 최종 HTML, CSS, JavaScript나 production asset을 생성하지 않는다.
 
-Storyboards, wireframes and small design-direction samples are review artifacts, not final production. Label them accordingly.
+Storyboard, wireframe과 작은 design-direction sample은 최종 제작물이 아니라 검토용 산출물로 표시한다.
 
-## 6. Design-plan compilation
+## 6. Design plan 컴파일
 
-Compile the approved proposal into `templates/design-plan.json` before editing final HTML, CSS or JavaScript. Read `references/design-plan-contract.md` and keep the proposal as the canonical scope record.
+최종 HTML, CSS 또는 JavaScript를 편집하기 전에 승인된 proposal을 `templates/design-plan.json`으로 컴파일한다. `references/design-plan-contract.md`를 읽고 proposal을 canonical scope record로 유지한다.
 
-The design plan must:
+Design plan은 다음을 만족해야 한다.
 
-- bind the exact approved proposal with its version, title, mode and SHA-256
-- include exactly the slide rows whose proposal status is `approved`
-- define one art direction and a small reusable slide-family system
-- assign each slide a family, dominant visual, content budget and evidence boundary
-- record adopted or rejected interaction decisions with Interaction Value Gate benefits
-- lock the mode-specific lifecycle, static fallback and accessibility behavior
-- require icon-only presentation chrome with accessible names and tooltips
+- 승인 proposal의 version, title, mode와 SHA-256을 정확히 결속한다.
+- proposal status가 `approved`인 slide row만 정확히 포함한다.
+- 하나의 art direction과 소수의 재사용 가능한 slide-family system을 정의한다.
+- 각 slide에 family, dominant visual, content budget과 evidence boundary를 배정한다.
+- Interaction Value Gate 이득과 함께 채택 또는 거부 결정을 기록한다.
+- 모드별 lifecycle, static fallback과 accessibility 동작을 고정한다.
+- accessible name과 tooltip이 있는 icon-only presentation chrome을 요구한다.
 
-Set `plan_status` to `ready` only after running:
+다음을 실행해 통과한 뒤에만 `plan_status`를 `ready`로 설정한다.
 
 ```text
 python scripts/validate_design_plan.py design-plan.json --proposal production-proposal.md --require-ready
 ```
 
-The design plan may refine composition but must not silently change scope. If it changes slide purpose, count, duration, sources, assets, interaction scope or art direction, revise and reapprove the proposal first.
+Design plan은 composition을 구체화할 수 있지만 scope를 조용히 바꿀 수 없다. Slide purpose, count, duration, source, asset, interaction scope 또는 art direction을 바꾸려면 먼저 proposal을 개정하고 다시 승인받는다.
 
-## 7. Production and change control
+## 7. 제작과 변경 통제
 
-Build against the approved slide rows and acceptance criteria. If a request during production changes scope:
+승인된 slide row와 acceptance criterion을 기준으로 제작한다. 제작 중 요청이 scope를 바꾸면 다음을 수행한다.
 
-- record the change
-- show its impact on count, duration, assets, effort and risk
-- return the proposal to `review`
-- obtain approval for the revised version before continuing the affected work
+- 변경을 기록한다.
+- count, duration, asset, effort와 risk 영향을 보여준다.
+- proposal을 `review` 상태로 되돌린다.
+- 영향받는 작업을 계속하기 전에 개정 version의 승인을 받는다.
 
-Minor corrections that do not change scope may remain in production but still belong in the revision history.
+Scope를 바꾸지 않는 작은 수정은 production 상태에서 처리할 수 있지만 revision history에는 기록한다.
 
 ## 8. Proposal-to-delivery QA
 
-At delivery, reconcile every approved slide row with both the design plan and generated deck. Report implemented, changed, deferred and missing items. A technically valid deck is not complete when it diverges from the approved proposal or ready design plan without a recorded decision.
+납품할 때 승인된 모든 slide row를 design plan과 생성 deck에 대조한다. 구현, 변경, 연기와 누락 항목을 보고한다. 기록된 결정 없이 승인 proposal 또는 ready design plan과 다르면 기술적으로 유효한 deck도 완료로 보지 않는다.

@@ -1,38 +1,38 @@
-# Interactive presentation storyboard
+# 인터랙티브 발표 스토리보드
 
-## Narrative spine
+## 내러티브 중심축
 
-- Why listen:
-- Core problem:
-- Evidence:
-- Demonstrated change:
-- Final takeaway:
+- 들어야 하는 이유:
+- 핵심 문제:
+- 근거:
+- 시연할 변화:
+- 최종 메시지:
 
-## Slide contracts
+## 슬라이드 계약
 
-| ID | Section | Purpose | Single claim | Evidence and certainty | Visual form | Interaction decision | Mode behavior | Seconds | Fallback | Source |
+| ID | 섹션 | 목적 | 단일 주장 | 근거와 확실성 | 시각 형식 | 인터랙션 결정 | 모드 동작 | 초 | Fallback | 출처 |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- |
-| opening | Opening | Establish relevance |  |  |  | reject: static opening | both: static |  | title and summary |  |
+| opening | 오프닝 | 관련성 제시 |  |  |  | reject: static opening | both: static |  | 제목과 요약 |  |
 
-## Speaker notes and cues
+## 발표자 노트와 큐
 
-| Slide ID | Say | Do | Cue | Recovery |
+| 슬라이드 ID | 발화 | 동작 | 큐 | 복구 |
 | --- | --- | --- | --- | --- |
-| opening |  |  | next | Continue from outline |
+| opening |  |  | next | 개요부터 이어서 진행 |
 
-## Interaction decisions
+## 인터랙션 결정
 
-| Slide ID | Candidate | Benefit signals | Cost or risk | Decision | Reason |
+| 슬라이드 ID | 후보 | 이점 신호 | 비용 또는 위험 | 결정 | 근거 |
 | --- | --- | --- | --- | --- | --- |
 |  |  | causality / temporal / decision / comparison / spatial |  | adopt / reject |  |
 
-## Rehearsal Receipt
+## 리허설 확인 기록
 
-- Mode tested:
-- Normal forward:
-- Replay and skip:
-- Navigation cleanup:
-- Keyboard and touch:
-- Reduced motion:
-- Offline and scene failure fallback:
-- Unverified combinations:
+- 검증한 모드:
+- 정상 진행:
+- Replay와 skip:
+- 이동 후 상태 정리:
+- 키보드와 터치:
+- 모션 감소:
+- 오프라인과 장면 실패 fallback:
+- 미검증 조합:

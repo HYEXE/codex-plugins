@@ -1,4 +1,4 @@
-# Scene recipes
+# 장면 recipe
 
 필요한 장면 section만 읽고 적용한다. 장면 이름이 아니라 설명 목표와 fallback을 먼저 결정한다.
 

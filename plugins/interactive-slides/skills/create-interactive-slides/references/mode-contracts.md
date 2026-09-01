@@ -1,4 +1,4 @@
-# Mode contracts
+# 모드 계약
 
 하나의 deck 콘텐츠가 `experience`와 `demo`에서 서로 다른 진행 방식을 제공한다. `meta.modeLocked`가 `false`일 때만 URL의 `?mode=experience` 또는 `?mode=demo`로 초기 모드를 지정하고 화면 제어로 전환할 수 있게 한다. `modeLocked: true`이면 승인된 `defaultMode`를 유지하고 URL override와 모든 mode 전환 입력을 무시하며 전환 control을 숨긴다.
 

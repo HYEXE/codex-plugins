@@ -2,6 +2,12 @@
 
 All notable changes to Interactive Slides are documented in this file.
 
+## 0.7.1
+
+- Proposal, design-plan과 forward fixture validator를 quality gate에 선언하고 관련 reference·template·script를 필수 파일로 등록했다.
+- 핵심 실행 marker를 `SKILL.md`의 literal 또는 정규식에 결속했다.
+- 한국어 semantic layer와 영어 canonical machine layer의 언어 정책을 추가하고 제작 지침 reference를 한국어화했다.
+
 ## 0.7.0
 
 - Added assembled demo and experience forward fixtures with malformed-manifest regression coverage.

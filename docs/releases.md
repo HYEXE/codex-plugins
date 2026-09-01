@@ -106,8 +106,8 @@ python3 scripts/check_source_liveness.py \
 
 ```bash
 python3 scripts/check_release_readiness.py
-python3 scripts/validate_release_tag.py --tag prompt-compiler-v0.7.1
-python3 scripts/validate_release_tag.py --tag uiux-advisor-v0.9.1
+python3 scripts/validate_release_tag.py --tag prompt-compiler-v0.7.2
+python3 scripts/validate_release_tag.py --tag uiux-advisor-v0.9.2
 python3 scripts/validate_all.py
 python3 -m unittest discover -s tests -p "test_*.py"
 python3 scripts/live_eval.py run --suite routing --case-set full --dry-run

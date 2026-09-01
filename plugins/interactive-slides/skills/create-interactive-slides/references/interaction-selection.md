@@ -1,4 +1,4 @@
-# Interaction selection
+# 인터랙션 선택
 
 ## Interaction Value Gate
 
@@ -19,7 +19,7 @@
 - 출처 없는 가상 데이터가 실제 근거처럼 보인다.
 - 장면 cleanup과 replay를 결정적으로 구현할 수 없다.
 
-## Candidate mapping
+## 후보 매핑
 
 | 설명 목표 | 우선 scene | 정적 fallback |
 | --- | --- | --- |
@@ -35,7 +35,7 @@
 | 시스템 경로의 자동 시연 | node route를 가진 `sequence` | 화살표 기반 경로 도식 |
 | 핵심 수치 | 정적 `metrics` | 숫자와 정의 |
 
-## Selection rules
+## 선택 규칙
 
 - 한 슬라이드에는 하나의 주 interaction만 둔다.
 - 같은 scene type을 연속해서 사용하지 않는다.

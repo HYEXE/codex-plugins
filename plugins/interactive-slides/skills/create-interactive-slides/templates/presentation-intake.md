@@ -1,44 +1,44 @@
-# Interactive presentation intake
+# 인터랙티브 발표 사전 입력
 
-## Outcome
+## 발표 결과
 
-- Presentation purpose:
-- One-sentence audience takeaway:
-- Audience:
-- Duration and venue:
-- Primary device and aspect ratio:
+- 발표 목적:
+- 청중이 기억해야 할 한 문장:
+- 청중:
+- 발표 시간과 장소:
+- 주 사용 기기와 화면 비율:
 
-## Authoring mode
+## 제작 모드
 
-Select exactly one unless a hybrid deck was explicitly requested.
+하이브리드 덱이 명시적으로 요청되지 않았다면 하나만 선택한다.
 
-- [ ] `demo` - presenter-controlled sequence with replay and skip
-- [ ] `experience` - audience-controlled exploration with reset
+- [ ] `demo` - 발표자가 순서를 제어하며 replay와 skip을 제공
+- [ ] `experience` - 청중이 직접 탐색하며 reset을 제공
 
-Mode rationale:
+모드 선택 근거:
 
-## Content and evidence
+## 콘텐츠와 근거
 
-- Source material:
-- Claims that require citations:
-- Simulations or reconstructions to label:
-- Required sections or speaking script:
+- 원본 자료:
+- 출처 표기가 필요한 주장:
+- 구분 표기가 필요한 시뮬레이션 또는 재구성:
+- 필수 섹션 또는 발표 대본:
 
-## Visual direction
+## 시각 방향
 
-- Brand assets and constraints:
-- Reference deck or commercial style family:
-- Desired art-direction sentence:
-- Avoid list:
+- 브랜드 에셋과 제약:
+- 참조 덱 또는 상용 스타일 계열:
+- 원하는 art direction 한 문장:
+- 피해야 할 표현:
 
-## Delivery
+## 전달 환경
 
-- Offline requirement:
-- Hosting target:
-- Browser and input constraints:
-- Accessibility requirements:
+- 오프라인 요구사항:
+- 호스팅 대상:
+- 브라우저와 입력 방식 제약:
+- 접근성 요구사항:
 
-## Locked decisions
+## 확정된 결정
 
 - `presentation_mode`:
 - `visual_direction`:

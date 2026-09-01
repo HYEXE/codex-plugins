@@ -1,38 +1,38 @@
-# Presentation brief
+# 발표 브리프
 
-## Audience and outcome
+## 청중과 목표 결과
 
-- Audience:
-- What they already know:
-- Decision or understanding after the talk:
-- Explicit exclusions:
+- 청중:
+- 청중이 이미 아는 내용:
+- 발표 후 기대하는 결정 또는 이해:
+- 명시적으로 제외할 내용:
 
-## Delivery constraints
+## 전달 환경 제약
 
-- Total duration:
-- Q&A and recovery reserve:
-- Default mode: experience / demo
-- Venue and screen:
-- Browser and offline requirement:
-- Brand or visual constraints:
+- 전체 발표 시간:
+- 질의응답과 복구를 위한 여유 시간:
+- 기본 모드: `experience` / `demo`
+- 장소와 화면:
+- 브라우저와 오프라인 요구사항:
+- 브랜드 또는 시각 제약:
 
-## Source boundary
+## 출처 경계
 
-- Primary source material:
-- Facts and metrics that must remain exact:
-- Inferences that require labels:
-- Synthetic demonstration data:
-- Missing assets and planned fallback:
+- 주요 원본 자료:
+- 정확히 유지해야 할 사실과 수치:
+- 구분 표기가 필요한 추론:
+- 합성된 시연 데이터:
+- 누락된 에셋과 계획한 fallback:
 
-## Interaction intent
+## 인터랙션 의도
 
-- What should the audience manipulate or observe:
-- What the presenter must control:
-- Scenes that must be replayable:
-- Interactions explicitly excluded:
+- 청중이 조작하거나 관찰해야 할 대상:
+- 발표자가 제어해야 할 대상:
+- replay할 수 있어야 하는 장면:
+- 명시적으로 제외할 인터랙션:
 
-## Completion evidence
+## 완료 근거
 
-- Required files:
-- Required rehearsal paths:
-- Unverified environments to report:
+- 필수 파일:
+- 필수 리허설 경로:
+- 보고해야 할 미검증 환경:

@@ -1,51 +1,51 @@
-# Authoring intake and mode lock
+# 제작 입력과 모드 고정
 
-Choose the presentation contract before writing the storyboard or generating UI.
+스토리보드를 작성하거나 UI를 생성하기 전에 발표 계약을 선택한다.
 
-## Required preflight
+## 필수 사전 확인
 
-Collect these inputs in the first prompt when they are not already supplied:
+첫 요청에 다음 정보가 없다면 누락된 항목만 확인한다.
 
-- purpose and one-sentence audience outcome
-- audience, venue, duration and expected device
-- source material and required evidence boundaries
-- presentation mode: `demo` or `experience`
-- brand assets or one visual direction
-- offline, hosting and browser constraints
+- 발표 목적과 청중이 얻어야 할 한 문장 결과
+- 청중, 장소, 발표 시간과 예상 기기
+- 원본 자료와 필수 근거 경계
+- 발표 모드: `demo` 또는 `experience`
+- 브랜드 자산 또는 하나의 시각 방향
+- 오프라인, hosting과 browser 제약
 
-Ask only for missing decisions. If mode is missing, ask one compact choice question before producing slides:
+결정되지 않은 항목만 질문한다. 모드가 없다면 slide 제작 전에 한 번의 짧은 선택 질문을 한다.
 
-- `demo`: presenter-controlled sequence, deterministic timing, replay and skip
-- `experience`: audience-controlled exploration, direct manipulation and reset
+- `demo`: 발표자가 순서와 timing을 제어하며 replay와 skip을 제공하는 모드
+- `experience`: 청중이 직접 탐색하고 조작하며 reset할 수 있는 모드
 
-Do not generate both modes speculatively. Do not expose a mode switch in the delivered presentation. A hybrid deck is allowed only when the user explicitly requests it; define the mode per slide during storyboarding instead of adding a global runtime toggle.
+두 모드를 추측으로 모두 만들지 않는다. 납품 발표에 mode switch를 노출하지 않는다. 사용자가 명시적으로 요청한 경우에만 hybrid deck을 허용하고, 전역 runtime toggle을 추가하는 대신 storyboarding 단계에서 slide별 모드를 정한다.
 
-## Build contract
+## 제작 계약
 
-Write the selected mode into the brief, production proposal, design plan and storyboard. Set it declaratively on the generated document:
+선택된 모드를 brief, production proposal, design plan과 storyboard에 기록한다. 생성 문서에는 선언적으로 설정한다.
 
 ```html
 <html lang="ko" data-presentation-mode="demo">
 ```
 
-Use `experience` for an experience deck. The starter reads this value once at startup and removes the authoring-only mode control from the presentation chrome.
+Experience deck은 `experience`를 사용한다. Starter는 시작할 때 이 값을 한 번 읽고 presentation chrome에서 제작 전용 mode control을 제거한다.
 
-### Demo mode
+### Demo 모드
 
-- Keep slide progression presenter-controlled.
-- Blocking scenes must have ready, running and complete states.
-- Provide replay and skip without leaving timers or stale callbacks.
-- Keep essential meaning visible in the static fallback.
-- Put timing and speaking cues in presenter notes.
+- slide 진행은 발표자가 제어한다.
+- blocking scene은 `ready`, `running`, `complete` 상태를 가져야 한다.
+- timer나 stale callback을 남기지 않는 replay와 skip을 제공한다.
+- 핵심 의미는 정적 fallback에서도 보이게 한다.
+- timing과 speaking cue는 presenter note에 기록한다.
 
-### Experience mode
+### Experience 모드
 
-- Make the primary interaction directly visible and self-explanatory.
-- Provide reset and a deterministic initial state.
-- Do not require autoplay or hidden keyboard knowledge.
-- Preserve slide navigation while the audience explores.
-- Ensure touch targets and mobile layout remain usable.
+- 주 interaction을 직접 보이고 별도 설명 없이 이해할 수 있게 한다.
+- reset과 결정론적인 초기 상태를 제공한다.
+- autoplay나 숨은 keyboard 지식을 요구하지 않는다.
+- 청중이 탐색하는 동안에도 slide navigation을 유지한다.
+- touch target과 mobile layout을 사용할 수 있게 유지한다.
 
-## Acceptance check
+## 인수 검사
 
-Reject the generated deck when the brief, proposal, design plan, storyboard and document mode disagree, or when a runtime mode toggle remains visible without an explicit hybrid requirement.
+Brief, proposal, design plan, storyboard와 document mode가 서로 다르거나 명시적인 hybrid 요구 없이 runtime mode toggle이 남아 있으면 생성된 deck을 거부한다.

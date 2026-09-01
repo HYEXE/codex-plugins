@@ -1,5 +1,11 @@
 # Changelog
 
+## Package 0.9.2 — Plugin-local Content Validation
+
+변경:
+- knowledge-base와 toolkit 구조·freshness 검증 로직을 공통 validator에서 plugin-local 선언형 validator로 이동
+- time-sensitive guide, stable guide와 toolkit role별 실제 재검토 일정을 추가하고 기준일을 검토 없이 변경하지 않는 원칙을 명시
+
 ## Package 0.9.1 — Bundled Search Validators
 
 변경:

@@ -1,6 +1,6 @@
 {
   "name": "uiux-advisor",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "근거 기반 UI/UX 가이드·감사와 접근 가능한 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, 인터랙티브 2D·3D 그래픽, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
   "author": {
     "name": "HYEXEN"

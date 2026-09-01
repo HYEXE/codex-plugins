@@ -91,6 +91,97 @@ class DeclarativeValidatorTests(unittest.TestCase):
             )
             self.assertTrue(any("escapes plugin directory" in failure for failure in failures))
 
+    def test_file_scoped_markers_do_not_fall_through_to_other_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            skill_dir = Path(temp_value)
+            (skill_dir / "SKILL.md").write_text("evaluation only\n", encoding="utf-8")
+            reference = skill_dir / "references" / "contract.md"
+            reference.parent.mkdir()
+            reference.write_text("eval\n", encoding="utf-8")
+            failures: list[str] = []
+
+            validate_all.validate_required_markers(
+                "sample",
+                "sample-skill",
+                skill_dir,
+                [{"path": "SKILL.md", "regex": r"\beval\b"}],
+                failures,
+            )
+
+            self.assertEqual(1, len(failures))
+            self.assertIn("SKILL.md", failures[0])
+
+    def test_file_scoped_marker_accepts_literal_and_rejects_unsafe_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_value:
+            root = Path(temp_value)
+            skill_dir = root / "skill"
+            skill_dir.mkdir()
+            (skill_dir / "SKILL.md").write_text("Approval Binding\n", encoding="utf-8")
+            (root / "outside.md").write_text("Approval Binding\n", encoding="utf-8")
+            failures: list[str] = []
+
+            validate_all.validate_required_markers(
+                "sample",
+                "sample-skill",
+                skill_dir,
+                [
+                    {"path": "SKILL.md", "contains": "Approval Binding"},
+                    {"path": "../outside.md", "contains": "Approval Binding"},
+                ],
+                failures,
+            )
+
+            self.assertEqual(1, len(failures))
+            self.assertIn("escapes the skill directory", failures[0])
+
+    def test_interactive_slides_gate_covers_production_pipeline(self) -> None:
+        config_path = (
+            ROOT / "plugins" / "interactive-slides" / ".codex-plugin" / "quality-gates.json"
+        )
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        gate = config["skills"]["create-interactive-slides"]
+        self.assertTrue(
+            {
+                "references/language-policy.md",
+                "references/authoring-intake.md",
+                "references/design-plan-contract.md",
+                "references/proposal-workflow.md",
+                "references/visual-quality-system.md",
+                "templates/design-plan.json",
+                "templates/presentation-intake.md",
+                "templates/production-proposal.md",
+                "templates/proposal-feedback.md",
+                "evals/forward/cases.json",
+                "scripts/validate_production_proposal.py",
+                "scripts/validate_design_plan.py",
+                "scripts/eval_forward_fixtures.py",
+            }
+            <= set(gate["required_files"])
+        )
+        self.assertTrue(
+            {
+                "scripts/validate_production_proposal.py",
+                "scripts/validate_design_plan.py",
+                "scripts/eval_forward_fixtures.py",
+            }
+            <= {validator["argv"][1] for validator in config["validators"]}
+        )
+
+    def test_uiux_content_rules_are_plugin_local(self) -> None:
+        config_path = ROOT / "plugins" / "uiux-advisor" / ".codex-plugin" / "quality-gates.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        scripts = {validator["argv"][1] for validator in config["validators"]}
+        self.assertIn("validate_content.py", scripts)
+        self.assertIn(
+            "references/kb/REVIEW_SCHEDULE.md",
+            config["skills"]["uiux-advisor"]["required_files"],
+        )
+
+        common_validator = (ROOT / "scripts" / "validate_all.py").read_text(encoding="utf-8")
+        self.assertNotIn("validate_uiux_kb", common_validator)
+        self.assertNotIn("validate_frontend_toolkits", common_validator)
+        self.assertNotIn('"uiux-advisor"', common_validator)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,38 +95,38 @@ presentation/
 - 실제 수행한 검증과 미검증 환경을 구분해 보고한다.
 - 복잡한 시연은 정상 경로, skip, replay, 장면 실패와 오프라인 상태를 요약한 Rehearsal Receipt를 남긴다.
 
-## Authoring intake and visual finish
+## 제작 입력과 시각 완성도
 
-Resolve the presentation contract before storyboarding or implementation.
+스토리보드나 구현에 들어가기 전에 발표 제작 계약을 확정한다.
 
-- When mode is not supplied, use [templates/presentation-intake.md](templates/presentation-intake.md) and ask the user to choose demo or experience.
-- Read [references/authoring-intake.md](references/authoring-intake.md) before generating the brief, storyboard or starter files.
-- Lock the selected mode into the brief, storyboard and data-presentation-mode; do not leave a runtime mode switch in the deliverable.
-- Read [references/visual-quality-system.md](references/visual-quality-system.md) before defining the design system or composing slides.
-- Treat commercial decks as quality benchmarks only. Build an original visual system from the user's content, evidence and brand.
-- Reject repetitive card grids, gratuitous gradients, decorative dashboards, invented data and other generic AI presentation signatures.
-- Use icon-only presentation chrome for panels and utilities, with SVG icons, accessible names, focus states and tooltips.
+- 모드가 제공되지 않았다면 [templates/presentation-intake.md](templates/presentation-intake.md)를 사용해 `demo` 또는 `experience` 중 하나를 선택받는다.
+- brief, storyboard나 starter file을 생성하기 전에 [references/authoring-intake.md](references/authoring-intake.md)를 읽는다.
+- 선택된 모드를 brief, storyboard와 `data-presentation-mode`에 고정하고 납품물에 runtime mode switch를 남기지 않는다.
+- design system을 정의하거나 slide를 구성하기 전에 [references/visual-quality-system.md](references/visual-quality-system.md)를 읽는다.
+- 상용 deck은 품질 기준으로만 참고한다. 사용자의 콘텐츠, 근거와 brand에서 독창적인 visual system을 만든다.
+- 반복되는 card grid, 불필요한 gradient, 장식용 dashboard, 만들어낸 데이터와 일반적인 AI presentation 흔적을 거부한다.
+- panel과 utility의 presentation chrome은 SVG icon, accessible name, focus state와 tooltip이 있는 icon-only control로 만든다.
 
-## Proposal-first production gate
+## Proposal-first 제작 게이트
 
-Use a proposal and approval gate for every new presentation. Scale the detail to the project, but do not generate final production files directly from raw requirements.
+새 발표는 모두 proposal과 승인 게이트를 거친다. 프로젝트 규모에 맞게 상세도를 조절하되, 원시 요구사항에서 최종 제작 파일을 바로 생성하지 않는다.
 
-1. Complete the authoring intake and lock demo or experience mode.
-2. Read [references/proposal-workflow.md](references/proposal-workflow.md).
-3. Analyze the requirements, script, evidence, assets, timing and interaction opportunities.
-4. Create [templates/production-proposal.md](templates/production-proposal.md) with a slide-by-slide scope estimate.
-5. Collect natural-language feedback or use [templates/proposal-feedback.md](templates/proposal-feedback.md).
-6. Revise the proposal with a new version and explicit scope-impact summary.
-7. Record explicit approval and validate the approved proposal.
-8. Read [references/design-plan-contract.md](references/design-plan-contract.md), then create [templates/design-plan.json](templates/design-plan.json) from the approved scope.
-9. Mark the design plan ready only after its proposal SHA, slide IDs, mode, visual system, scene decisions and fallback contracts validate.
-10. Begin final production only after both gates pass, then reconcile the delivered deck against every approved slide and acceptance criterion.
+1. 제작 입력을 완료하고 `demo` 또는 `experience` 모드를 고정한다.
+2. [references/proposal-workflow.md](references/proposal-workflow.md)를 읽는다.
+3. 요구사항, 발표문, 근거, 자산, 시간과 interaction 기회를 분석한다.
+4. [templates/production-proposal.md](templates/production-proposal.md)에 slide별 제작 범위 추정치를 작성한다.
+5. 자연어 피드백을 받거나 [templates/proposal-feedback.md](templates/proposal-feedback.md)를 사용한다.
+6. 새 버전과 명시적인 범위 영향 요약을 포함해 proposal을 개정한다.
+7. 명시적 승인을 기록하고 승인된 proposal을 검증한다.
+8. [references/design-plan-contract.md](references/design-plan-contract.md)를 읽고 승인 범위에서 [templates/design-plan.json](templates/design-plan.json)을 작성한다.
+9. proposal SHA, slide ID, mode, visual system, scene 결정과 fallback 계약이 모두 유효할 때만 design plan을 `ready`로 표시한다.
+10. 두 게이트가 모두 통과한 뒤 최종 제작을 시작하고, 납품 deck을 승인된 모든 slide와 acceptance criterion에 대조한다.
 
-The estimate covers slide count, duration, composition, interactions, assets, effort and risk. Include monetary pricing only when the user supplies a rate card and pricing rules.
+추정에는 slide 수, duration, composition, interaction, asset, effort와 risk를 포함한다. 사용자가 rate card와 pricing rule을 제공한 경우에만 금액을 계산한다.
 
-Before production, run:
+제작 전에 다음을 실행한다.
 
     python scripts/validate_production_proposal.py <proposal.md> --require-approved
     python scripts/validate_design_plan.py <design-plan.json> --proposal <proposal.md> --require-ready
 
-If either gate fails, remain in proposal, review or design-planning state. Do not create the final HTML, CSS, JavaScript or production assets.
+둘 중 하나라도 실패하면 proposal, review 또는 design-planning 상태에 머문다. 최종 HTML, CSS, JavaScript나 production asset을 생성하지 않는다.

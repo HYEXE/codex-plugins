@@ -64,7 +64,7 @@ class ReleaseTagTests(unittest.TestCase):
     def test_plugin_tag_must_match_manifest_version(self) -> None:
         policy = validate_release_tag.load_object(ROOT / "release" / "release-policy.json")
         failures, metadata = validate_release_tag.validate_tag(
-            "prompt-compiler-v0.7.1", policy, ROOT
+            "prompt-compiler-v0.7.2", policy, ROOT
         )
         self.assertEqual(failures, [])
         self.assertEqual(metadata["plugin"], "prompt-compiler")
@@ -82,7 +82,7 @@ class ReleaseTagTests(unittest.TestCase):
     def test_interactive_slides_tag_must_match_manifest_version(self) -> None:
         policy = validate_release_tag.load_object(ROOT / "release" / "release-policy.json")
         failures, metadata = validate_release_tag.validate_tag(
-            "interactive-slides-v0.7.0", policy, ROOT
+            "interactive-slides-v0.7.1", policy, ROOT
         )
         self.assertEqual(failures, [])
         self.assertEqual(metadata["plugin"], "interactive-slides")

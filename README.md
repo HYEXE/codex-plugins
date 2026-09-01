@@ -6,9 +6,9 @@
 
 | 플러그인 | package | 번들 스킬 | 용도 |
 | --- | --- | --- | --- |
-| `prompt-compiler` | `0.7.1` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `0.9.1` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
-| `interactive-slides` | `0.7.0` | `create-interactive-slides` | 제작 견적·승인·design-plan gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
+| `prompt-compiler` | `0.7.2` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
+| `uiux-advisor` | `0.9.2` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `interactive-slides` | `0.7.1` | `create-interactive-slides` | 제작 견적·승인·design-plan gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
 
 ## 구조
 
@@ -97,7 +97,7 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, observation manifest, UI/UX 지식베이스 참조 무결성과 freshness를 확인합니다. 플러그인별 skill 목록, 필수 파일·marker, KB·toolkit 수, freshness budget과 specialized evaluator command는 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 안전한 Python argv로 자동 실행합니다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문과 observation manifest를 확인합니다. 플러그인별 skill 목록, 필수 파일·marker와 specialized evaluator command는 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 안전한 Python argv로 자동 실행합니다. Marker는 기존 package-wide 문자열 또는 `{path, contains}`·`{path, regex}` 형식으로 선언할 수 있으며, 실행 계약처럼 위치가 중요한 규칙은 파일 경로와 검색 방식을 고정합니다. KB·toolkit 구조와 freshness 같은 domain-specific 규칙은 해당 플러그인의 선언형 validator가 소유합니다.
 
 저장된 behavior snapshot은 안정적인 `observations.json` manifest가 선택합니다. metadata에 dataset/result SHA-256, 관찰 시각, plugin 버전과 provenance 상태를 기록하며, 과거 실행에서 확인할 수 없는 model·Codex build는 추정하지 않고 `legacy-partial`로 표시합니다. 오케스트레이션 transcript 평가는 질문 수, 이어가기, preview 승인 경계와 외부 행동 주장을 판정하지만 그 자체로 side effect 부재를 증명하지 않습니다.
 
