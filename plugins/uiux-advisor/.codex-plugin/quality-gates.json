@@ -7,6 +7,7 @@
         "scripts/search_kb.py",
         "scripts/search_toolkits.py",
         "references/frontend-toolkit-registry.json",
+        "references/frontend-stack-relations.json",
         "references/frontend-stack-selection.md",
         "references/kb/REVIEW_SCHEDULE.md"
       ],
@@ -22,6 +23,18 @@
         {
           "path": "references/frontend-stack-selection.md",
           "contains": "전체 stack을 한 번에 교체하지 않는다"
+        },
+        {
+          "path": "SKILL.md",
+          "contains": "--existing-stack"
+        },
+        {
+          "path": "SKILL.md",
+          "contains": "--strategy"
+        },
+        {
+          "path": "SKILL.md",
+          "contains": "conflicts-with-installed"
         }
       ]
     },
@@ -169,6 +182,12 @@
       "cwd": "../skills/uiux-advisor",
       "argv": ["{python}", "scripts/search_toolkits.py", "--capability", "carousel", "--surface", "carousel", "--ecosystem", "react", "--max-risk", "medium", "--recommend", "--top", "3", "--json"],
       "echo": false
+    },
+    {
+      "name": "toolkit-context-cli-smoke",
+      "cwd": "../skills/uiux-advisor",
+      "argv": ["{python}", "scripts/search_toolkits.py", "--role", "routing", "--ecosystem", "react", "--recommend", "--strategy", "ecosystem-first", "--existing-stack", "../../.codex-plugin/evals/fixtures/next-package.json", "--explain", "--json"],
+      "echo": false
     }
   ],
   "toolkit_registry": {
@@ -269,6 +288,34 @@
       "warning_after_days": 180,
       "error_after_days": 365
     }
+  },
+  "stack_relations": {
+    "path": "../skills/uiux-advisor/references/frontend-stack-relations.json",
+    "schema_version": "1.0.0",
+    "required_tool_ids": [
+      "vite",
+      "next-js",
+      "react-router",
+      "tanstack-router",
+      "nuxt",
+      "vue-router",
+      "sveltekit",
+      "astro",
+      "angular",
+      "tanstack-query",
+      "redux-toolkit",
+      "zustand",
+      "pinia",
+      "xstate",
+      "react-hook-form",
+      "vee-validate",
+      "tanstack-form",
+      "zod",
+      "tanstack-table",
+      "vitest",
+      "testing-library",
+      "playwright"
+    ]
   },
   "knowledge_base": {
     "path": "../skills/uiux-advisor/references/kb",

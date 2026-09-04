@@ -28,6 +28,9 @@ SEMVER_PATTERN = re.compile(
 )
 GUIDE_ID_PATTERN = re.compile(r"uiux-playbook-(\d{3})")
 SLUG_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+PACKAGE_NAME_PATTERN = re.compile(
+    r"(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*"
+)
 
 
 def load_json(path: Path) -> Any:
@@ -353,6 +356,147 @@ def validate_frontend_toolkits(
     )
 
 
+def validate_stack_relations(
+    config_path: Path,
+    quality_config: dict[str, Any],
+    failures: list[str],
+) -> None:
+    relations_config = quality_config.get("stack_relations")
+    registry_config = quality_config.get("toolkit_registry")
+    if not isinstance(relations_config, dict):
+        failures.append("uiux-advisor: missing stack_relations quality gate")
+        return
+    if not isinstance(registry_config, dict):
+        failures.append("uiux-advisor: cannot validate stack relations without toolkit_registry")
+        return
+
+    relations_path = resolve_config_path(
+        config_path,
+        relations_config.get("path"),
+        "uiux-advisor stack_relations",
+        failures,
+    )
+    registry_path = resolve_config_path(
+        config_path,
+        registry_config.get("path"),
+        "uiux-advisor toolkit_registry",
+        failures,
+    )
+    check(relations_path.is_file(), "uiux-advisor: missing frontend stack relations", failures)
+    if not relations_path.is_file() or not registry_path.is_file():
+        return
+
+    try:
+        payload = load_json(relations_path)
+        registry = load_json(registry_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        failures.append(f"uiux-advisor: invalid frontend stack relations: {exc}")
+        return
+    if not isinstance(payload, dict) or not isinstance(registry, dict):
+        failures.append("uiux-advisor: stack relations and toolkit registry must be objects")
+        return
+
+    expected_schema = relations_config.get("schema_version")
+    check(
+        isinstance(expected_schema, str) and payload.get("schema_version") == expected_schema,
+        f"uiux-advisor: stack relation schema_version must be {expected_schema}",
+        failures,
+    )
+    snapshot_date = payload.get("snapshot_date")
+    try:
+        parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
+        check(
+            parsed_snapshot is not None and parsed_snapshot <= date.today(),
+            "uiux-advisor: invalid or future stack relation snapshot_date",
+            failures,
+        )
+    except ValueError:
+        failures.append("uiux-advisor: invalid stack relation snapshot_date")
+
+    tools = registry.get("tools")
+    known_tool_ids = {
+        tool.get("id") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("id"), str)
+    } if isinstance(tools, list) else set()
+    known_roles = set(registry_config.get("required_roles", []))
+    relations = payload.get("relations")
+    check(isinstance(relations, list) and bool(relations), "uiux-advisor: stack relations must be a non-empty array", failures)
+    if not isinstance(relations, list):
+        return
+
+    required_ids_value = relations_config.get("required_tool_ids")
+    check(
+        isinstance(required_ids_value, list)
+        and bool(required_ids_value)
+        and all(isinstance(tool_id, str) and tool_id for tool_id in required_ids_value),
+        "uiux-advisor: stack relation required_tool_ids must be a non-empty string array",
+        failures,
+    )
+    required_ids = set(required_ids_value) if isinstance(required_ids_value, list) else set()
+    relation_by_id: dict[str, dict[str, Any]] = {}
+    package_owners: dict[str, str] = {}
+    for index, relation in enumerate(relations, 1):
+        if not isinstance(relation, dict):
+            failures.append(f"uiux-advisor: stack relation {index} must be an object")
+            continue
+        tool_id = relation.get("tool_id")
+        label = tool_id if isinstance(tool_id, str) and tool_id else f"relation-{index}"
+        check(tool_id in known_tool_ids, f"uiux-advisor: {label} references unknown toolkit", failures)
+        if isinstance(tool_id, str):
+            check(tool_id not in relation_by_id, f"uiux-advisor: duplicate stack relation {tool_id}", failures)
+            relation_by_id[tool_id] = relation
+
+        package_names = relation.get("package_names")
+        valid_packages = (
+            isinstance(package_names, list)
+            and bool(package_names)
+            and all(
+                isinstance(package_name, str)
+                and PACKAGE_NAME_PATTERN.fullmatch(package_name) is not None
+                for package_name in package_names
+            )
+        )
+        check(valid_packages, f"uiux-advisor: {label} has invalid package_names", failures)
+        if valid_packages:
+            check(len(package_names) == len(set(package_names)), f"uiux-advisor: {label} has duplicate package_names", failures)
+            for package_name in package_names:
+                owner = package_owners.setdefault(package_name, str(tool_id))
+                check(owner == tool_id, f"uiux-advisor: package {package_name} maps to multiple toolkits", failures)
+
+        provides_roles = relation.get("provides_roles")
+        valid_roles = (
+            isinstance(provides_roles, list)
+            and bool(provides_roles)
+            and all(isinstance(role, str) and role in known_roles for role in provides_roles)
+        )
+        check(valid_roles, f"uiux-advisor: {label} has invalid provides_roles", failures)
+        if valid_roles:
+            check(len(provides_roles) == len(set(provides_roles)), f"uiux-advisor: {label} has duplicate provides_roles", failures)
+
+        for field in ("conflicts_with", "overlaps_with"):
+            related_ids = relation.get(field)
+            valid_related = (
+                isinstance(related_ids, list)
+                and all(isinstance(related_id, str) and related_id for related_id in related_ids)
+            )
+            check(valid_related, f"uiux-advisor: {label} has invalid {field}", failures)
+            if valid_related:
+                check(len(related_ids) == len(set(related_ids)), f"uiux-advisor: {label} has duplicate {field}", failures)
+                check(tool_id not in related_ids, f"uiux-advisor: {label} {field} references itself", failures)
+
+        conflicts = set(relation.get("conflicts_with", []))
+        overlaps = set(relation.get("overlaps_with", []))
+        check(not conflicts.intersection(overlaps), f"uiux-advisor: {label} conflict and overlap relations intersect", failures)
+
+    relation_ids = set(relation_by_id)
+    check(required_ids <= relation_ids, f"uiux-advisor: missing required stack relations {sorted(required_ids - relation_ids)}", failures)
+    for tool_id, relation in relation_by_id.items():
+        for field in ("conflicts_with", "overlaps_with"):
+            for related_id in relation.get(field, []):
+                check(related_id in relation_ids, f"uiux-advisor: {tool_id} {field} references unknown relation {related_id}", failures)
+                reverse = relation_by_id.get(related_id, {}).get(field, [])
+                check(tool_id in reverse, f"uiux-advisor: {tool_id} and {related_id} have asymmetric {field}", failures)
+
+
 def validate_uiux_kb(
     config_path: Path,
     quality_config: dict[str, Any],
@@ -605,6 +749,11 @@ def main() -> int:
         quality_config,
         failures,
         warnings,
+    )
+    validate_stack_relations(
+        args.config.resolve(),
+        quality_config,
+        failures,
     )
 
     if warnings:

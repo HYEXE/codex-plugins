@@ -24,10 +24,17 @@ description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명,
    python3 scripts/search_toolkits.py --role "<role>" --ecosystem "<ecosystem>" --recommend --max-risk "<risk>" --top 5
    ```
 
+   현재 저장소를 대상으로 선택할 때는 설치된 package와 역할 중복까지 함께 확인한다.
+
+   ```bash
+   python3 scripts/search_toolkits.py --role "<role>" --ecosystem "<ecosystem>" --recommend --strategy ecosystem-first --existing-stack package.json --explain --top 5
+   ```
+
 6. application framework, routing, server·client state, form·validation, data table과 test stack을 함께 비교하면 `references/frontend-stack-selection.md`를 읽고 필요한 계층만 role별로 검색한다.
-7. `time_sensitive: true`이거나 도구 도입을 결정하면 현재 공식 자료를 확인하고, 확인할 수 없는 항목을 미검증으로 표시한다.
-   추천 순서는 리스크·생태계 직접 지원·도입 방식을 설명하는 후보 정렬이지 보편적 품질 점수가 아니다. 현재 설치 여부·기능 적합성·검증 비용은 실제 저장소에서 따로 판단한다.
-8. 답변에서 `표준 요구`, `출처 기반 종합`, `실무 권고`, `맥락적 추론`을 구분한다.
+7. 변경 폭을 최소화해야 하면 기본 `conservative`, framework 생태계의 직접 지원이 결정적이면 `ecosystem-first` 전략을 사용한다. `conflicts-with-installed`, `overlaps-with-installed`, `role-provided-by-installed` 경고는 자동 제외 명령이 아니라 검토 근거다.
+8. `time_sensitive: true`이거나 도구 도입을 결정하면 현재 공식 자료를 확인하고, 확인할 수 없는 항목을 미검증으로 표시한다.
+   추천 순서는 리스크·생태계 직접 지원·도입 방식·현재 설치 여부를 설명하는 후보 정렬이지 보편적 품질 점수가 아니다. 기능 적합성·검증 비용은 실제 저장소에서 따로 판단한다.
+9. 답변에서 `표준 요구`, `출처 기반 종합`, `실무 권고`, `맥락적 추론`을 구분한다.
 
 ## 산출 모드
 
@@ -90,6 +97,7 @@ description: 근거 기반 한국어 UI/UX 가이드를 검색해 개념 설명,
 - 구조화 데이터: `references/kb/guides.jsonl`
 - 개별 가이드: `references/kb/guides/`
 - 프론트엔드 도구 레지스트리: `references/frontend-toolkit-registry.json`
+- package·역할·충돌 관계: `references/frontend-stack-relations.json`
 - 프론트엔드 스택 선택 절차: `references/frontend-stack-selection.md`
 
 ## 답변 마감 검사

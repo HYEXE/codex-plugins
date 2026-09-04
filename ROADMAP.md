@@ -29,3 +29,5 @@
 - [ ] source liveness artifact를 이전 정상 baseline과 자동 비교하는 drift history 실제 Actions 실행 확인
 - [x] interactive-slides 0.6.0 routing fixture의 live observation과 metadata hash 갱신
 - [x] interactive-slides 0.7.x clean-tree routing full live observation과 metadata hash 갱신
+- [x] 현재 package와 역할·충돌·겹침을 반영하는 UI/UX stack 추천
+- [x] stack 추천 전략과 충돌 경고의 결정론적 회귀 시나리오

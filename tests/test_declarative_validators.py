@@ -180,6 +180,14 @@ class DeclarativeValidatorTests(unittest.TestCase):
             "references/frontend-stack-selection.md",
             config["skills"]["uiux-advisor"]["required_files"],
         )
+        self.assertIn(
+            "references/frontend-stack-relations.json",
+            config["skills"]["uiux-advisor"]["required_files"],
+        )
+        self.assertIn(
+            "toolkit-context-cli-smoke",
+            {validator["name"] for validator in config["validators"]},
+        )
         self.assertTrue(
             {
                 "application-framework",
@@ -196,6 +204,18 @@ class DeclarativeValidatorTests(unittest.TestCase):
         self.assertTrue(
             {"react", "vue", "svelte", "angular", "solid", "astro"}
             <= set(config["toolkit_registry"]["required_ecosystems"])
+        )
+        self.assertTrue(
+            {
+                "next-js",
+                "react-router",
+                "nuxt",
+                "tanstack-query",
+                "redux-toolkit",
+                "react-hook-form",
+                "tanstack-form",
+            }
+            <= set(config["stack_relations"]["required_tool_ids"])
         )
 
         common_validator = (ROOT / "scripts" / "validate_all.py").read_text(encoding="utf-8")

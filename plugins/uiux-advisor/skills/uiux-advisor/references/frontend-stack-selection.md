@@ -2,7 +2,7 @@
 
 공식 문서 확인 기준일: 2026-09-04
 
-이 문서는 인기 순위나 고정된 정답 스택을 제공하지 않는다. 현재 저장소, 사용자 과업과 운영 제약을 기준으로 필요한 계층만 선택하고, 구조화된 후보 정보는 `frontend-toolkit-registry.json`을 진실 원본으로 사용한다.
+이 문서는 인기 순위나 고정된 정답 스택을 제공하지 않는다. 현재 저장소, 사용자 과업과 운영 제약을 기준으로 필요한 계층만 선택한다. 구조화된 후보 정보는 `frontend-toolkit-registry.json`, package·역할·충돌 관계는 `frontend-stack-relations.json`을 진실 원본으로 사용한다.
 
 ## 입력 계약
 
@@ -36,7 +36,7 @@ UI primitive, design system, motion, visualization과 interactive graphics는 �
 
 ## 선택 순서
 
-1. 현재 package, lockfile, route 구조, rendering·deployment 설정과 테스트를 읽어 이미 해결된 계층을 표시한다.
+1. 현재 `package.json`, lockfile, route 구조, rendering·deployment 설정과 테스트를 읽어 이미 해결된 계층을 표시한다. JavaScript package manifest가 있으면 검색기에 `--existing-stack package.json --explain`을 전달해 감지 결과를 먼저 확인한다.
 2. 제품이 content 중심인지 application 중심인지, server rendering이나 server mutation이 실제로 필요한지 결정한다.
 3. framework 제공 기능으로 routing, data loading, form action과 build를 충족할 수 있으면 겹치는 package를 추가하지 않는다.
 4. server state와 client state를 분리한다. remote cache를 전역 store에 복제하거나 local interaction state를 query cache에 넣지 않는다.
@@ -44,7 +44,7 @@ UI primitive, design system, motion, visualization과 interactive graphics는 �
 6. native form과 framework action으로 부족한 field lifecycle이 있을 때 form library를, 신뢰 경계 검증이 필요할 때 schema library를 별도로 선택한다.
 7. semantic table로 충분한지 먼저 확인하고 headless data-table engine은 정렬·필터·페이지·가상화 상태가 실제로 복잡할 때 추가한다.
 8. 기존 test runner를 유지하고, unit·component·browser E2E 사이의 검증 책임이 비어 있을 때만 새 도구를 추가한다.
-9. 각 계층을 `search_toolkits.py --role <role> --ecosystem <ecosystem> --recommend --max-risk <risk>`로 검색한다. application framework를 처음 비교할 때는 risk 상한 없이 생태계에 정확히 맞는 후보를 확인한 뒤 허용 가능한 migration risk로 좁힌다.
+9. 각 계층을 `search_toolkits.py --role <role> --ecosystem <ecosystem> --recommend --existing-stack package.json --explain`로 검색한다. 변경 폭을 최소화할 때는 기본 `conservative`, framework 생태계 직접 지원을 먼저 볼 때는 `--strategy ecosystem-first`를 사용한다. application framework를 처음 비교할 때는 risk 상한 없이 정확히 맞는 후보를 확인한 뒤 허용 가능한 migration risk로 좁힌다.
 10. framework가 form·state 같은 role로 검색되면 해당 내장 기능을 먼저 평가하라는 뜻이지, 현재 application에 그 framework를 추가하라는 뜻으로 해석하지 않는다.
 11. 후보의 현재 공식 API, 설치 버전, SSR·hydration, browser 지원, license, bundle, migration과 제거 비용을 확인한다.
 
@@ -59,6 +59,14 @@ UI primitive, design system, motion, visualization과 interactive graphics는 �
 - Vanilla·Web Components: framework 없이 유지 가능한 수명과 복잡도인지 먼저 확인하고, 라이브러리 하나 때문에 application framework를 도입하지 않는다.
 
 ## 겹침과 충돌 검사
+
+검색기의 구조화 경고는 다음 의미를 가진다.
+
+- `conflicts-with-installed`: URL·lifecycle 같은 핵심 소유권이 현재 도구와 경쟁하므로 함께 채택하기 전에 migration 경계를 정한다.
+- `overlaps-with-installed`: 일부 책임이 겹치므로 각 도구가 소유할 상태와 제거 조건을 명시한다.
+- `role-provided-by-installed`: 현재 framework나 package가 요청한 역할을 이미 제공하므로 새 의존성의 추가 가치부터 증명한다.
+
+경고는 후보를 자동 제외하거나 uninstall을 지시하지 않는다. package 이름만으로 runtime 구성·실사용·호환 버전을 확정할 수 없으므로 import, 설정, lockfile과 공식 문서를 함께 확인한다.
 
 - Next.js App Router와 별도 React router가 같은 URL 소유권을 가지지 않게 한다.
 - Nuxt·SvelteKit의 server data와 TanStack Query cache를 같은 진실 원본처럼 이중 관리하지 않는다.
