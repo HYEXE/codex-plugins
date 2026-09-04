@@ -31,3 +31,4 @@
 - [x] interactive-slides 0.7.x clean-tree routing full live observation과 metadata hash 갱신
 - [x] 현재 package와 역할·충돌·겹침을 반영하는 UI/UX stack 추천
 - [x] stack 추천 전략과 충돌 경고의 결정론적 회귀 시나리오
+- [x] uiux-advisor 0.11.0 프론트엔드 스택 routing clean live observation 갱신

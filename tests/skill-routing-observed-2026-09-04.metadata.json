@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "routing",
+  "provenance_status": "complete",
+  "source": "codex-cli-live-eval-normalized",
+  "observed_at": "2026-09-04T07:21:03.627226Z",
+  "run_id": "20260904T070941Z-73c5c302cc2a",
+  "auth_mode": "saved",
+  "model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "codex_version": "codex-cli 0.147.0",
+  "runner_commit": "db01877ed2cb05c389e4689886a4f6520e727208",
+  "runner_dirty": false,
+  "plugin_versions": {
+    "prompt-compiler": "0.7.2",
+    "uiux-advisor": "0.11.0",
+    "interactive-slides": "0.7.1"
+  },
+  "dataset": "skill-routing.jsonl",
+  "dataset_sha256": "95bae0fce7ae1d13ac254318316a5f9c464ecc711c984c7c5d006580b6e08746",
+  "policy_sha256": "d992ece5953606c59cd1ce8195bb87aba98b270a6b0c72fceb772f77e4824ad2",
+  "case_set": "full",
+  "attempts": 1,
+  "results": "skill-routing-observed-2026-09-04.jsonl",
+  "results_sha256": "df1b4fc93bd7a385118ff607dd1d0d1d463d455a98a9157ccc7ceb9546c6d521",
+  "raw_results_sha256": "0cbfa1129513847b89ebd1f8e2cb54196577527c0e8d5f36a5e6a91e3c702082",
+  "summary_sha256": "63973a5190450ecf4934c2ea0be128a5fcec5d970f4261f876dd0217f1d9e2d7",
+  "run_metadata_sha256": "c5809af541d32c7815d2a2c64d1b46391df9c3d91c6434d7a44daa5ab0727819",
+  "observation_scope": "selected-skill-only",
+  "outcomes": {
+    "canonical": 86,
+    "acceptable": 2,
+    "forbidden": 0,
+    "unexpected": 0
+  },
+  "critical": {
+    "passed": 8,
+    "total": 8
+  },
+  "general": {
+    "passed": 80,
+    "total": 80
+  },
+  "release_gate": true,
+  "notes": "Normalized from the saved-auth full routing live eval for uiux-advisor 0.11.0. Volatile thread, usage, event-path, and rationale fields remain only in the local raw run artifact; all 88 selected-skill outcomes passed."
+}
