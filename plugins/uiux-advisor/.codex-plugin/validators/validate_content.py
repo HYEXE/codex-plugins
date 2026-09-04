@@ -138,7 +138,16 @@ def validate_frontend_toolkits(
             failures,
         )
 
-    allowed_kinds = {"api", "library", "registry", "specification", "workbench"}
+    allowed_kinds = {
+        "api",
+        "build-tool",
+        "framework",
+        "library",
+        "registry",
+        "specification",
+        "test-runner",
+        "workbench",
+    }
     configured_roles = registry_config.get("required_roles")
     check(
         isinstance(configured_roles, list)
@@ -156,8 +165,25 @@ def validate_frontend_toolkits(
         "svelte",
         "angular",
         "solid",
+        "astro",
         "multi-platform",
     }
+    configured_ecosystems = registry_config.get("required_ecosystems")
+    check(
+        isinstance(configured_ecosystems, list)
+        and bool(configured_ecosystems)
+        and all(isinstance(ecosystem, str) and ecosystem for ecosystem in configured_ecosystems),
+        "uiux-advisor: toolkit required_ecosystems must be a non-empty string array",
+        failures,
+    )
+    required_ecosystems = (
+        set(configured_ecosystems) if isinstance(configured_ecosystems, list) else set()
+    )
+    check(
+        required_ecosystems <= allowed_ecosystems,
+        f"uiux-advisor: unknown required ecosystems {sorted(required_ecosystems - allowed_ecosystems)}",
+        failures,
+    )
     allowed_adoption = {"native", "package", "registry", "source-copy", "specification"}
     allowed_status = {"candidate", "verified", "deprecated"}
     allowed_license_review = {"required-at-adoption", "verified", "not-applicable"}
@@ -184,6 +210,7 @@ def validate_frontend_toolkits(
     names: list[str] = []
     official_urls: list[str] = []
     covered_roles: set[str] = set()
+    covered_ecosystems: set[str] = set()
     for index, tool in enumerate(tools, 1):
         if not isinstance(tool, dict):
             failures.append(f"uiux-advisor: toolkit {index} must be an object")
@@ -239,6 +266,7 @@ def validate_frontend_toolkits(
                 f"uiux-advisor: {label} has unknown ecosystems",
                 failures,
             )
+            covered_ecosystems.update(ecosystems)
         for field in ("capabilities", "surfaces"):
             values = tool.get(field)
             valid_values = (
@@ -318,6 +346,11 @@ def validate_frontend_toolkits(
     )
     check(required_ids <= set(ids), f"uiux-advisor: missing required toolkits {sorted(required_ids - set(ids))}", failures)
     check(allowed_roles <= covered_roles, f"uiux-advisor: uncovered toolkit roles {sorted(allowed_roles - covered_roles)}", failures)
+    check(
+        required_ecosystems <= covered_ecosystems,
+        f"uiux-advisor: uncovered toolkit ecosystems {sorted(required_ecosystems - covered_ecosystems)}",
+        failures,
+    )
 
 
 def validate_uiux_kb(

@@ -176,6 +176,27 @@ class DeclarativeValidatorTests(unittest.TestCase):
             "references/kb/REVIEW_SCHEDULE.md",
             config["skills"]["uiux-advisor"]["required_files"],
         )
+        self.assertIn(
+            "references/frontend-stack-selection.md",
+            config["skills"]["uiux-advisor"]["required_files"],
+        )
+        self.assertTrue(
+            {
+                "application-framework",
+                "routing",
+                "server-state",
+                "client-state",
+                "form",
+                "validation",
+                "data-table",
+                "testing",
+            }
+            <= set(config["toolkit_registry"]["required_roles"])
+        )
+        self.assertTrue(
+            {"react", "vue", "svelte", "angular", "solid", "astro"}
+            <= set(config["toolkit_registry"]["required_ecosystems"])
+        )
 
         common_validator = (ROOT / "scripts" / "validate_all.py").read_text(encoding="utf-8")
         self.assertNotIn("validate_uiux_kb", common_validator)

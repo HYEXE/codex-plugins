@@ -10,7 +10,7 @@ from typing import Any
 
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "references" / "frontend-toolkit-registry.json"
-WEB_FRAMEWORKS = {"vanilla", "react", "vue", "svelte", "angular", "solid"}
+WEB_FRAMEWORKS = {"vanilla", "react", "vue", "svelte", "angular", "solid", "astro"}
 RISK_RANK = {"low": 0, "medium": 1, "high": 2}
 ADOPTION_RANK = {"native": 0, "specification": 1, "package": 2, "registry": 3, "source-copy": 4}
 

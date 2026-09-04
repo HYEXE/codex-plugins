@@ -7,7 +7,7 @@
 | 플러그인 | package | 번들 스킬 | 용도 |
 | --- | --- | --- | --- |
 | `prompt-compiler` | `0.7.2` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `0.9.2` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `uiux-advisor` | `0.10.0` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사, React·Vue·Svelte·Angular·Solid·Astro 스택 선택과 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
 | `interactive-slides` | `0.7.1` | `create-interactive-slides` | 제작 견적·승인·design-plan gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
 
 ## 구조
@@ -118,10 +118,18 @@ python3 scripts/live_eval.py run \
 
 프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있습니다. `--recommend`는 필터된 후보를 낮은 리스크, framework 직접 지원, 가벼운 도입 방식 순으로 정렬하며 보편적 품질 점수로 해석하지 않습니다.
 
+application framework, build, routing, server·client state, form·validation, data table과 testing을 함께 고를 때도 같은 레지스트리를 계층별로 검색합니다. framework가 이미 제공하는 기능과 중복되는 패키지를 자동으로 추가하지 않으며, 현재 저장소의 stack과 migration 비용을 먼저 확인합니다.
+
 ```bash
 python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
   --capability carousel --surface carousel --ecosystem react \
   --recommend --max-risk medium --top 3
+```
+
+```bash
+python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
+  --role server-state --ecosystem react \
+  --recommend --max-risk medium --top 5
 ```
 
 라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의합니다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과와 metadata hash를 함께 갱신해야 합니다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있습니다.
