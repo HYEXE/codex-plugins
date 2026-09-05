@@ -62,6 +62,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
         "max_risk",
         "adoption",
         "status",
+        "strategy",
+        "existing_tool_ids",
         "recommend",
         "top",
     }
@@ -88,7 +90,15 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
                     failures.append(f"{label}: recommend must be boolean")
                 elif name == "top" and (not isinstance(value, int) or isinstance(value, bool) or value < 1):
                     failures.append(f"{label}: top must be a positive integer")
-                elif name not in {"recommend", "top"} and (
+                elif name == "existing_tool_ids" and (
+                    not isinstance(value, list)
+                    or any(not isinstance(tool_id, str) or not tool_id for tool_id in value)
+                    or len(value) != len(set(value))
+                ):
+                    failures.append(f"{label}: existing_tool_ids must be a unique string array")
+                elif name == "strategy" and value not in {"conservative", "ecosystem-first"}:
+                    failures.append(f"{label}: strategy must be conservative or ecosystem-first")
+                elif name not in {"recommend", "top", "existing_tool_ids", "strategy"} and (
                     not isinstance(value, str) or not value
                 ):
                     failures.append(f"{label}: {name} must be a non-empty string")
@@ -109,6 +119,17 @@ def validate_cases(cases: list[dict[str, Any]]) -> list[str]:
             failures.append(f"{label}: ordered_prefix must be a string array")
         if set(case.get("must_include", [])) & set(case.get("forbidden_ids", [])):
             failures.append(f"{label}: required and forbidden IDs overlap")
+        for field in ("must_warn", "provided_roles"):
+            mapping = case.get(field, {})
+            if not isinstance(mapping, dict) or any(
+                not isinstance(key, str)
+                or not key
+                or not isinstance(values, list)
+                or any(not isinstance(value, str) or not value for value in values)
+                or len(values) != len(set(values))
+                for key, values in mapping.items()
+            ):
+                failures.append(f"{label}: {field} must map strings to unique string arrays")
 
     if len(cases) < 8:
         failures.append(f"toolkit search suite needs at least 8 cases, got {len(cases)}")
@@ -125,6 +146,7 @@ def main() -> int:
         cases = load_jsonl(args.cases)
         module = load_search_module()
         payload = module.load_registry(module.REGISTRY_PATH)
+        relations_payload = module.load_relations(module.RELATIONS_PATH, payload)
     except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}")
         return 1
@@ -147,16 +169,34 @@ def main() -> int:
         "max_risk",
         "adoption",
         "status",
+        "strategy",
+        "existing_tool_ids",
         "recommend",
         "top",
     )
     for case in cases:
         filters = case["filters"]
         namespace = argparse.Namespace(**{
-            name: filters.get(name, False if name == "recommend" else None)
+            name: filters.get(
+                name,
+                False
+                if name == "recommend"
+                else "conservative"
+                if name == "strategy"
+                else []
+                if name == "existing_tool_ids"
+                else None,
+            )
             for name in filter_names
         })
-        result_ids = [tool["id"] for tool in module.search(payload, namespace)]
+        namespace.existing_packages = []
+        result_tools = module.search(payload, namespace)
+        result_ids = [tool["id"] for tool in result_tools]
+        context = module.build_recommendation_context(
+            relations_payload,
+            namespace,
+            result_tools,
+        )
         reasons: list[str] = []
         if case.get("expect_empty") and result_ids:
             reasons.append(f"expected no matches, got {result_ids}")
@@ -169,6 +209,20 @@ def main() -> int:
         forbidden = sorted(set(case.get("forbidden_ids", [])) & set(result_ids))
         if forbidden:
             reasons.append(f"returned forbidden IDs {forbidden}")
+        for tool_id, warning_codes in case.get("must_warn", {}).items():
+            actual_codes = {
+                warning["code"]
+                for warning in context["warnings_by_tool"].get(tool_id, [])
+            }
+            missing_codes = sorted(set(warning_codes) - actual_codes)
+            if missing_codes:
+                reasons.append(f"{tool_id} missing warning codes {missing_codes}")
+        for role, provider_ids in case.get("provided_roles", {}).items():
+            missing_providers = sorted(
+                set(provider_ids) - set(context["provided_roles"].get(role, []))
+            )
+            if missing_providers:
+                reasons.append(f"{role} missing installed providers {missing_providers}")
         if args.show_results or reasons:
             print(f"{case['id']}: {result_ids}")
         if reasons:

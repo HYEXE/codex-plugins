@@ -1,4 +1,4 @@
-# Deck schema
+# Deck schema 정의
 
 `deck.js`는 `window.INTERACTIVE_DECK`에 다음 구조를 할당한다. JSON 직렬화 가능한 데이터만 사용하며 렌더러가 문자열을 실행하게 만들지 않는다.
 
@@ -18,7 +18,7 @@ window.INTERACTIVE_DECK = {
 
 `modeLocked: true`이면 `defaultMode`가 제작 승인에서 확정된 모드다. 런타임은 URL mode override를 무시하고 모드 전환 control을 숨기며 키보드·API를 통한 mode 변경도 거부한다.
 
-## Slide fields
+## Slide field
 
 - `id`: URL hash와 목차에 쓰는 고유한 lower-kebab-case 값
 - `section`: 목차 그룹 이름
@@ -34,7 +34,7 @@ window.INTERACTIVE_DECK = {
 - `notes`: speaker notes 문자열 배열
 - `sources`: 화면 하단 출처 문자열 배열
 
-## Scene fields
+## Scene field
 
 ### sequence
 

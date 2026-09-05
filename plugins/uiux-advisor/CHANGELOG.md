@@ -1,5 +1,27 @@
 # Changelog
 
+## Package 0.11.0 — Context-aware Stack Recommendations
+
+변경:
+- `package.json`의 dependencies, dev·peer·optional dependencies에서 알려진 framework와 도구를 감지하는 `--existing-stack` 입력 추가
+- 변경 폭을 우선하는 `conservative`와 framework 생태계 직접 지원을 우선하는 `ecosystem-first` 추천 전략 추가
+- 설치된 도구와의 충돌, 책임 겹침, 이미 제공되는 역할을 구조화 경고로 설명하는 stack relation registry 추가
+- package 감지·전략 순위·Next.js router 충돌을 unit test와 34개 toolkit 검색 회귀 사례로 검증
+
+## Package 0.10.0 — Frontend Stack Selection
+
+변경:
+- React·Next.js, Vue·Nuxt, Svelte·SvelteKit, Angular, Solid, Astro와 Vite의 application·routing·build 후보를 toolkit registry에 추가
+- server state, client state, form, validation, data table과 testing 계층을 분리하고 계층별 중복·호환성·migration 검토 절차를 추가
+- TanStack Query·Router·Form·Table, Redux Toolkit, Zustand, Pinia, XState, React Hook Form, VeeValidate, Zod, Vitest, Testing Library와 Playwright 후보를 생태계·위험·폴백과 함께 구조화
+- registry role과 ecosystem coverage를 plugin-local quality gate 및 검색 회귀 사례로 검증
+
+## Package 0.9.2 — Plugin-local Content Validation
+
+변경:
+- knowledge-base와 toolkit 구조·freshness 검증 로직을 공통 validator에서 plugin-local 선언형 validator로 이동
+- time-sensitive guide, stable guide와 toolkit role별 실제 재검토 일정을 추가하고 기준일을 검토 없이 변경하지 않는 원칙을 명시
+
 ## Package 0.9.1 — Bundled Search Validators
 
 변경:

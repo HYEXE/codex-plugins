@@ -1,6 +1,6 @@
-# Rehearsal and fallback
+# 리허설과 fallback
 
-## Rehearsal matrix
+## 리허설 매트릭스
 
 최소한 다음 경로를 실제 발표 순서로 확인한다.
 
@@ -17,7 +17,7 @@
 | reduced motion | 같은 phase와 결과를 짧은 delay 또는 즉시 상태로 제공한다. |
 | scene failure | 정적 요약과 다음 이동이 남는다. |
 
-## Fallback layers
+## Fallback 계층
 
 1. `semantic summary`: JavaScript와 자산이 없어도 제목, 요약, 근거 경계를 읽을 수 있다.
 2. `static visual`: animation 대신 단계 목록, 비교 표, poster 또는 도식이 남는다.
@@ -26,7 +26,7 @@
 
 원격 image, video, iframe과 API는 기본 발표의 필수 경로로 두지 않는다. 꼭 필요하면 로컬 poster와 실패 문구를 함께 제공하고 외부 연결이 실패해도 Deck Controller를 막지 않는다.
 
-## Rehearsal Receipt
+## Rehearsal Receipt 기록
 
 복잡한 시연을 완료할 때 다음을 짧게 보고한다.
 

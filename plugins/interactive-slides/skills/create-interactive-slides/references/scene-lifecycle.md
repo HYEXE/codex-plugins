@@ -1,4 +1,4 @@
-# Scene lifecycle
+# Scene lifecycle 계약
 
 자동 시연은 슬라이드에 붙인 일회성 timer 묶음이 아니라 명시적인 Scene Controller로 구현한다.
 

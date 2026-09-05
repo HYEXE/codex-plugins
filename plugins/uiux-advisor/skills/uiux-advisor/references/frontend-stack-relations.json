@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0.0",
+  "snapshot_date": "2026-09-04",
+  "relations": [
+    {
+      "tool_id": "vite",
+      "package_names": ["vite"],
+      "provides_roles": ["build-tool"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "next-js",
+      "package_names": ["next"],
+      "provides_roles": ["application-framework", "build-tool", "routing", "server-state", "form"],
+      "conflicts_with": ["react-router", "tanstack-router"],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "react-router",
+      "package_names": ["react-router", "react-router-dom"],
+      "provides_roles": ["application-framework", "routing", "form"],
+      "conflicts_with": ["next-js", "tanstack-router"],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "tanstack-router",
+      "package_names": ["@tanstack/react-router", "@tanstack/solid-router"],
+      "provides_roles": ["routing"],
+      "conflicts_with": ["next-js", "react-router"],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "nuxt",
+      "package_names": ["nuxt"],
+      "provides_roles": ["application-framework", "build-tool", "routing", "server-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["vue-router"]
+    },
+    {
+      "tool_id": "vue-router",
+      "package_names": ["vue-router"],
+      "provides_roles": ["routing"],
+      "conflicts_with": [],
+      "overlaps_with": ["nuxt"]
+    },
+    {
+      "tool_id": "sveltekit",
+      "package_names": ["@sveltejs/kit"],
+      "provides_roles": ["application-framework", "build-tool", "routing", "server-state", "form"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "astro",
+      "package_names": ["astro"],
+      "provides_roles": ["application-framework", "build-tool", "routing"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "angular",
+      "package_names": ["@angular/core"],
+      "provides_roles": ["application-framework", "build-tool", "routing", "client-state", "form"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "tanstack-query",
+      "package_names": ["@tanstack/react-query", "@tanstack/vue-query", "@tanstack/svelte-query", "@tanstack/angular-query-experimental", "@tanstack/solid-query"],
+      "provides_roles": ["server-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["redux-toolkit"]
+    },
+    {
+      "tool_id": "redux-toolkit",
+      "package_names": ["@reduxjs/toolkit"],
+      "provides_roles": ["client-state", "server-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["tanstack-query", "zustand", "xstate"]
+    },
+    {
+      "tool_id": "zustand",
+      "package_names": ["zustand"],
+      "provides_roles": ["client-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["redux-toolkit", "xstate"]
+    },
+    {
+      "tool_id": "pinia",
+      "package_names": ["pinia"],
+      "provides_roles": ["client-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["xstate"]
+    },
+    {
+      "tool_id": "xstate",
+      "package_names": ["xstate", "@xstate/react", "@xstate/vue", "@xstate/svelte"],
+      "provides_roles": ["client-state"],
+      "conflicts_with": [],
+      "overlaps_with": ["redux-toolkit", "zustand", "pinia"]
+    },
+    {
+      "tool_id": "react-hook-form",
+      "package_names": ["react-hook-form"],
+      "provides_roles": ["form"],
+      "conflicts_with": [],
+      "overlaps_with": ["tanstack-form"]
+    },
+    {
+      "tool_id": "vee-validate",
+      "package_names": ["vee-validate"],
+      "provides_roles": ["form", "validation"],
+      "conflicts_with": [],
+      "overlaps_with": ["tanstack-form"]
+    },
+    {
+      "tool_id": "tanstack-form",
+      "package_names": ["@tanstack/react-form", "@tanstack/vue-form", "@tanstack/svelte-form", "@tanstack/angular-form", "@tanstack/solid-form"],
+      "provides_roles": ["form"],
+      "conflicts_with": [],
+      "overlaps_with": ["react-hook-form", "vee-validate"]
+    },
+    {
+      "tool_id": "zod",
+      "package_names": ["zod"],
+      "provides_roles": ["validation"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "tanstack-table",
+      "package_names": ["@tanstack/react-table", "@tanstack/vue-table", "@tanstack/svelte-table", "@tanstack/angular-table", "@tanstack/solid-table", "@tanstack/table-core"],
+      "provides_roles": ["data-table"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "vitest",
+      "package_names": ["vitest"],
+      "provides_roles": ["testing"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "testing-library",
+      "package_names": ["@testing-library/dom", "@testing-library/react", "@testing-library/vue", "@testing-library/svelte", "@testing-library/angular"],
+      "provides_roles": ["testing"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    },
+    {
+      "tool_id": "playwright",
+      "package_names": ["@playwright/test", "playwright"],
+      "provides_roles": ["testing"],
+      "conflicts_with": [],
+      "overlaps_with": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 interface:
   display_name: "UI/UX Advisor"
-  short_description: "근거 기반 한국어 UI/UX 설명, 비교, 명세와 검증 계획"
-  default_prompt: "Use $uiux-advisor to explain or specify this UI/UX problem with evidence-backed guidance and concrete validation steps."
+  short_description: "UI/UX 근거와 프론트엔드 스택을 함께 비교·설계"
+  default_prompt: "Use $uiux-advisor to compare this UI/UX or frontend stack decision with evidence, tradeoffs, and concrete validation steps."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

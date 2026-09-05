@@ -27,4 +27,8 @@
 - [x] live eval 결과를 릴리스 간 추세로 비교하는 summary report
 - [x] 여러 모델·Codex build를 로컬에서 비교하는 비차단 canary matrix
 - [ ] source liveness artifact를 이전 정상 baseline과 자동 비교하는 drift history 실제 Actions 실행 확인
-- [x] interactive-slides routing fixture의 live observation과 metadata hash 갱신
+- [x] interactive-slides 0.6.0 routing fixture의 live observation과 metadata hash 갱신
+- [x] interactive-slides 0.7.x clean-tree routing full live observation과 metadata hash 갱신
+- [x] 현재 package와 역할·충돌·겹침을 반영하는 UI/UX stack 추천
+- [x] stack 추천 전략과 충돌 경고의 결정론적 회귀 시나리오
+- [x] uiux-advisor 0.11.0 프론트엔드 스택 routing clean live observation 갱신

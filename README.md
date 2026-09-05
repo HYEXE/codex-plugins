@@ -6,9 +6,9 @@
 
 | 플러그인 | package | 번들 스킬 | 용도 |
 | --- | --- | --- | --- |
-| `prompt-compiler` | `0.7.1` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
-| `uiux-advisor` | `0.9.1` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사와 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
-| `interactive-slides` | `0.7.0` | `create-interactive-slides` | 제작 견적·승인·design-plan gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
+| `prompt-compiler` | `0.7.2` | `prompt-coach`, `prompt-compiler`, `prompt-evaluator` | 요청을 필요한 만큼 보완해 실행·검증하고 후속 변경분만 재컴파일하거나, 프롬프트만 작성·평가 |
+| `uiux-advisor` | `0.11.0` | `uiux-advisor`, `uiux-auditor`, `implement-async-ui-state`, `implement-ui-interaction`, `implement-ui-motion`, `build-data-visualization`, `build-interactive-graphics`, `compose-creative-ui`, `build-design-system` | 근거 기반 UI/UX 설계·감사, 현재 package를 인식하는 React·Vue·Svelte·Angular·Solid·Astro 스택 선택과 접근 가능한 widget 상호작용·비동기 작업 상태·모션·차트·2D·3D 그래픽·창의적 UI·디자인 시스템 구현 |
+| `interactive-slides` | `0.7.1` | `create-interactive-slides` | 제작 견적·승인·design-plan gate를 거쳐 발표문을 timeline·diagram·code walkthrough·before/after 장면과 fallback이 있는 HTML 발표로 설계·검증 |
 
 ## 구조
 
@@ -97,7 +97,7 @@ python3 scripts/check_version_bumps.py --base <base-ref>
 git diff --check
 ```
 
-공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문, observation manifest, UI/UX 지식베이스 참조 무결성과 freshness를 확인합니다. 플러그인별 skill 목록, 필수 파일·marker, KB·toolkit 수, freshness budget과 specialized evaluator command는 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 안전한 Python argv로 자동 실행합니다.
+공통 검증기는 marketplace와 manifest 연결, 전체 스킬 메타데이터와 UI 자산, Python 구문과 observation manifest를 확인합니다. 플러그인별 skill 목록, 필수 파일·marker와 specialized evaluator command는 각 `.codex-plugin/quality-gates.json`이 소유하며 공통 validator가 안전한 Python argv로 자동 실행합니다. Marker는 기존 package-wide 문자열 또는 `{path, contains}`·`{path, regex}` 형식으로 선언할 수 있으며, 실행 계약처럼 위치가 중요한 규칙은 파일 경로와 검색 방식을 고정합니다. KB·toolkit 구조와 freshness 같은 domain-specific 규칙은 해당 플러그인의 선언형 validator가 소유합니다.
 
 저장된 behavior snapshot은 안정적인 `observations.json` manifest가 선택합니다. metadata에 dataset/result SHA-256, 관찰 시각, plugin 버전과 provenance 상태를 기록하며, 과거 실행에서 확인할 수 없는 model·Codex build는 추정하지 않고 `legacy-partial`로 표시합니다. 오케스트레이션 transcript 평가는 질문 수, 이어가기, preview 승인 경계와 외부 행동 주장을 판정하지만 그 자체로 side effect 부재를 증명하지 않습니다.
 
@@ -116,12 +116,21 @@ python3 scripts/live_eval.py run \
 
 공개 CI와 release workflow는 저장된 개인 로그인을 배포하지 않습니다. release workflow는 로컬 live eval의 model·Codex version·run ID와 operator 확인을 attestation으로 보존하고 deterministic validator를 다시 실행합니다. 선택적 GitHub-hosted live eval만 운영자의 `CODEX_LIVE_EVAL_API_KEY`를 사용합니다. 플러그인을 설치한 일반 사용자는 자신의 Codex 로그인 또는 자신의 API 키로 실행하므로 저장소 운영자의 키나 사용료를 공유하지 않습니다.
 
-프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있습니다. `--recommend`는 필터된 후보를 낮은 리스크, framework 직접 지원, 가벼운 도입 방식 순으로 정렬하며 보편적 품질 점수로 해석하지 않습니다.
+프론트엔드 도구는 역할·생태계뿐 아니라 필요한 기능, 적용 surface, 도입 방식과 리스크 상한으로 검색할 수 있습니다. `--recommend`는 보편적 품질 점수가 아니라 선택한 전략에 따른 후보 정렬입니다. 기본 `conservative`는 낮은 리스크를, `ecosystem-first`는 framework 생태계의 직접 지원을 먼저 봅니다.
+
+application framework, build, routing, server·client state, form·validation, data table과 testing을 함께 고를 때도 같은 레지스트리를 계층별로 검색합니다. `--existing-stack package.json --explain`을 사용하면 알려진 package를 감지해 설치된 framework가 제공하는 역할과 충돌·겹침 경고를 구조화해 보여줍니다. 이 경고는 자동 선택이나 제거 지시가 아니며 실제 import·설정·버전과 migration 비용을 별도로 확인해야 합니다.
 
 ```bash
 python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
   --capability carousel --surface carousel --ecosystem react \
   --recommend --max-risk medium --top 3
+```
+
+```bash
+python3 plugins/uiux-advisor/skills/uiux-advisor/scripts/search_toolkits.py \
+  --role server-state --ecosystem react \
+  --recommend --strategy ecosystem-first \
+  --existing-stack package.json --explain --max-risk medium --top 5
 ```
 
 라우팅 평가 데이터는 예상 스킬과 비적용 경계를 정의합니다. 기대 라벨을 노출하지 않은 독립 관찰 snapshot도 통합 검증에서 점수화하며, 라우팅 사례가 바뀌면 새 관찰 결과와 metadata hash를 함께 갱신해야 합니다. 다른 실행에서 관찰한 선택 결과도 다음처럼 점수화할 수 있습니다.
@@ -174,7 +183,7 @@ codex plugin add uiux-advisor@codex-plugins-kr
 codex plugin add interactive-slides@codex-plugins-kr
 ```
 
-첫 번째 명령은 Git marketplace snapshot을 등록된 ref에서 다시 가져옵니다. `main` nightly marketplace라면 최신 commit으로 이동하지만 immutable stable tag라면 같은 snapshot을 다시 확인할 뿐 더 새 stable tag로 자동 이동하지 않습니다. 이어지는 두 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체합니다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않습니다.
+첫 번째 명령은 Git marketplace snapshot을 등록된 ref에서 다시 가져옵니다. `main` nightly marketplace라면 최신 commit으로 이동하지만 immutable stable tag라면 같은 snapshot을 다시 확인할 뿐 더 새 stable tag로 자동 이동하지 않습니다. 이어지는 세 명령은 각 플러그인을 다시 설치해 Codex의 설치 cache를 교체합니다. 스크립트는 현재 작업 복사본에 `git pull`을 실행하거나 manifest 버전을 자동으로 올리거나 실행 중인 Codex 작업을 다시 시작하지 않습니다.
 
 플러그인 소스 자체를 변경했다면 설치 전에 해당 `.codex-plugin/plugin.json`의 SemVer를 올리고 저장소 검증을 실행합니다.
 

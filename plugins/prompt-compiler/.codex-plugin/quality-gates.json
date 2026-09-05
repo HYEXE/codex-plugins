@@ -9,12 +9,12 @@
         "scripts/eval_harness.py"
       ],
       "required_markers": [
-        "Prompt Sufficiency Gate",
-        "pass-through",
-        "refine-directly",
-        "clarify-before-compile",
-        "질문 1~3개",
-        "최대 두 차례"
+        {"path": "SKILL.md", "contains": "Prompt Sufficiency Gate"},
+        {"path": "SKILL.md", "contains": "pass-through"},
+        {"path": "SKILL.md", "contains": "refine-directly"},
+        {"path": "SKILL.md", "contains": "clarify-before-compile"},
+        {"path": "SKILL.md", "contains": "질문 1~3개"},
+        {"path": "SKILL.md", "contains": "최대 두 차례"}
       ]
     },
     "prompt-compiler": {
@@ -26,22 +26,22 @@
         "scripts/eval_orchestration.py"
       ],
       "required_markers": [
-        "Prompt Front Door",
-        "Prompt Sufficiency Gate",
-        "pass-through",
-        "refine-directly",
-        "clarify-before-compile",
-        "intent-compile-and-execute",
-        "task-scoped-compile-and-execute",
-        "delta-compile-and-execute",
-        "preview-then-act",
-        "Clarification Resume",
-        "Partial Completion Receipt",
-        "Task State Capsule",
-        "Approval Binding",
-        "continue",
-        "replace",
-        "별도 모델 호출"
+        {"path": "SKILL.md", "contains": "Prompt Front Door"},
+        {"path": "SKILL.md", "contains": "Prompt Sufficiency Gate"},
+        {"path": "SKILL.md", "contains": "pass-through"},
+        {"path": "SKILL.md", "contains": "refine-directly"},
+        {"path": "SKILL.md", "contains": "clarify-before-compile"},
+        {"path": "SKILL.md", "contains": "intent-compile-and-execute"},
+        {"path": "SKILL.md", "contains": "task-scoped-compile-and-execute"},
+        {"path": "SKILL.md", "contains": "delta-compile-and-execute"},
+        {"path": "SKILL.md", "contains": "preview-then-act"},
+        {"path": "references/front-door-modes.md", "contains": "Clarification Resume"},
+        {"path": "references/front-door-modes.md", "contains": "Partial Completion Receipt"},
+        {"path": "references/task-state-and-delta.md", "contains": "Task State Capsule"},
+        {"path": "references/task-state-and-delta.md", "contains": "Approval Binding"},
+        {"path": "SKILL.md", "regex": "\\bcontinue\\b"},
+        {"path": "SKILL.md", "regex": "\\breplace\\b"},
+        {"path": "SKILL.md", "contains": "별도 모델 호출"}
       ]
     },
     "prompt-evaluator": {

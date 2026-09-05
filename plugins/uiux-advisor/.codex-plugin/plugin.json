@@ -1,15 +1,15 @@
 {
   "name": "uiux-advisor",
-  "version": "0.9.1",
-  "description": "근거 기반 UI/UX 가이드·감사와 접근 가능한 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, 인터랙티브 2D·3D 그래픽, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
+  "version": "0.11.0",
+  "description": "근거 기반 UI/UX 가이드·감사, 프론트엔드 스택 선택과 접근 가능한 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, 인터랙티브 2D·3D 그래픽, 창의적 UI, 디자인 시스템 구현을 연결하는 한국어 프론트엔드 워크플로입니다.",
   "author": {
     "name": "HYEXEN"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "UI/UX Advisor",
-    "shortDescription": "UI/UX 근거를 상호작용·비동기 상태·그래픽·시스템 구현까지 연결",
-    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 현재 프론트엔드에 맞는 widget 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, Rive·PixiJS·Three.js 기반 그래픽, 시각 효과와 디자인 시스템 도구를 선별하고 폴백·성능 예산과 함께 구현·검증합니다.",
+    "shortDescription": "UI/UX 근거를 스택 선택과 접근 가능한 구현으로 연결",
+    "longDescription": "한국어 UI/UX 지식베이스와 증거 기반 감사를 바탕으로 React·Next.js, Vue·Nuxt, Svelte·SvelteKit, Angular, Solid, Astro 생태계의 application framework, routing, 상태, form, validation, data table과 test stack을 비교하고 현재 프론트엔드에 맞는 상호작용, 비동기 작업 상태, 모션, 데이터 시각화, 그래픽, 시각 효과와 디자인 시스템 도구를 선별해 구현·검증합니다.",
     "developerName": "HYEXEN",
     "category": "Productivity",
     "capabilities": [
@@ -18,6 +18,9 @@
       "컴포넌트와 제품 명세 작성",
       "리서치와 검증 계획 수립",
       "근거 가이드와 출처 추적",
+      "React·Vue·Svelte·Angular·Solid·Astro 프론트엔드 스택 계층별 비교",
+      "application framework·routing·server state·client state·form·validation·data table·test 도구 선택",
+      "현재 package.json의 설치 도구와 역할·충돌·겹침을 반영한 stack 후보 추천",
       "화면과 사용자 흐름의 증거 기반 감사",
       "키보드·포커스·터치·제스처가 정확한 UI 상호작용 구현",
       "요청·스트림·background job·batch의 중복·순서·취소·재시도·부분 성공 상태 구현",
@@ -29,10 +32,10 @@
       "capability·surface·risk 기반 프론트엔드 도구 레지스트리 검색",
       "Rive·Three.js·R3F·PixiJS·Theatre.js의 제한적 고급 그래픽 후보 비교",
       "Rive 상태 머신·PixiJS 2D·Three.js·R3F 3D·Theatre.js 연출을 폴백·접근성·렌더 루프 예산과 함께 구현",
-      "위험 상한·생태계 적합성·도입 방식으로 프론트엔드 도구 후보 추천"
+      "보수적·생태계 우선 전략과 위험 상한·도입 방식으로 프론트엔드 도구 후보 추천"
     ],
     "defaultPrompt": [
-      "이 UI 문제의 원리와 대안을 근거와 트레이드오프로 비교해줘.",
+      "이 UI 문제 또는 현재 저장소에 맞는 프론트엔드 스택을 근거와 트레이드오프로 비교해줘.",
       "이 UI의 상호작용과 비동기 작업 상태를 접근성과 오류 복구까지 포함해 구현하고 검증해줘.",
       "이 사용자 흐름을 심각도와 근거 확실도에 따라 감사해줘."
     ],

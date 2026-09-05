@@ -40,12 +40,12 @@ approved_at: ""
 
 ## 디자인 시스템과 슬라이드 패밀리
 
-- Art-direction sentence:
-- Typography:
-- Palette:
-- Image treatment:
-- Grid and geometry:
-- Motion language:
+- Art direction 한 문장:
+- 타이포그래피:
+- 색상 팔레트:
+- 이미지 처리 방식:
+- 그리드와 기하 형태:
+- 모션 언어:
 - 사용할 slide family:
 - 피해야 할 표현:
 

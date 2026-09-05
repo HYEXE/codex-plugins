@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "next": "0.0.0-fixture",
+    "react": "0.0.0-fixture",
+    "react-dom": "0.0.0-fixture"
+  },
+  "devDependencies": {
+    "vitest": "0.0.0-fixture"
+  }
+}

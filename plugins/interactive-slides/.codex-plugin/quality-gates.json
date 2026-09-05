@@ -4,11 +4,16 @@
   "skills": {
     "create-interactive-slides": {
       "required_files": [
+        "references/language-policy.md",
+        "references/authoring-intake.md",
         "references/mode-contracts.md",
         "references/deck-schema.md",
         "references/scene-lifecycle.md",
         "references/content-to-storyboard.md",
         "references/interaction-selection.md",
+        "references/proposal-workflow.md",
+        "references/design-plan-contract.md",
+        "references/visual-quality-system.md",
         "references/rehearsal-and-fallback.md",
         "references/scene-recipes.md",
         "assets/icon.svg",
@@ -19,26 +24,34 @@
         "assets/starter/deck.js",
         "assets/starter/scenes.js",
         "assets/starter/presentation.js",
+        "templates/presentation-intake.md",
+        "templates/production-proposal.md",
+        "templates/proposal-feedback.md",
+        "templates/design-plan.json",
+        "evals/forward/cases.json",
         "scripts/validate_starter.py",
-        "scripts/validate_deck_project.py"
+        "scripts/validate_deck_project.py",
+        "scripts/validate_production_proposal.py",
+        "scripts/validate_design_plan.py",
+        "scripts/eval_forward_fixtures.py"
       ],
       "required_markers": [
-        "experience",
-        "demo",
-        "Deck Controller",
-        "Scene Controller",
-        "ready → running → complete",
-        "SYNTHETIC TELEMETRY",
-        "Interaction Value Gate",
-        "timeline",
-        "diagram",
-        "code-walkthrough",
-        "before-after",
-        "Rehearsal Receipt",
-        "fallback",
-        "speaker notes",
-        "prefers-reduced-motion",
-        "eval"
+        {"path": "SKILL.md", "regex": "\\bexperience\\b"},
+        {"path": "SKILL.md", "regex": "\\bdemo\\b"},
+        {"path": "SKILL.md", "contains": "Deck Controller"},
+        {"path": "SKILL.md", "contains": "Scene Controller"},
+        {"path": "SKILL.md", "contains": "ready → running → complete"},
+        {"path": "SKILL.md", "contains": "SYNTHETIC TELEMETRY"},
+        {"path": "SKILL.md", "contains": "Interaction Value Gate"},
+        {"path": "SKILL.md", "regex": "\\btimeline\\b"},
+        {"path": "SKILL.md", "regex": "\\bdiagram\\b"},
+        {"path": "SKILL.md", "contains": "code-walkthrough"},
+        {"path": "SKILL.md", "contains": "before-after"},
+        {"path": "SKILL.md", "contains": "Rehearsal Receipt"},
+        {"path": "SKILL.md", "regex": "\\bfallback\\b"},
+        {"path": "SKILL.md", "contains": "speaker notes"},
+        {"path": "SKILL.md", "contains": "prefers-reduced-motion"},
+        {"path": "SKILL.md", "regex": "\\beval\\b"}
       ]
     }
   },
@@ -52,6 +65,23 @@
       "name": "generated-project-contract",
       "cwd": "../skills/create-interactive-slides",
       "argv": ["{python}", "scripts/validate_deck_project.py", "assets/starter"]
+    },
+    {
+      "name": "proposal-validator-cli",
+      "cwd": "../skills/create-interactive-slides",
+      "argv": ["{python}", "scripts/validate_production_proposal.py", "--help"],
+      "echo": false
+    },
+    {
+      "name": "design-plan-validator-cli",
+      "cwd": "../skills/create-interactive-slides",
+      "argv": ["{python}", "scripts/validate_design_plan.py", "--help"],
+      "echo": false
+    },
+    {
+      "name": "forward-fixtures",
+      "cwd": "../skills/create-interactive-slides",
+      "argv": ["{python}", "scripts/eval_forward_fixtures.py"]
     }
   ]
 }

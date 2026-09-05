@@ -9,11 +9,9 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import date
 from pathlib import Path
 from typing import Any
 
-from check_freshness import classify_freshness
 from validate_observation_manifest import validate_manifest
 
 
@@ -33,7 +31,6 @@ SEMVER_PATTERN = re.compile(
     r"(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 )
-GUIDE_ID_PATTERN = re.compile(r"uiux-playbook-(\d{3})")
 SLUG_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 UPDATE_SCRIPT_MARKERS = {
     "bash": (
@@ -176,6 +173,88 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
             key, value = line.split(":", 1)
             result[key.strip()] = value.strip().strip('"')
     return result
+
+
+def validate_required_markers(
+    plugin_name: str,
+    skill_name: str,
+    skill_dir: Path,
+    required_markers: Any,
+    failures: list[str],
+) -> None:
+    if not isinstance(required_markers, list):
+        failures.append(
+            f"{plugin_name}: {skill_name} required_markers must be an array"
+        )
+        return
+
+    legacy_markdown_text: str | None = None
+    skill_boundary = skill_dir.resolve()
+    for index, marker in enumerate(required_markers, 1):
+        label = f"{plugin_name}: {skill_name} required_markers[{index}]"
+        if isinstance(marker, str):
+            if not marker:
+                failures.append(f"{label} must not be empty")
+                continue
+            if legacy_markdown_text is None:
+                legacy_markdown_text = "\n".join(
+                    path.read_text(encoding="utf-8")
+                    for path in sorted(skill_dir.rglob("*.md"))
+                )
+            check(
+                marker in legacy_markdown_text,
+                f"{plugin_name}: {skill_name} missing legacy marker {marker}",
+                failures,
+            )
+            continue
+
+        if not isinstance(marker, dict):
+            failures.append(f"{label} must be a string or object")
+            continue
+        unknown_fields = sorted(set(marker) - {"path", "contains", "regex"})
+        if unknown_fields:
+            failures.append(f"{label} has unknown fields {unknown_fields}")
+            continue
+        relative = marker.get("path")
+        contains = marker.get("contains")
+        regex = marker.get("regex")
+        if not isinstance(relative, str) or not relative:
+            failures.append(f"{label}.path must be a non-empty string")
+            continue
+        if (isinstance(contains, str) and bool(contains)) == (
+            isinstance(regex, str) and bool(regex)
+        ):
+            failures.append(f"{label} must define exactly one of contains or regex")
+            continue
+
+        marker_path = (skill_dir / relative).resolve()
+        try:
+            marker_path.relative_to(skill_boundary)
+        except ValueError:
+            failures.append(f"{label}.path escapes the skill directory: {relative}")
+            continue
+        if marker_path.suffix != ".md" or not marker_path.is_file():
+            failures.append(f"{label}.path is not a Markdown file: {relative}")
+            continue
+
+        text = marker_path.read_text(encoding="utf-8")
+        if isinstance(contains, str) and contains:
+            check(
+                contains in text,
+                f"{plugin_name}: {skill_name} missing marker {contains} in {relative}",
+                failures,
+            )
+            continue
+        try:
+            pattern = re.compile(regex)
+        except re.error as exc:
+            failures.append(f"{label}.regex is invalid: {exc}")
+            continue
+        check(
+            pattern.search(text) is not None,
+            f"{plugin_name}: {skill_name} missing regex {regex} in {relative}",
+            failures,
+        )
 
 
 def run(command: list[str], cwd: Path, failures: list[str], *, echo: bool = True) -> None:
@@ -379,18 +458,13 @@ def validate_skill(
     for relative in required_files if isinstance(required_files, list) else []:
         check((skill_dir / relative).is_file(), f"{plugin_name}: {skill_name} missing {relative}", failures)
 
-    required_markers = skill_gate.get("required_markers", [])
-    check(
-        isinstance(required_markers, list) and all(isinstance(value, str) and value for value in required_markers),
-        f"{plugin_name}: {skill_name} required_markers must be a string array",
+    validate_required_markers(
+        plugin_name,
+        skill_name,
+        skill_dir,
+        skill_gate.get("required_markers", []),
         failures,
     )
-    if required_markers:
-        markdown_text = "\n".join(
-            path.read_text(encoding="utf-8") for path in sorted(skill_dir.rglob("*.md"))
-        )
-        for marker in required_markers:
-            check(marker in markdown_text, f"{plugin_name}: {skill_name} missing toolkit marker {marker}", failures)
 
     agents_yaml = skill_dir / "agents" / "openai.yaml"
     check(agents_yaml.is_file(), f"{plugin_name}: {skill_name} missing agents/openai.yaml", failures)
@@ -514,486 +588,8 @@ def validate_repository_scripts(failures: list[str]) -> None:
             failures.append(f"invalid Python syntax in {script.relative_to(ROOT)}: {exc}")
 
 
-def validate_frontend_toolkits(
-    config_path: Path,
-    quality_config: dict[str, Any],
-    failures: list[str],
-    warnings: list[str],
-) -> None:
-    registry_config = quality_config.get("toolkit_registry")
-    if not isinstance(registry_config, dict):
-        failures.append("uiux-advisor: missing toolkit_registry quality gate")
-        return
-    registry_path = resolve_config_path(
-        config_path,
-        registry_config.get("path"),
-        "uiux-advisor toolkit_registry",
-        failures,
-    )
-    check(registry_path.is_file(), "uiux-advisor: missing frontend toolkit registry", failures)
-    if not registry_path.is_file():
-        return
-
-    try:
-        payload = load_json(registry_path)
-    except (OSError, json.JSONDecodeError) as exc:
-        failures.append(f"uiux-advisor: invalid frontend toolkit registry: {exc}")
-        return
-    if not isinstance(payload, dict):
-        failures.append("uiux-advisor: frontend toolkit registry must be an object")
-        return
-
-    schema_version = payload.get("schema_version")
-    expected_schema = registry_config.get("schema_version")
-    check(
-        isinstance(expected_schema, str) and schema_version == expected_schema,
-        f"uiux-advisor: toolkit schema_version must be {expected_schema}",
-        failures,
-    )
-    snapshot_date = payload.get("snapshot_date")
-    try:
-        parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
-        check(
-            parsed_snapshot is not None and parsed_snapshot <= date.today(),
-            "uiux-advisor: invalid or future toolkit snapshot_date",
-            failures,
-        )
-    except ValueError:
-        parsed_snapshot = None
-        failures.append("uiux-advisor: invalid toolkit snapshot_date")
-
-    tools = payload.get("tools")
-    check(isinstance(tools, list), "uiux-advisor: toolkit tools must be an array", failures)
-    if not isinstance(tools, list):
-        return
-    minimum_count = registry_config.get("minimum_count")
-    check(
-        isinstance(minimum_count, int) and minimum_count > 0,
-        "uiux-advisor: toolkit minimum_count must be a positive integer",
-        failures,
-    )
-    if isinstance(minimum_count, int):
-        check(
-            len(tools) >= minimum_count,
-            f"uiux-advisor: expected at least {minimum_count} toolkits, got {len(tools)}",
-            failures,
-        )
-
-    allowed_kinds = {"api", "library", "registry", "specification", "workbench"}
-    configured_roles = registry_config.get("required_roles")
-    check(
-        isinstance(configured_roles, list)
-        and bool(configured_roles)
-        and all(isinstance(role, str) and role for role in configured_roles),
-        "uiux-advisor: toolkit required_roles must be a non-empty string array",
-        failures,
-    )
-    allowed_roles = set(configured_roles) if isinstance(configured_roles, list) else set()
-    allowed_ecosystems = {
-        "web",
-        "vanilla",
-        "react",
-        "vue",
-        "svelte",
-        "angular",
-        "solid",
-        "multi-platform",
-    }
-    allowed_adoption = {"native", "package", "registry", "source-copy", "specification"}
-    allowed_status = {"candidate", "verified", "deprecated"}
-    allowed_license_review = {"required-at-adoption", "verified", "not-applicable"}
-    configured_ids = registry_config.get("required_ids")
-    check(
-        isinstance(configured_ids, list)
-        and bool(configured_ids)
-        and all(isinstance(tool_id, str) and tool_id for tool_id in configured_ids),
-        "uiux-advisor: toolkit required_ids must be a non-empty string array",
-        failures,
-    )
-    required_ids = set(configured_ids) if isinstance(configured_ids, list) else set()
-    freshness = registry_config.get("freshness")
-    warning_after = freshness.get("warning_after_days") if isinstance(freshness, dict) else None
-    error_after = freshness.get("error_after_days") if isinstance(freshness, dict) else None
-    valid_freshness = (
-        isinstance(warning_after, int)
-        and isinstance(error_after, int)
-        and 0 <= warning_after < error_after
-    )
-    check(valid_freshness, "uiux-advisor: invalid toolkit freshness budget", failures)
-
-    ids: list[str] = []
-    names: list[str] = []
-    official_urls: list[str] = []
-    covered_roles: set[str] = set()
-    for index, tool in enumerate(tools, 1):
-        if not isinstance(tool, dict):
-            failures.append(f"uiux-advisor: toolkit {index} must be an object")
-            continue
-        label = tool.get("id") or f"toolkit-{index}"
-        tool_id = tool.get("id")
-        name = tool.get("name")
-        check(
-            isinstance(tool_id, str) and SLUG_PATTERN.fullmatch(tool_id) is not None,
-            f"uiux-advisor: {label} has invalid id",
-            failures,
-        )
-        check(isinstance(name, str) and bool(name.strip()), f"uiux-advisor: {label} missing name", failures)
-        if isinstance(tool_id, str):
-            ids.append(tool_id)
-        if isinstance(name, str):
-            names.append(name)
-
-        check(tool.get("kind") in allowed_kinds, f"uiux-advisor: {label} has invalid kind", failures)
-        check(tool.get("adoption") in allowed_adoption, f"uiux-advisor: {label} has invalid adoption", failures)
-        check(tool.get("status") in allowed_status, f"uiux-advisor: {label} has invalid status", failures)
-        check(
-            tool.get("license_review") in allowed_license_review,
-            f"uiux-advisor: {label} has invalid license_review",
-            failures,
-        )
-        roles = tool.get("roles")
-        valid_roles = (
-            isinstance(roles, list)
-            and bool(roles)
-            and all(isinstance(role, str) and bool(role) for role in roles)
-        )
-        check(valid_roles, f"uiux-advisor: {label} has invalid roles", failures)
-        if valid_roles:
-            check(len(roles) == len(set(roles)), f"uiux-advisor: {label} has duplicate roles", failures)
-            check(set(roles) <= allowed_roles, f"uiux-advisor: {label} has unknown roles", failures)
-            covered_roles.update(roles)
-        ecosystems = tool.get("ecosystems")
-        valid_ecosystems = (
-            isinstance(ecosystems, list)
-            and bool(ecosystems)
-            and all(isinstance(ecosystem, str) and bool(ecosystem) for ecosystem in ecosystems)
-        )
-        check(valid_ecosystems, f"uiux-advisor: {label} has invalid ecosystems", failures)
-        if valid_ecosystems:
-            check(
-                len(ecosystems) == len(set(ecosystems)),
-                f"uiux-advisor: {label} has duplicate ecosystems",
-                failures,
-            )
-            check(
-                set(ecosystems) <= allowed_ecosystems,
-                f"uiux-advisor: {label} has unknown ecosystems",
-                failures,
-            )
-        for field in ("capabilities", "surfaces"):
-            values = tool.get(field)
-            valid_values = (
-                isinstance(values, list)
-                and bool(values)
-                and all(
-                    isinstance(value, str) and SLUG_PATTERN.fullmatch(value) is not None
-                    for value in values
-                )
-            )
-            check(valid_values, f"uiux-advisor: {label} has invalid {field}", failures)
-            if valid_values:
-                check(
-                    len(values) == len(set(values)),
-                    f"uiux-advisor: {label} has duplicate {field}",
-                    failures,
-                )
-        check(tool.get("risk") in {"low", "medium", "high"}, f"uiux-advisor: {label} has invalid risk", failures)
-        check(
-            isinstance(tool.get("fallback"), str) and bool(tool["fallback"].strip()),
-            f"uiux-advisor: {label} missing fallback",
-            failures,
-        )
-        official_url = tool.get("official_url")
-        check(
-            isinstance(official_url, str) and official_url.startswith("https://"),
-            f"uiux-advisor: {label} has invalid official_url",
-            failures,
-        )
-        if isinstance(official_url, str):
-            official_urls.append(official_url)
-        checked_on = tool.get("checked_on")
-        try:
-            parsed_checked = date.fromisoformat(checked_on) if isinstance(checked_on, str) else None
-            check(
-                parsed_checked is not None
-                and parsed_checked <= date.today()
-                and (parsed_snapshot is None or parsed_checked <= parsed_snapshot),
-                f"uiux-advisor: {label} has invalid checked_on",
-                failures,
-            )
-            if parsed_checked is not None and valid_freshness:
-                status, age = classify_freshness(
-                    parsed_checked,
-                    warning_after_days=warning_after,
-                    error_after_days=error_after,
-                )
-                if status == "error":
-                    failures.append(
-                        f"uiux-advisor: {label} toolkit freshness exceeded: {age} days"
-                    )
-                elif status == "warning":
-                    warnings.append(
-                        f"uiux-advisor: {label} toolkit should be refreshed: {age} days"
-                    )
-        except ValueError:
-            failures.append(f"uiux-advisor: {label} has invalid checked_on")
-        check(
-            isinstance(tool.get("selection_note"), str) and bool(tool["selection_note"].strip()),
-            f"uiux-advisor: {label} missing selection_note",
-            failures,
-        )
-        if tool.get("license_review") == "verified":
-            check(bool(tool.get("license_spdx")), f"uiux-advisor: {label} missing license_spdx", failures)
-            check(
-                isinstance(tool.get("license_url"), str) and tool["license_url"].startswith("https://"),
-                f"uiux-advisor: {label} missing license_url",
-                failures,
-            )
-
-    check(len(ids) == len(set(ids)), "uiux-advisor: duplicate toolkit IDs", failures)
-    check(len(names) == len(set(names)), "uiux-advisor: duplicate toolkit names", failures)
-    check(
-        len(official_urls) == len(set(official_urls)),
-        "uiux-advisor: duplicate toolkit official URLs",
-        failures,
-    )
-    check(required_ids <= set(ids), f"uiux-advisor: missing required toolkits {sorted(required_ids - set(ids))}", failures)
-    check(allowed_roles <= covered_roles, f"uiux-advisor: uncovered toolkit roles {sorted(allowed_roles - covered_roles)}", failures)
-
-
-def validate_uiux_kb(
-    config_path: Path,
-    quality_config: dict[str, Any],
-    failures: list[str],
-    warnings: list[str],
-) -> None:
-    kb_config = quality_config.get("knowledge_base")
-    if not isinstance(kb_config, dict):
-        failures.append("uiux-advisor: missing knowledge_base quality gate")
-        return
-    kb_dir = resolve_config_path(
-        config_path,
-        kb_config.get("path"),
-        "uiux-advisor knowledge_base",
-        failures,
-    )
-    guides_path = kb_dir / "guides.jsonl"
-    sources_path = kb_dir / "sources.json"
-    check(guides_path.is_file(), "uiux-advisor: missing guides.jsonl", failures)
-    check(sources_path.is_file(), "uiux-advisor: missing sources.json", failures)
-    if not guides_path.is_file() or not sources_path.is_file():
-        return
-
-    records: list[dict[str, Any]] = []
-    for line_number, line in enumerate(guides_path.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            record = json.loads(line)
-        except json.JSONDecodeError as exc:
-            failures.append(f"uiux-advisor: invalid guides.jsonl line {line_number}: {exc}")
-            continue
-        if not isinstance(record, dict):
-            failures.append(f"uiux-advisor: guides.jsonl line {line_number} must be an object")
-            continue
-        records.append(record)
-
-    try:
-        sources = load_json(sources_path)
-    except (OSError, json.JSONDecodeError) as exc:
-        failures.append(f"uiux-advisor: invalid sources.json: {exc}")
-        sources = []
-    check(isinstance(sources, list), "uiux-advisor: sources.json must be an array", failures)
-    if isinstance(sources, list):
-        source_records = [source for source in sources if isinstance(source, dict)]
-        check(len(source_records) == len(sources), "uiux-advisor: every source must be an object", failures)
-    else:
-        source_records = []
-
-    source_ids: list[str] = []
-    source_required = ("id", "title", "publisher", "url", "source_type", "scope", "stability", "usage")
-    for index, source in enumerate(source_records, 1):
-        label = source.get("id") or f"source-{index}"
-        for field in source_required:
-            check(isinstance(source.get(field), str) and bool(source[field].strip()), f"uiux-advisor: {label} missing {field}", failures)
-        source_id = source.get("id")
-        if isinstance(source_id, str):
-            source_ids.append(source_id)
-        url = source.get("url")
-        check(isinstance(url, str) and url.startswith(("https://", "http://")), f"uiux-advisor: {label} has invalid URL", failures)
-    check(len(source_ids) == len(set(source_ids)), "uiux-advisor: duplicate source IDs", failures)
-    known_source_ids = set(source_ids)
-
-    ids = [record.get("id") for record in records]
-    markdown_paths = [record.get("markdown_path") for record in records]
-    string_ids = [guide_id for guide_id in ids if isinstance(guide_id, str)]
-    string_markdown_paths = [path for path in markdown_paths if isinstance(path, str)]
-    expected_count = kb_config.get("expected_guide_count")
-    check(
-        isinstance(expected_count, int) and expected_count > 0,
-        "uiux-advisor: expected_guide_count must be a positive integer",
-        failures,
-    )
-    if isinstance(expected_count, int):
-        check(
-            len(records) == expected_count,
-            f"uiux-advisor: expected {expected_count} records, got {len(records)}",
-            failures,
-        )
-    check(len(string_ids) == len(set(string_ids)), "uiux-advisor: duplicate guide IDs", failures)
-    check(len(string_markdown_paths) == len(set(string_markdown_paths)), "uiux-advisor: duplicate guide Markdown paths", failures)
-    known_guide_ids = {guide_id for guide_id in ids if isinstance(guide_id, str)}
-    used_source_ids: set[str] = set()
-    required_fields = (
-        "id",
-        "num",
-        "slug",
-        "title",
-        "category",
-        "rule",
-        "sources",
-        "tags",
-        "related_ids",
-        "time_sensitive",
-        "markdown_path",
-        "version",
-        "snapshot_date",
-    )
-    freshness = kb_config.get("freshness")
-    time_warning = (
-        freshness.get("time_sensitive_warning_after_days") if isinstance(freshness, dict) else None
-    )
-    time_error = (
-        freshness.get("time_sensitive_error_after_days") if isinstance(freshness, dict) else None
-    )
-    stable_warning = (
-        freshness.get("stable_warning_after_days") if isinstance(freshness, dict) else None
-    )
-    stable_error = (
-        freshness.get("stable_error_after_days") if isinstance(freshness, dict) else None
-    )
-    valid_freshness = all(
-        isinstance(value, int)
-        for value in (time_warning, time_error, stable_warning, stable_error)
-    ) and 0 <= time_warning < time_error and 0 <= stable_warning < stable_error
-    check(valid_freshness, "uiux-advisor: invalid knowledge-base freshness budget", failures)
-
-    for index, record in enumerate(records, 1):
-        guide_id = record.get("id")
-        label = guide_id if isinstance(guide_id, str) and guide_id else f"guide-{index}"
-        for field in required_fields:
-            check(field in record, f"uiux-advisor: {label} missing {field}", failures)
-
-        match = GUIDE_ID_PATTERN.fullmatch(guide_id) if isinstance(guide_id, str) else None
-        check(match is not None, f"uiux-advisor: {label} has invalid guide ID", failures)
-        if match:
-            check(record.get("num") == int(match.group(1)), f"uiux-advisor: {label} num does not match ID", failures)
-        slug = record.get("slug")
-        check(isinstance(slug, str) and SLUG_PATTERN.fullmatch(slug) is not None, f"uiux-advisor: {label} has invalid slug", failures)
-        for field in ("title", "category", "rule"):
-            check(isinstance(record.get(field), str) and bool(record[field].strip()), f"uiux-advisor: {label} missing {field}", failures)
-
-        version = record.get("version")
-        check(isinstance(version, str) and SEMVER_PATTERN.fullmatch(version) is not None, f"uiux-advisor: {label} has invalid version", failures)
-        snapshot_date = record.get("snapshot_date")
-        try:
-            parsed_snapshot = date.fromisoformat(snapshot_date) if isinstance(snapshot_date, str) else None
-            check(parsed_snapshot is not None and parsed_snapshot <= date.today(), f"uiux-advisor: {label} has future snapshot_date", failures)
-            if parsed_snapshot is not None and valid_freshness:
-                if record.get("time_sensitive") is True:
-                    warning_after, error_after = time_warning, time_error
-                else:
-                    warning_after, error_after = stable_warning, stable_error
-                status, age = classify_freshness(
-                    parsed_snapshot,
-                    warning_after_days=warning_after,
-                    error_after_days=error_after,
-                )
-                if status == "error":
-                    failures.append(
-                        f"uiux-advisor: {label} guide freshness exceeded: {age} days"
-                    )
-                elif status == "warning":
-                    warnings.append(
-                        f"uiux-advisor: {label} guide should be refreshed: {age} days"
-                    )
-        except ValueError:
-            failures.append(f"uiux-advisor: {label} has invalid snapshot_date")
-        check(isinstance(record.get("time_sensitive"), bool), f"uiux-advisor: {label} time_sensitive must be boolean", failures)
-
-        for field in ("sources", "tags", "related_ids"):
-            values = record.get(field)
-            check(
-                isinstance(values, list) and bool(values) and all(isinstance(value, str) and value for value in values),
-                f"uiux-advisor: {label} {field} must be a non-empty string array", failures)
-            if isinstance(values, list):
-                check(len(values) == len(set(values)), f"uiux-advisor: {label} has duplicate {field}", failures)
-
-        record_sources = record.get("sources")
-        if isinstance(record_sources, list):
-            unknown_sources = sorted(set(record_sources) - known_source_ids)
-            check(not unknown_sources, f"uiux-advisor: {label} references unknown sources {unknown_sources}", failures)
-            used_source_ids.update(source_id for source_id in record_sources if isinstance(source_id, str))
-        related_ids = record.get("related_ids")
-        if isinstance(related_ids, list):
-            unknown_related = sorted(set(related_ids) - known_guide_ids)
-            check(not unknown_related, f"uiux-advisor: {label} references unknown guides {unknown_related}", failures)
-            check(guide_id not in related_ids, f"uiux-advisor: {label} relates to itself", failures)
-
-        markdown_path = record.get("markdown_path")
-        if not isinstance(markdown_path, str):
-            failures.append(f"uiux-advisor: {label} missing guide Markdown")
-            continue
-        resolved = (kb_dir / markdown_path).resolve()
-        try:
-            resolved.relative_to(kb_dir.resolve())
-        except ValueError:
-            failures.append(f"uiux-advisor: {label} has unsafe Markdown path {markdown_path}")
-            continue
-        check(resolved.is_file(), f"uiux-advisor: {label} missing guide Markdown {markdown_path}", failures)
-        if resolved.is_file():
-            frontmatter = parse_frontmatter(resolved)
-            expected_frontmatter = {
-                "id": guide_id,
-                "title": record.get("title"),
-                "slug": slug,
-                "category": record.get("category"),
-                "version": version,
-                "snapshot_date": snapshot_date,
-                "time_sensitive": str(record.get("time_sensitive")).lower(),
-            }
-            for field, expected in expected_frontmatter.items():
-                check(frontmatter.get(field) == str(expected), f"uiux-advisor: {label} Markdown {field} mismatch", failures)
-
-    unused_sources = sorted(known_source_ids - used_source_ids)
-    check(not unused_sources, f"uiux-advisor: unused source registry entries {unused_sources}", failures)
-    if isinstance(expected_count, int):
-        check(
-            len(list((kb_dir / "guides").rglob("*.md"))) == expected_count,
-            "uiux-advisor: guide file count mismatch",
-            failures,
-        )
-
-    broken: list[str] = []
-    link_pattern = re.compile(r"\[[^\]]+\]\(([^)#]+\.md)(?:#[^)]+)?\)")
-    for markdown in kb_dir.rglob("*.md"):
-        for target in link_pattern.findall(markdown.read_text(encoding="utf-8")):
-            if target.startswith(("http://", "https://")):
-                continue
-            resolved = (markdown.parent / target).resolve()
-            try:
-                resolved.relative_to(kb_dir.resolve())
-            except ValueError:
-                broken.append(f"{markdown.relative_to(kb_dir)} -> unsafe {target}")
-                continue
-            if not resolved.is_file():
-                broken.append(f"{markdown.relative_to(kb_dir)} -> {target}")
-    check(not broken, f"uiux-advisor: broken links: {broken[:5]}", failures)
-
-
 def main() -> int:
     failures: list[str] = []
-    warnings: list[str] = []
     plugin_names = validate_marketplace(failures)
     validate_repository_inventory(plugin_names, failures)
     quality_gates: dict[str, tuple[Path, dict[str, Any]]] = {}
@@ -1014,10 +610,6 @@ def main() -> int:
             quality_config,
             failures,
         )
-        if "knowledge_base" in quality_config:
-            validate_uiux_kb(config_path, quality_config, failures, warnings)
-        if "toolkit_registry" in quality_config:
-            validate_frontend_toolkits(config_path, quality_config, failures, warnings)
         run_declared_validators(
             plugin_name,
             config_path,
@@ -1037,11 +629,6 @@ def main() -> int:
         )
     run([python, str(VERSION_CHECK_PATH), "--help"], ROOT, failures, echo=False)
     run([python, str(LIVE_EVAL_PATH), "validate"], ROOT, failures)
-
-    if warnings:
-        print("\nMONOREPO VALIDATION WARNINGS")
-        for warning in warnings:
-            print(f"- {warning}")
 
     if failures:
         print("\nMONOREPO VALIDATION FAILED")

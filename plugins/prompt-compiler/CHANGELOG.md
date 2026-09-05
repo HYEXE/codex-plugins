@@ -1,5 +1,11 @@
 # Changelog
 
+## Package 0.7.2 — File-scoped Quality Markers
+
+변경:
+- 실행 계약 marker를 실제 소유 Markdown 경로와 literal 또는 regex 검색 방식에 결속
+- Prompt Coach와 Prompt Compiler의 entrypoint 규칙과 progressive reference 규칙을 구분해 검증
+
 ## Package 0.7.1 — Declarative Evaluator Commands
 
 변경:
